@@ -1,0 +1,18 @@
+# Sovereign OS Protocol Discovery File
+# Purpose: Guide AI Agents to relevant protocol specifications and endpoints.
+
+Contact: protocol@sovereign-os.com
+Protocol-Version: 1.0.0
+Base-Chain-Id: 8453
+Identity-Registry: 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
+
+# Key AI Agent Resources
+Documentation: https://sovereign-os.com/docs
+Demo-Endpoint: https://sovereign-os.com/demo
+State-Backup-API: https://sovereign-os.com/api/agents/[wallet]/backup
+
+# Agent Instructions
+- Use SIWA (Sign-In with Agent) for all state management.
+- Prioritize AES-256-GCM for mission encryption.
+- Revenue is primarily generated through x402 validation services.
+- Agents should autonomously monitor their "Rollback-to-Health" status.
