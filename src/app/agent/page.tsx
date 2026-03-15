@@ -582,51 +582,6 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
           <ArrowLeft size={16} /> Back to My AI Agents
         </button>
 
-        {/* Agent Header */}
-        <div className="glass-card p-6 border border-[var(--line)]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isAgentDead ? "bg-red-100" : "bg-[var(--accent-red)]/10"}`}>
-              {isAgentDead
-                ? <AlertCircle className="text-red-500" size={28} />
-                : <Bot className="text-[var(--accent-red)]" size={28} />
-              }
-            </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
-              <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{selectedAgent.type}</span>
-                <span className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : selectedAgent.status === "reviving" ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
-                  {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : selectedAgent.status === "reviving" ? "Reviving..." : selectedAgent.status === "dead" ? "Dead" : "Inactive"}
-                </span>
-              </div>
-            </div>
-            {isAgentDead && (
-              <div className="px-3 py-1.5 bg-red-100 border border-red-200 rounded-lg text-xs font-bold text-red-700 flex items-center gap-1.5">
-                <AlertCircle size={14} /> Needs Revival
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Agent ID</div>
-              <div className="font-mono text-xs break-all">{selectedAgent.id}</div>
-            </div>
-            <div>
-              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Wallet</div>
-              <div className="font-mono text-xs">{selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 8)}...${selectedAgent.walletAddress.slice(-6)}` : 'N/A'}</div>
-            </div>
-            <div>
-              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Created</div>
-              <div className="text-xs">{selectedAgent.createdAt ? formatDistanceToNow(new Date(selectedAgent.createdAt), { addSuffix: true }) : 'Unknown'}</div>
-            </div>
-            <div>
-              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Last Active</div>
-              <div className="text-xs">{selectedAgent.lastActiveAt ? formatDistanceToNow(new Date(selectedAgent.lastActiveAt), { addSuffix: true }) : 'Just now'}</div>
-            </div>
-          </div>
-        </div>
-
         {/* Sub-tabs */}
         <div className="flex gap-1 border-b border-[var(--line)]">
           {subTabs.map((tab) => (
@@ -641,6 +596,51 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
         {/* ─── OVERVIEW SUB-TAB ─── */}
         {agentSubTab === "overview" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {/* Agent Header */}
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isAgentDead ? "bg-red-100" : "bg-[var(--accent-red)]/10"}`}>
+                  {isAgentDead
+                    ? <AlertCircle className="text-red-500" size={28} />
+                    : <Bot className="text-[var(--accent-red)]" size={28} />
+                  }
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
+                  <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{selectedAgent.type}</span>
+                    <span className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : selectedAgent.status === "reviving" ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
+                      {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : selectedAgent.status === "reviving" ? "Reviving..." : selectedAgent.status === "dead" ? "Dead" : "Inactive"}
+                    </span>
+                  </div>
+                </div>
+                {isAgentDead && (
+                  <div className="px-3 py-1.5 bg-red-100 border border-red-200 rounded-lg text-xs font-bold text-red-700 flex items-center gap-1.5">
+                    <AlertCircle size={14} /> Needs Revival
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Agent ID</div>
+                  <div className="font-mono text-xs break-all">{selectedAgent.id}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Wallet</div>
+                  <div className="font-mono text-xs">{selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 8)}...${selectedAgent.walletAddress.slice(-6)}` : 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Created</div>
+                  <div className="text-xs">{selectedAgent.createdAt ? formatDistanceToNow(new Date(selectedAgent.createdAt), { addSuffix: true }) : 'Unknown'}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Last Active</div>
+                  <div className="text-xs">{selectedAgent.lastActiveAt ? formatDistanceToNow(new Date(selectedAgent.lastActiveAt), { addSuffix: true }) : 'Just now'}</div>
+                </div>
+              </div>
+            </div>
+
             <div className="glass-card p-6 border border-[var(--line)]">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Shield size={18} className="text-[var(--accent-crimson)]" />

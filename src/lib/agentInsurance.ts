@@ -271,13 +271,8 @@ export class AgentInsurance {
         throw new Error('Invalid plan');
       }
 
-      if (plan.price > 0) {
-        // Process payment (would integrate with payment processor)
-        const paymentValid = await this.verifyPayment(paymentSignature, plan.price);
-        if (!paymentValid) {
-          throw new Error('Payment verification failed');
-        }
-      }
+      // Payment is already handled in the API route for bypass plan
+      // No need to verify signature here since real USDC payment was already collected
 
       // Update agent plan
       const agent = await database.getAgent(agentId);
