@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@base-org/account": "^2.5.2",
+    "@base-org/account-ui": "^1.0.1",
     "@buildersgarden/siwa": "^0.0.24",
     "@circle-fin/developer-controlled-wallets": "^10.1.0",
     "@coinbase/cdp-core": "^0.0.96",

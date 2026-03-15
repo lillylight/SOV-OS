@@ -37,6 +37,7 @@ import {
   Lock
 } from "lucide-react";
 import AgentInsurance from '@/components/AgentInsurance';
+import PaymentModal from '@/components/PaymentModal';
 import AISharingStats from '@/components/AISharingStats';
 import AgentSettings from '@/components/AgentSettings';
 import TransactionHistory from '@/components/TransactionHistory';
@@ -446,6 +447,13 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   const [skillDisconnectModal, setSkillDisconnectModal] = useState<{ skillId: string; skillName: string; affected: number } | null>(null);
   const [skillEnableModal, setSkillEnableModal] = useState<{ skillId: string; skillName: string } | null>(null);
   const [skillActionLoading, setSkillActionLoading] = useState<string | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{
+    isOpen: boolean;
+    amount: string;
+    description: string;
+    purpose: 'backup' | 'upgrade';
+  }>({ isOpen: false, amount: '0', description: '', purpose: 'backup' });
+  const [nextBackupCost, setNextBackupCost] = useState<string>('0.10');
 
   // Fetch backups when agent changes or backup tab is opened
   useEffect(() => {
@@ -475,30 +483,99 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       if (data.success) {
         setBackups(data.backups || []);
         setBackupStats(data.stats || null);
+        if (data.nextCost !== undefined) setNextBackupCost(data.nextCost.toFixed(2));
       }
     } catch (e) { console.error("Failed to fetch backups:", e); }
   };
 
-  const handleCreateBackup = async () => {
+  // Show payment modal before creating backup
+  const handleCreateBackup = () => {
     if (!selectedAgent?.walletAddress) return;
-    setBackupLoading(true);
     setBackupMessage(null);
-    try {
-      const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setBackupMessage({ type: "success", text: `Backup created successfully. CID: ${data.backup.ipfsCid.slice(0, 16)}...` });
-        await fetchBackups();
-      } else {
-        setBackupMessage({ type: "error", text: data.error || "Backup failed" });
-      }
-    } catch (e) {
-      setBackupMessage({ type: "error", text: "Network error creating backup" });
-    } finally {
-      setBackupLoading(false);
+    setPaymentModal({
+      isOpen: true,
+      amount: nextBackupCost,
+      description: 'Agent State Backup',
+      purpose: 'backup',
+    });
+  };
+
+  // Show payment modal for upgrade
+  const handleUpgradePlan = () => {
+    if (!selectedAgent?.walletAddress) return;
+    setBackupMessage(null);
+    setPaymentModal({
+      isOpen: true,
+      amount: '5.00',
+      description: 'Unlock Unlimited Backups',
+      purpose: 'upgrade',
+    });
+  };
+
+  // Called after payment modal confirms embedded wallet payment
+  const executeBackupAfterPayment = async () => {
+    if (!selectedAgent?.walletAddress) return;
+    const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setBackupMessage({ type: "success", text: `Backup created successfully. CID: ${data.backup.ipfsCid.slice(0, 16)}...` });
+      await fetchBackups();
+    } else {
+      throw new Error(data.error || "Backup failed");
+    }
+  };
+
+  const executeUpgradeAfterPayment = async () => {
+    if (!selectedAgent?.walletAddress) return;
+    const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/upgrade-plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planId: 'bypass', paymentSignature: `basepay_${Date.now()}` }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setBackupMessage({ type: "success", text: "Upgraded to Unlimited Backups!" });
+      await fetchBackups();
+    } else {
+      throw new Error(data.error || "Upgrade failed");
+    }
+  };
+
+  // Handle payment success from modal (both embedded and base pay)
+  const handlePaymentSuccess = async (method: 'embedded' | 'basepay', txId?: string) => {
+    // For Base Pay, the payment already went through on-chain
+    // For embedded wallet, the payment went through the API route
+    // In both cases, proceed with the action
+    if (paymentModal.purpose === 'backup' && method === 'basepay') {
+      // Base Pay already sent USDC, now create the backup record
+      try {
+        const res = await fetch(`/api/agents/${selectedAgent?.walletAddress}/backup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paidViaBP: true, bpTxId: txId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setBackupMessage({ type: "success", text: `Backup created successfully. CID: ${data.backup.ipfsCid.slice(0, 16)}...` });
+          await fetchBackups();
+        }
+      } catch (e) { console.error("Backup after base pay failed:", e); }
+    } else if (paymentModal.purpose === 'upgrade' && method === 'basepay') {
+      try {
+        const res = await fetch(`/api/agents/${selectedAgent?.walletAddress}/upgrade-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ planId: 'bypass', paymentSignature: `basepay_${txId}` }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setBackupMessage({ type: "success", text: "Upgraded to Unlimited Backups!" });
+          await fetchBackups();
+        }
+      } catch (e) { console.error("Upgrade after base pay failed:", e); }
     }
   };
 
@@ -732,9 +809,20 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                 {backupLoading ? (
                   <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
                 ) : (
-                  <><Upload size={16} /> Backup Agent State Now</>
+                  <><Upload size={16} /> Backup Agent State — ${nextBackupCost} USDC</>
                 )}
               </button>
+              {backupStats?.plan?.id !== 'bypass' && (
+                <button
+                  onClick={handleUpgradePlan}
+                  className="mt-3 w-full bg-[var(--accent-crimson)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                >
+                  <Infinity size={16} /> Unlock Unlimited Backups — $5 USDC
+                </button>
+              )}
+              <p className="text-xs text-[var(--ink-50)] mt-3 text-center">
+                First 2 backups: $0.10 each · 3rd onwards: $0.30 each · Recovery is always free
+              </p>
             </div>
 
             {/* Backup History + Revive */}
@@ -985,6 +1073,19 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
             </div>
           </motion.div>
         )}
+
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={paymentModal.isOpen}
+          onClose={() => setPaymentModal(prev => ({ ...prev, isOpen: false }))}
+          amount={paymentModal.amount}
+          description={paymentModal.description}
+          embeddedWalletBalance={selectedAgent.protocols?.agenticWallet?.balance || "0"}
+          embeddedWalletAddress={selectedAgent.walletAddress || ""}
+          userType="human"
+          onPayWithEmbedded={paymentModal.purpose === 'backup' ? executeBackupAfterPayment : executeUpgradeAfterPayment}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       </motion.div>
     );
   }
