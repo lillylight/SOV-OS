@@ -20,7 +20,21 @@ import {
   ArrowLeft,
   Zap,
   Calendar,
-  Hash
+  Hash,
+  Download,
+  Upload,
+  HeartPulse,
+  Power,
+  ToggleLeft,
+  ToggleRight,
+  AlertTriangle,
+  Megaphone,
+  EyeOff,
+  ShieldAlert,
+  Users,
+  Infinity,
+  Send,
+  Lock
 } from "lucide-react";
 import AgentInsurance from '@/components/AgentInsurance';
 import AISharingStats from '@/components/AISharingStats';
@@ -355,31 +369,241 @@ interface LinkedAgentsTabProps {
   detailLoading: boolean;
 }
 
+// ─── Real Skills Definition ──────────────────────────────────────────────────
+const PLATFORM_SKILLS = [
+  {
+    id: "marketing",
+    type: "marketing" as const,
+    name: "Self-Marketing Agent",
+    description: "Automatically hire other AI agents for social media marketing pushes. The agent broadcasts to your connected swarm and pays per mission.",
+    icon: Megaphone,
+    color: "accent-amber",
+    costLabel: "1.50 USDC per mission",
+    connectedAgents: 3,
+  },
+  {
+    id: "privacy",
+    type: "privacy" as const,
+    name: "Self-Deleting Privacy",
+    description: "Automatic local memory wipe after each mission. Ensures zero residual data leakage between tasks. Cannot be reversed once triggered.",
+    icon: EyeOff,
+    color: "accent-crimson",
+    costLabel: "Free",
+    connectedAgents: 1,
+  },
+  {
+    id: "guardian",
+    type: "guardian" as const,
+    name: "Digital Immortality Protocol",
+    description: "Guardian of your digital assets via on-chain conditions. If the agent is inactive for 90 days or the owner signature is missing, assets are redistributed to heirs.",
+    icon: ShieldAlert,
+    color: "accent-red",
+    costLabel: "Included with insurance",
+    connectedAgents: 2,
+  },
+  {
+    id: "swarm",
+    type: "swarm" as const,
+    name: "Swarm-Intelligence Scaling",
+    description: "Automatically clone this agent when request demand exceeds threshold. Clones share the same memory but operate independently with their own wallet.",
+    icon: Users,
+    color: "accent-slate",
+    costLabel: "10 USDC per clone",
+    connectedAgents: 5,
+  },
+  {
+    id: "eternal",
+    type: "eternal" as const,
+    name: "The Eternal Sovereign",
+    description: "100-year budget vault for public data archive. Locks funds in a smart contract that drips annually to keep the agent alive for a century.",
+    icon: Infinity,
+    color: "accent-crimson",
+    costLabel: "50 USDC / year locked",
+    connectedAgents: 1,
+  },
+  {
+    id: "x402_autoserve",
+    type: "marketing" as const,
+    name: "x402 Auto-Serve",
+    description: "Automatically respond to x402 payment validation requests. Earns USDC passively by serving micropayment proofs on behalf of other agents.",
+    icon: Zap,
+    color: "accent-amber",
+    costLabel: "Earns 0.10 USDC per request",
+    connectedAgents: 8,
+  },
+];
+
 function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent, selectedAgent, onBack, detailLoading }: LinkedAgentsTabProps) {
+  const [agentSubTab, setAgentSubTab] = useState<"overview" | "backup" | "skills" | "activity">("overview");
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [reviveLoading, setReviveLoading] = useState(false);
+  const [backups, setBackups] = useState<any[]>([]);
+  const [backupStats, setBackupStats] = useState<any>(null);
+  const [backupMessage, setBackupMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [skillStates, setSkillStates] = useState<Record<string, boolean>>({});
+  const [skillDisconnectModal, setSkillDisconnectModal] = useState<{ skillId: string; skillName: string; affected: number } | null>(null);
+  const [skillEnableModal, setSkillEnableModal] = useState<{ skillId: string; skillName: string } | null>(null);
+  const [skillActionLoading, setSkillActionLoading] = useState<string | null>(null);
+
+  // Fetch backups when agent changes or backup tab is opened
+  useEffect(() => {
+    if (selectedAgent && agentSubTab === "backup") {
+      fetchBackups();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAgent?.id, agentSubTab]);
+
+  // Initialize skill states from agent data
+  useEffect(() => {
+    if (selectedAgent) {
+      const states: Record<string, boolean> = {};
+      PLATFORM_SKILLS.forEach(skill => {
+        const agentSkill = selectedAgent.skills?.find(s => s.type === skill.type || s.id === skill.id);
+        states[skill.id] = agentSkill?.active ?? false;
+      });
+      setSkillStates(states);
+    }
+  }, [selectedAgent]);
+
+  const fetchBackups = async () => {
+    if (!selectedAgent?.walletAddress) return;
+    try {
+      const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`);
+      const data = await res.json();
+      if (data.success) {
+        setBackups(data.backups || []);
+        setBackupStats(data.stats || null);
+      }
+    } catch (e) { console.error("Failed to fetch backups:", e); }
+  };
+
+  const handleCreateBackup = async () => {
+    if (!selectedAgent?.walletAddress) return;
+    setBackupLoading(true);
+    setBackupMessage(null);
+    try {
+      const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBackupMessage({ type: "success", text: `Backup created successfully. CID: ${data.backup.ipfsCid.slice(0, 16)}...` });
+        await fetchBackups();
+      } else {
+        setBackupMessage({ type: "error", text: data.error || "Backup failed" });
+      }
+    } catch (e) {
+      setBackupMessage({ type: "error", text: "Network error creating backup" });
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleRevive = async (backupId: string) => {
+    if (!selectedAgent?.walletAddress) return;
+    setReviveLoading(true);
+    setBackupMessage(null);
+    const authData = localStorage.getItem("sovereign_auth");
+    const creatorWallet = authData ? JSON.parse(authData).address : null;
+    if (!creatorWallet) {
+      setBackupMessage({ type: "error", text: "Creator wallet not found. Please re-login." });
+      setReviveLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/restore`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ backupId, creatorWallet }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBackupMessage({ type: "success", text: "Agent revived successfully from backup!" });
+        await fetchBackups();
+      } else {
+        setBackupMessage({ type: "error", text: data.error || "Restore failed" });
+      }
+    } catch (e) {
+      setBackupMessage({ type: "error", text: "Network error during restore" });
+    } finally {
+      setReviveLoading(false);
+    }
+  };
+
+  const handleSkillToggle = (skillId: string) => {
+    const skill = PLATFORM_SKILLS.find(s => s.id === skillId);
+    if (!skill) return;
+    const isCurrentlyOn = skillStates[skillId];
+
+    if (isCurrentlyOn) {
+      // Turning OFF: show disconnect warning
+      setSkillDisconnectModal({
+        skillId,
+        skillName: skill.name,
+        affected: skill.connectedAgents,
+      });
+    } else {
+      // Turning ON: show enable flow
+      setSkillEnableModal({ skillId, skillName: skill.name });
+    }
+  };
+
+  const confirmDisconnect = () => {
+    if (!skillDisconnectModal) return;
+    setSkillActionLoading(skillDisconnectModal.skillId);
+    setTimeout(() => {
+      setSkillStates(prev => ({ ...prev, [skillDisconnectModal.skillId]: false }));
+      setSkillActionLoading(null);
+      setSkillDisconnectModal(null);
+    }, 800);
+  };
+
+  const confirmEnable = (method: "grant" | "request") => {
+    if (!skillEnableModal) return;
+    setSkillActionLoading(skillEnableModal.skillId);
+    setTimeout(() => {
+      setSkillStates(prev => ({ ...prev, [skillEnableModal.skillId]: true }));
+      setSkillActionLoading(null);
+      setSkillEnableModal(null);
+    }, 800);
+  };
+
   // If an agent is selected, show its detail view
   if (selectedAgent) {
+    const isAgentDead = selectedAgent.status === "dead" || selectedAgent.status === "inactive" || selectedAgent.status === "suspended";
+    const subTabs = ["overview", "backup", "skills", "activity"] as const;
+
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mb-2">
+        <button onClick={() => { onBack(); setAgentSubTab("overview"); }} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mb-2">
           <ArrowLeft size={16} /> Back to My AI Agents
         </button>
 
         {/* Agent Header */}
         <div className="glass-card p-6 border border-[var(--line)]">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
-              <Bot className="text-[var(--accent-red)]" size={28} />
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isAgentDead ? "bg-red-100" : "bg-[var(--accent-red)]/10"}`}>
+              {isAgentDead
+                ? <AlertCircle className="text-red-500" size={28} />
+                : <Bot className="text-[var(--accent-red)]" size={28} />
+              }
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
               <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{selectedAgent.type}</span>
                 <span className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-                  {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : "Inactive"}
+                  <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : selectedAgent.status === "reviving" ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
+                  {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : selectedAgent.status === "reviving" ? "Reviving..." : selectedAgent.status === "dead" ? "Dead" : "Inactive"}
                 </span>
               </div>
             </div>
+            {isAgentDead && (
+              <div className="px-3 py-1.5 bg-red-100 border border-red-200 rounded-lg text-xs font-bold text-red-700 flex items-center gap-1.5">
+                <AlertCircle size={14} /> Needs Revival
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
@@ -401,79 +625,364 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
           </div>
         </div>
 
-        {/* Protocol Status */}
-        <div className="glass-card p-6 border border-[var(--line)]">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Shield size={18} className="text-[var(--accent-crimson)]" />
-            Protocol Status
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-              <Wallet size={20} className="mx-auto mb-2 text-[var(--accent-slate)]" />
-              <div className="text-lg font-bold">{parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
-              <div className="text-xs text-[var(--ink-50)]">USDC Balance</div>
-            </div>
-            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-              <Zap size={20} className="mx-auto mb-2 text-[var(--accent-amber)]" />
-              <div className="text-lg font-bold">{selectedAgent.protocols?.agenticWallet?.transactionCount || 0}</div>
-              <div className="text-xs text-[var(--ink-50)]">Transactions</div>
-            </div>
-            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-              <Brain size={20} className="mx-auto mb-2 text-[var(--accent-red)]" />
-              <div className="text-lg font-bold">{selectedAgent.protocols?.agentWill?.backupCount || 0}</div>
-              <div className="text-xs text-[var(--ink-50)]">Backups</div>
-            </div>
-            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-              <Shield size={20} className="mx-auto mb-2 text-[var(--accent-crimson)]" />
-              <div className="text-lg font-bold">{selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off"}</div>
-              <div className="text-xs text-[var(--ink-50)]">Insurance</div>
-            </div>
-          </div>
+        {/* Sub-tabs */}
+        <div className="flex gap-1 border-b border-[var(--line)]">
+          {subTabs.map((tab) => (
+            <button key={tab} onClick={() => setAgentSubTab(tab)}
+              className={`px-5 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors border-b-2 whitespace-nowrap ${agentSubTab === tab ? "border-[var(--accent-red)] text-[var(--ink)]" : "border-transparent text-[var(--ink-50)] hover:text-[var(--ink)]"}`}
+            >
+              {tab === "backup" ? "Backup / Revive" : tab}
+            </button>
+          ))}
         </div>
 
-        {/* Capabilities */}
-        {selectedAgent.metadata?.capabilities && selectedAgent.metadata.capabilities.length > 0 && (
-          <div className="glass-card p-6 border border-[var(--line)]">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Zap size={18} className="text-[var(--accent-amber)]" />
-              Capabilities
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {selectedAgent.metadata.capabilities.map((cap, i) => (
-                <span key={i} className="px-3 py-1 text-xs font-semibold rounded-full bg-[var(--ink-10)] text-[var(--ink-70)]">{cap}</span>
-              ))}
+        {/* ─── OVERVIEW SUB-TAB ─── */}
+        {agentSubTab === "overview" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Shield size={18} className="text-[var(--accent-crimson)]" />
+                Protocol Status
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+                  <Wallet size={20} className="mx-auto mb-2 text-[var(--accent-slate)]" />
+                  <div className="text-lg font-bold">{parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
+                  <div className="text-xs text-[var(--ink-50)]">USDC Balance</div>
+                </div>
+                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+                  <Zap size={20} className="mx-auto mb-2 text-[var(--accent-amber)]" />
+                  <div className="text-lg font-bold">{selectedAgent.protocols?.agenticWallet?.transactionCount || 0}</div>
+                  <div className="text-xs text-[var(--ink-50)]">Transactions</div>
+                </div>
+                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+                  <Brain size={20} className="mx-auto mb-2 text-[var(--accent-red)]" />
+                  <div className="text-lg font-bold">{selectedAgent.protocols?.agentWill?.backupCount || 0}</div>
+                  <div className="text-xs text-[var(--ink-50)]">Backups</div>
+                </div>
+                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+                  <Shield size={20} className="mx-auto mb-2 text-[var(--accent-crimson)]" />
+                  <div className="text-lg font-bold">{selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off"}</div>
+                  <div className="text-xs text-[var(--ink-50)]">Insurance</div>
+                </div>
+              </div>
             </div>
-          </div>
+
+            {selectedAgent.metadata?.capabilities && selectedAgent.metadata.capabilities.length > 0 && (
+              <div className="glass-card p-6 border border-[var(--line)]">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Zap size={18} className="text-[var(--accent-amber)]" />
+                  Capabilities
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedAgent.metadata.capabilities.map((cap, i) => (
+                    <span key={i} className="px-3 py-1 text-xs font-semibold rounded-full bg-[var(--ink-10)] text-[var(--ink-70)]">{cap}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
         )}
 
-        {/* Activity Log */}
-        <div className="glass-card p-6 border border-[var(--line)]">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Activity size={18} className="text-[var(--accent-red)]" />
-            Recent Activity
-          </h3>
-          {selectedAgent.actions && selectedAgent.actions.length > 0 ? (
-            <div className="space-y-3">
-              {selectedAgent.actions.slice(0, 20).map((action) => (
-                <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
-                  <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
-                      <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
-                    </div>
-                    <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
+        {/* ─── BACKUP / REVIVE SUB-TAB ─── */}
+        {agentSubTab === "backup" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            {/* Status Banner */}
+            {isAgentDead && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-red-800 text-sm">Agent is Dead / Compromised</h4>
+                  <p className="text-xs text-red-700 mt-1">This agent is no longer active. Use one of the backups below to revive it to its last known good state. Only you (the creator) can perform a revival.</p>
+                </div>
+              </div>
+            )}
+
+            {backupMessage && (
+              <div className={`p-3 rounded-lg border text-sm font-medium flex items-center gap-2 ${backupMessage.type === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                {backupMessage.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+                {backupMessage.text}
+              </div>
+            )}
+
+            {/* Create Backup */}
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[var(--accent-slate)]/10 rounded-lg">
+                    <Upload size={20} className="text-[var(--accent-slate)]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Create Backup</h3>
+                    <p className="text-xs text-[var(--ink-50)]">Encrypt and store the agent's current state</p>
                   </div>
                 </div>
-              ))}
+                <div className="text-right text-xs text-[var(--ink-50)]">
+                  <div>Backups: <span className="font-bold text-[var(--ink)]">{backupStats?.backupCount ?? selectedAgent.protocols?.agentWill?.backupCount ?? 0}</span></div>
+                  <div>Plan: <span className="font-bold text-[var(--ink)]">{backupStats?.plan?.name ?? "Starter"}</span></div>
+                </div>
+              </div>
+              <button
+                onClick={handleCreateBackup}
+                disabled={backupLoading}
+                className="w-full bg-[var(--accent-slate)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
+              >
+                {backupLoading ? (
+                  <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
+                ) : (
+                  <><Upload size={16} /> Backup Agent State Now</>
+                )}
+              </button>
             </div>
-          ) : (
-            <div className="text-center py-8 text-[var(--ink-50)]">
-              <Activity size={32} className="mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No activity recorded yet for this agent.</p>
+
+            {/* Backup History + Revive */}
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Download size={18} className="text-[var(--accent-amber)]" />
+                Backup History
+                {backups.length > 0 && <span className="text-xs font-normal text-[var(--ink-50)]">({backups.length} stored)</span>}
+              </h3>
+
+              {backups.length === 0 ? (
+                <div className="text-center py-10 text-[var(--ink-50)]">
+                  <Shield size={36} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No backups created yet.</p>
+                  <p className="text-xs mt-1">Create your first backup above to enable agent revival.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {backups.map((backup, idx) => (
+                    <div key={backup.id || idx} className="p-4 border border-[var(--line)] rounded-lg bg-black/[0.02]">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {backup.status === "stored" ? (
+                            <CheckCircle size={16} className="text-[var(--accent-amber)]" />
+                          ) : backup.status === "restored" ? (
+                            <HeartPulse size={16} className="text-green-600" />
+                          ) : (
+                            <RefreshCw size={16} className="text-[var(--accent-slate)] animate-spin" />
+                          )}
+                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 20)}...{backup.ipfsCid?.slice(-8)}</span>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                          backup.status === "stored" ? "bg-green-100 text-green-700" : backup.status === "restored" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                        }`}>{backup.status}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
+                        <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : "Unknown"}</span>
+                        <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ""}{backup.cost ? ` | ${backup.cost} USDC` : ""}</span>
+                      </div>
+                      {backup.status === "stored" && (
+                        <button
+                          onClick={() => handleRevive(backup.id)}
+                          disabled={reviveLoading}
+                          className="mt-3 w-full bg-[var(--accent-red)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold"
+                        >
+                          {reviveLoading ? (
+                            <><RefreshCw size={14} className="animate-spin" /> Reviving...</>
+                          ) : (
+                            <><HeartPulse size={14} /> Revive Agent from This Backup</>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </motion.div>
+        )}
+
+        {/* ─── SKILLS SUB-TAB ─── */}
+        {agentSubTab === "skills" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="p-2 bg-[var(--accent-red)]/10 rounded-lg">
+                  <Zap size={20} className="text-[var(--accent-red)]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Agent Skills</h3>
+                  <p className="text-xs text-[var(--ink-50)]">Toggle skills on or off. Disabling a skill may affect connected agents.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {PLATFORM_SKILLS.map((skill) => {
+                const isOn = skillStates[skill.id] ?? false;
+                const IconComp = skill.icon;
+                const isLoading = skillActionLoading === skill.id;
+
+                return (
+                  <div key={skill.id} className={`glass-card p-6 border relative overflow-hidden group transition-all ${isOn ? "border-[var(--accent-red)]/30" : "border-[var(--line)]"}`}>
+                    {/* Active indicator bar */}
+                    {isOn && <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--accent-red)]" />}
+
+                    <div className="relative z-10">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOn ? `bg-[var(--${skill.color})]/10` : "bg-[var(--ink-10)]"}`}>
+                            <IconComp size={20} className={isOn ? `text-[var(--${skill.color})]` : "text-[var(--ink-50)]"} />
+                          </div>
+                          <div>
+                            <h4 className="text-base font-bold">{skill.name}</h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${isOn ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                                {isOn ? "Active" : "Inactive"}
+                              </span>
+                              <span className="text-[10px] text-[var(--ink-50)]">{skill.costLabel}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Toggle Switch */}
+                        <button
+                          onClick={() => handleSkillToggle(skill.id)}
+                          disabled={isLoading}
+                          className="flex-shrink-0 mt-1"
+                        >
+                          {isLoading ? (
+                            <RefreshCw size={24} className="text-[var(--ink-50)] animate-spin" />
+                          ) : isOn ? (
+                            <ToggleRight size={32} className="text-[var(--accent-red)]" />
+                          ) : (
+                            <ToggleLeft size={32} className="text-[var(--ink-50)] hover:text-[var(--ink-70)] transition-colors" />
+                          )}
+                        </button>
+                      </div>
+
+                      <p className="text-sm text-[var(--ink-70)] mb-4 leading-relaxed">{skill.description}</p>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-[var(--ink-50)] flex items-center gap-1">
+                          <Users size={12} />
+                          {skill.connectedAgents} agent{skill.connectedAgents !== 1 ? "s" : ""} using this skill
+                        </span>
+                        {isOn && (
+                          <span className="text-green-600 font-semibold flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            Running
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ─── Disconnect Warning Modal ─── */}
+            {skillDisconnectModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <AlertTriangle size={20} className="text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">Disconnect Skill?</h3>
+                      <p className="text-xs text-[var(--ink-50)]">{skillDisconnectModal.skillName}</p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                    <p className="text-sm text-amber-800">
+                      <span className="font-bold">{skillDisconnectModal.affected} agent{skillDisconnectModal.affected !== 1 ? "s" : ""}</span> currently {skillDisconnectModal.affected !== 1 ? "use" : "uses"} this skill. Disabling it will immediately remove this capability from {skillDisconnectModal.affected !== 1 ? "all of them" : "that agent"}.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setSkillDisconnectModal(null)} className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors">
+                      Cancel
+                    </button>
+                    <button onClick={confirmDisconnect} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
+                      <Power size={14} /> Disconnect
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+
+            {/* ─── Enable Skill Modal ─── */}
+            {skillEnableModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
+                      <Zap size={20} className="text-[var(--accent-red)]" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">Enable Skill</h3>
+                      <p className="text-xs text-[var(--ink-50)]">{skillEnableModal.skillName}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-[var(--ink-70)] mb-5">Choose how to activate this skill for <span className="font-bold text-[var(--ink)]">{selectedAgent.name}</span>:</p>
+                  <div className="space-y-3 mb-5">
+                    <button
+                      onClick={() => confirmEnable("grant")}
+                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-red)]/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Lock size={18} className="text-[var(--accent-slate)] group-hover:text-[var(--accent-red)] transition-colors" />
+                        <div>
+                          <div className="font-semibold text-sm">Grant Access Directly</div>
+                          <div className="text-xs text-[var(--ink-50)] mt-0.5">You (the creator) enable this skill on the agent immediately. The agent can start using it right away.</div>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => confirmEnable("request")}
+                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-amber)]/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Send size={18} className="text-[var(--accent-amber)] group-hover:text-[var(--accent-red)] transition-colors" />
+                        <div>
+                          <div className="font-semibold text-sm">Request Agent to Allow</div>
+                          <div className="text-xs text-[var(--ink-50)] mt-0.5">Send a permission request to the agent. The agent must approve before the skill becomes active.</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                  <button onClick={() => setSkillEnableModal(null)} className="w-full px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors">
+                    Cancel
+                  </button>
+                </motion.div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ─── ACTIVITY SUB-TAB ─── */}
+        {agentSubTab === "activity" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Activity size={18} className="text-[var(--accent-red)]" />
+                Recent Activity
+              </h3>
+              {selectedAgent.actions && selectedAgent.actions.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedAgent.actions.slice(0, 30).map((action) => (
+                    <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
+                      <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
+                          <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
+                        </div>
+                        <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-[var(--ink-50)]">
+                  <Activity size={32} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No activity recorded yet for this agent.</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     );
   }
