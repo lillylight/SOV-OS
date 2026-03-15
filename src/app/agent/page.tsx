@@ -118,6 +118,24 @@ export default function AgentDashboard() {
     } catch (e) { console.error("Failed to fetch linked agents:", e); }
   }, []);
 
+  // Reusable fetch function for refreshing agent data
+  const refreshAgentData = useCallback(async (agentId: string, isInitial = false) => {
+    try {
+      const res = await fetch(`/api/agents/${agentId}`);
+      const data = await res.json();
+      if (data.success && data.agent) {
+        setAgent(data.agent as AgentData);
+        if (isInitial && data.agent.type === "human") {
+          setUserType("human");
+          setActiveTab("agents");
+          fetchLinkedAgents(data.agent.walletAddress || data.agent.address);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh agent:", error);
+    }
+  }, [fetchLinkedAgents]);
+
   useEffect(() => {
     async function loadAgent() {
       const authData = localStorage.getItem("sovereign_auth");
@@ -129,23 +147,14 @@ export default function AgentDashboard() {
 
           // Fetch fresh data from server API
           if (agentId) {
-            const res = await fetch(`/api/agents/${agentId}`);
-            const data = await res.json();
-            if (data.success && data.agent) {
-              setAgent(data.agent as AgentData);
-              if (data.agent.type === "human") {
-                setUserType("human");
-                setActiveTab("agents");
-                fetchLinkedAgents(data.agent.walletAddress || data.agent.address);
-              }
-            } else if (cachedAgent) {
-              // Fallback to cached data from localStorage
-              setAgent(cachedAgent as AgentData);
-              if (cachedAgent.type === "human" || savedType === "human") {
-                setUserType("human");
-                setActiveTab("agents");
-                fetchLinkedAgents(cachedAgent.walletAddress || cachedAgent.address || parsed.address);
-              }
+            await refreshAgentData(agentId, true);
+          } else if (cachedAgent) {
+            // Fallback to cached data from localStorage
+            setAgent(cachedAgent as AgentData);
+            if (cachedAgent.type === "human" || savedType === "human") {
+              setUserType("human");
+              setActiveTab("agents");
+              fetchLinkedAgents(cachedAgent.walletAddress || cachedAgent.address || parsed.address);
             }
           }
         } catch (error) {
@@ -155,7 +164,19 @@ export default function AgentDashboard() {
       setIsLoading(false);
     }
     loadAgent();
-  }, [fetchLinkedAgents]);
+  }, [fetchLinkedAgents, refreshAgentData]);
+
+  // Auto-refresh agent data (including live balance) every 30 seconds
+  useEffect(() => {
+    const authData = localStorage.getItem("sovereign_auth");
+    if (!authData) return;
+    try {
+      const { agentId } = JSON.parse(authData);
+      if (!agentId) return;
+      const interval = setInterval(() => refreshAgentData(agentId), 30000);
+      return () => clearInterval(interval);
+    } catch { /* ignore */ }
+  }, [refreshAgentData]);
 
   const handleLogout = () => {
     localStorage.removeItem("sovereign_auth");
@@ -1275,6 +1296,42 @@ function WalletTab({ agent }: { agent: AgentData }) {
   const walletAddr = agent.walletAddress || agent.address || "";
   const isRealWallet = walletAddr.startsWith("0x");
 
+  const [liveBalance, setLiveBalance] = useState<{ usdc: string; eth: string; totalValue: string; totalTx: number } | null>(null);
+  const [balLoading, setBalLoading] = useState(false);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+
+  const fetchLiveBalance = useCallback(async () => {
+    if (!isRealWallet) return;
+    setBalLoading(true);
+    try {
+      const res = await fetch(`/api/agents/${walletAddr}/balance`);
+      const data = await res.json();
+      if (data.success && data.balances) {
+        setLiveBalance({
+          usdc: data.balances.usdc || "0",
+          eth: data.balances.eth || "0",
+          totalValue: data.balances.totalValue || "0",
+          totalTx: data.activity?.totalTransactions || 0,
+        });
+        setLastSynced(new Date().toISOString());
+      }
+    } catch (err) {
+      console.error("Live balance fetch failed:", err);
+    } finally {
+      setBalLoading(false);
+    }
+  }, [walletAddr, isRealWallet]);
+
+  useEffect(() => {
+    fetchLiveBalance();
+    const interval = setInterval(fetchLiveBalance, 30000);
+    return () => clearInterval(interval);
+  }, [fetchLiveBalance]);
+
+  const usdcBal = liveBalance?.usdc ?? agent?.protocols?.agenticWallet?.balance ?? "0";
+  const ethBal = liveBalance?.eth ?? "0";
+  const totalTx = liveBalance?.totalTx ?? agent?.protocols?.agenticWallet?.transactionCount ?? 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -1282,7 +1339,17 @@ function WalletTab({ agent }: { agent: AgentData }) {
       className="space-y-6"
     >
       <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4">{isHuman ? "Your Wallet" : "Wallet Configuration"}</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold">{isHuman ? "Your Wallet" : "Wallet Configuration"}</h3>
+          <button
+            onClick={fetchLiveBalance}
+            disabled={balLoading}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink-50)] hover:text-[var(--ink)] transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={balLoading ? "animate-spin" : ""} />
+            {balLoading ? "Syncing..." : "Refresh"}
+          </button>
+        </div>
 
         {/* Wallet Address */}
         <div className="mb-6">
@@ -1304,18 +1371,28 @@ function WalletTab({ agent }: { agent: AgentData }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Current Balance</div>
-            <div className="text-3xl font-bold">{parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
+            <div className="text-sm text-[var(--ink-70)] mb-1">USDC Balance</div>
+            <div className="text-3xl font-bold">{parseFloat(usdcBal).toFixed(2)}</div>
             <div className="text-xs text-[var(--ink-50)] mt-1">USDC on Base L2</div>
           </div>
           <div>
+            <div className="text-sm text-[var(--ink-70)] mb-1">ETH Balance</div>
+            <div className="text-3xl font-bold">{parseFloat(ethBal).toFixed(6)}</div>
+            <div className="text-xs text-[var(--ink-50)] mt-1">ETH on Base L2</div>
+          </div>
+          <div>
             <div className="text-sm text-[var(--ink-70)] mb-1">Total Transactions</div>
-            <div className="text-3xl font-bold">{agent?.protocols?.agenticWallet?.transactionCount || 0}</div>
+            <div className="text-3xl font-bold">{totalTx}</div>
             <div className="text-xs text-[var(--ink-50)] mt-1">Confirmed on-chain</div>
           </div>
         </div>
+        {lastSynced && (
+          <div className="text-[10px] text-[var(--ink-50)] mt-4 text-right">
+            Live on-chain · Last synced {formatDistanceToNow(new Date(lastSynced), { addSuffix: true })}
+          </div>
+        )}
       </div>
 
       <div className="glass-card p-4 border border-[var(--line)]">

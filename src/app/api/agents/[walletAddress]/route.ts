@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
+import { AgenticWallet } from "@/lib/agenticWallet";
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +17,24 @@ export async function GET(
 
     if (!agent) {
       return NextResponse.json({ success: false, error: "Agent not found" }, { status: 404 });
+    }
+
+    // Fetch live on-chain balance if CDP is configured and wallet exists
+    const liveWalletAddr = agent.walletAddress || agent.address;
+    if (liveWalletAddr && liveWalletAddr.startsWith("0x") && AgenticWallet.isConfigured()) {
+      try {
+        const liveBalance = await AgenticWallet.getCompleteBalance(liveWalletAddr);
+        agent.protocols = agent.protocols || {};
+        agent.protocols.agenticWallet = {
+          ...agent.protocols.agenticWallet,
+          balance: liveBalance.usdc,
+          ethBalance: liveBalance.eth,
+          totalValue: liveBalance.totalValue,
+          lastSynced: new Date().toISOString(),
+        };
+      } catch (balErr) {
+        console.warn("[Balance] Live balance fetch failed:", balErr instanceof Error ? balErr.message : balErr);
+      }
     }
 
     return NextResponse.json({ success: true, agent });
