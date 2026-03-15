@@ -276,7 +276,8 @@ export default function AgentDashboard() {
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats — hidden when viewing a connected agent's details */}
+      {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {isHuman ? (
@@ -326,6 +327,7 @@ export default function AgentDashboard() {
           )}
         </div>
       </div>
+      )}
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-6">

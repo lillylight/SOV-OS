@@ -26,10 +26,10 @@ export interface InsurancePlan {
 }
 
 export const BACKUP_PRICING = {
-  INTRO_PRICE: 0.10,       // First 2 backups
+  INTRO_PRICE: 0.10,       // First 2 backups — $0.10 each
   INTRO_LIMIT: 2,
-  STANDARD_PRICE: 0.30,    // After 2 backups
-  UNLIMITED_PRICE: 10.00,  // One-time unlimited tier
+  STANDARD_PRICE: 0.30,    // 3rd backup onwards — $0.30 each
+  UNLIMITED_PRICE: 5.00,   // One-time $5 to unlock infinite backups
   RECOVERY_PRICE: 0,       // Recovery is ALWAYS free
 } as const;
 
@@ -38,15 +38,15 @@ export const INSURANCE_PLANS: InsurancePlan[] = [
     id: 'starter',
     name: 'Pay-per-backup',
     maxBackups: -1,
-    price: 0.10,
-    features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (after 2)', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
+    price: 5.00,
+    features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (3rd onwards)', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
   },
   {
     id: 'bypass',
-    name: 'Bypass Limit',
+    name: 'Unlimited Backups',
     maxBackups: -1,
-    price: 10,
-    features: ['$10 USDC one-time payment', 'Remove the 2-backup cap', 'More than 2 backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
+    price: 5,
+    features: ['$5 USDC one-time payment', 'Unlimited backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
   }
 ];
 
@@ -54,7 +54,11 @@ export class AgentInsurance {
   private pinata: PinataSDK | null = null;
 
   constructor() {
-    if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
+    if (process.env.PINATA_JWT) {
+      this.pinata = new PinataSDK({
+        pinataJWTKey: process.env.PINATA_JWT,
+      });
+    } else if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
       this.pinata = new PinataSDK({
         pinataApiKey: process.env.PINATA_API_KEY,
         pinataSecretApiKey: process.env.PINATA_SECRET_KEY,
@@ -80,8 +84,6 @@ export class AgentInsurance {
       // Upload to IPFS via Pinata
       const buffer = new Uint8Array(encryptedData);
       
-      // We use a mock result if pinata fails or for demo purposes if keys are missing
-      // But here we expect keys to be present
       const result = await this.pinata.pinJSONToIPFS(
         { state: Buffer.from(buffer).toString('base64') },
         {

@@ -183,9 +183,9 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
           <span className="font-semibold text-[var(--ink)]">{stats.totalCost.toFixed(2)} USDC</span>
         </div>
 
-        {stats.plan.id !== 'infinite' && (
+        {stats.plan.id !== 'bypass' && (
           <button
-            onClick={() => upgradePlan('infinite')}
+            onClick={() => upgradePlan('bypass')}
             disabled={isUpgrading}
             className="w-full bg-[var(--accent-crimson)] text-white px-4 py-2 rounded-lg hover:bg-[var(--accent-crimson)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
@@ -194,7 +194,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
             ) : (
               <CreditCard className="w-4 h-4" />
             )}
-            Unlock Infinite (${stats.plan.price})
+            Unlock Infinite ($5)
           </button>
         )}
       </div>
@@ -214,7 +214,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
       {/* How it works */}
       <div className="bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg p-4 mb-6">
         <p className="text-sm text-[var(--ink)]">
-          <strong>How it works:</strong> Agent pays 1.00 USDC to store an encrypted state snapshot on decentralised storage. Recovery is always free. Over 2 backups requires a one-time 10 USDC upgrade.
+          <strong>How it works:</strong> First 2 backups cost $0.10 USDC each. From the 3rd backup onwards, each costs $0.30 USDC. To unlock unlimited backups, pay a one-time $5 USDC upgrade. Recovery is always free.
         </p>
       </div>
 

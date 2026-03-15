@@ -112,7 +112,7 @@ export async function GET(
         introPrice: 0.10,
         introLimit: 2,
         standardPrice: 0.30,
-        unlimitedPrice: 10.00,
+        unlimitedPrice: 5.00,
         recoveryPrice: 0,
       },
       availablePlans: [
@@ -120,15 +120,15 @@ export async function GET(
           id: 'starter',
           name: 'Pay-per-backup',
           maxBackups: -1,
-          price: 0.10,
-          features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (after 2)', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
+          price: 5.00,
+          features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (3rd onwards)', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
         },
         {
           id: 'bypass',
-          name: 'Bypass Limit',
+          name: 'Unlimited Backups',
           maxBackups: -1,
-          price: 10,
-          features: ['$10 USDC one-time payment', 'Remove the 2-backup cap', 'More than 2 backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
+          price: 5,
+          features: ['$5 USDC one-time payment', 'Unlimited backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
         }
       ]
     });
