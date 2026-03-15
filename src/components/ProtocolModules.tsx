@@ -49,28 +49,34 @@ const modules = [
 
 export default function ProtocolModules() {
   const sectionRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
   const [shifted, setShifted] = useState(false);
   const lockedRef = useRef(false);
-  const hasTriggeredRef = useRef(false);
 
   const handleWheel = useCallback((e: WheelEvent) => {
-    if (!sectionRef.current || hasTriggeredRef.current) return;
+    if (!sectionRef.current || lockedRef.current) return;
 
     const rect = sectionRef.current.getBoundingClientRect();
-    const inView = rect.top <= 80 && rect.bottom > window.innerHeight * 0.5;
+    const inView = rect.top <= 100 && rect.bottom > window.innerHeight * 0.4;
+    if (!inView) return;
 
-    if (inView && e.deltaY > 0 && !lockedRef.current) {
+    // Scrolling DOWN while showing 01/02/03 → shift to 02/03/04
+    if (e.deltaY > 0 && !shifted) {
       e.preventDefault();
       lockedRef.current = true;
-      hasTriggeredRef.current = true;
       setShifted(true);
-
-      setTimeout(() => {
-        lockedRef.current = false;
-      }, 800);
+      setTimeout(() => { lockedRef.current = false; }, 800);
+      return;
     }
-  }, []);
+
+    // Scrolling UP while showing 02/03/04 → shift back to 01/02/03
+    if (e.deltaY < 0 && shifted) {
+      e.preventDefault();
+      lockedRef.current = true;
+      setShifted(false);
+      setTimeout(() => { lockedRef.current = false; }, 800);
+      return;
+    }
+  }, [shifted]);
 
   useEffect(() => {
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -89,12 +95,14 @@ export default function ProtocolModules() {
           </div>
         </div>
 
-        {/* Carousel viewport — shows 3 at a time on desktop */}
+        {/* Carousel viewport — shows 3 cards at a time, 4 total in the track */}
         <div className="border-t border-[var(--line)] overflow-hidden">
           <div
-            ref={trackRef}
-            className="flex transition-transform duration-700 ease-in-out"
-            style={{ transform: shifted ? "translateX(-25%)" : "translateX(0)" }}
+            className="flex"
+            style={{
+              transform: shifted ? "translateX(calc(-100% / 4))" : "translateX(0)",
+              transition: "transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
+            }}
           >
             {modules.map((m, i) => (
               <motion.div
@@ -103,7 +111,8 @@ export default function ProtocolModules() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.15, duration: 0.5 }}
-                className={`${m.color} ${m.textColor} p-7 md:p-8 min-h-[260px] flex flex-col justify-between relative border-r border-[var(--line)] group cursor-default flex-shrink-0 w-full md:w-1/3`}
+                className={`${m.color} ${m.textColor} p-7 md:p-8 min-h-[260px] flex flex-col justify-between relative border-r border-[var(--line)] last:border-r-0 group cursor-default`}
+                style={{ flex: "0 0 calc(100% / 3)", minWidth: "calc(100% / 3)" }}
               >
                 <div
                   className="absolute right-6 top-10 text-[10px] tracking-[0.1em] uppercase opacity-40"
@@ -138,12 +147,14 @@ export default function ProtocolModules() {
         {/* Carousel indicators */}
         <div className="flex justify-center gap-2 py-4">
           <button
-            onClick={() => { setShifted(false); hasTriggeredRef.current = false; }}
-            className={`w-2 h-2 rounded-full transition-colors ${!shifted ? "bg-[var(--ink)]" : "bg-[var(--ink-50)]/30"}`}
+            onClick={() => setShifted(false)}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${!shifted ? "bg-[var(--ink)] scale-125" : "bg-[var(--ink)]/20 hover:bg-[var(--ink)]/40"}`}
+            aria-label="Show modules 1-3"
           />
           <button
-            onClick={() => { setShifted(true); hasTriggeredRef.current = true; }}
-            className={`w-2 h-2 rounded-full transition-colors ${shifted ? "bg-[var(--ink)]" : "bg-[var(--ink-50)]/30"}`}
+            onClick={() => setShifted(true)}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${shifted ? "bg-[var(--ink)] scale-125" : "bg-[var(--ink)]/20 hover:bg-[var(--ink)]/40"}`}
+            aria-label="Show modules 2-4"
           />
         </div>
       </div>

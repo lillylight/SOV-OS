@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   FileText,
@@ -82,6 +82,8 @@ const SUBCATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function TaxCompliance({ agent }: TaxComplianceProps) {
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [summary, setSummary] = useState<TaxSummary | null>(null);
   const [transactions, setTransactions] = useState<TaxTransaction[]>([]);
   const [alerts, setAlerts] = useState<string[]>([]);
@@ -95,6 +97,28 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   const [editingTx, setEditingTx] = useState<string | null>(null);
   const [year, setYear] = useState(new Date().getFullYear());
   const [exporting, setExporting] = useState(false);
+  const termsRef = useRef<HTMLDivElement>(null);
+
+  // Check if user has already accepted terms
+  useEffect(() => {
+    const key = `sovereign_tax_terms_${agent.walletAddress}`;
+    const accepted = localStorage.getItem(key);
+    setHasAcceptedTerms(accepted === 'true');
+  }, [agent.walletAddress]);
+
+  const handleAcceptTerms = () => {
+    const key = `sovereign_tax_terms_${agent.walletAddress}`;
+    localStorage.setItem(key, 'true');
+    setHasAcceptedTerms(true);
+  };
+
+  const handleTermsScroll = () => {
+    if (!termsRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = termsRef.current;
+    if (scrollTop + clientHeight >= scrollHeight - 20) {
+      setScrolledToBottom(true);
+    }
+  };
 
   const fetchTaxData = useCallback(async () => {
     if (!agent.walletAddress) return;
@@ -181,6 +205,170 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   });
 
   const currentJurisdiction = availableJurisdictions.find((j: any) => j.id === jurisdiction);
+
+  // Still checking localStorage
+  if (hasAcceptedTerms === null) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <RefreshCw size={24} className="animate-spin text-[var(--ink-50)]" />
+      </div>
+    );
+  }
+
+  // Disclaimer gate — must accept before using Tax features
+  if (!hasAcceptedTerms) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white border border-[var(--line)] rounded-2xl shadow-xl max-w-2xl w-full mx-4 overflow-hidden"
+        >
+          {/* Header */}
+          <div className="p-6 pb-4 border-b border-[var(--line)] bg-[var(--ink)]/[0.02]">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-[var(--ink)]/5 rounded-xl">
+                <FileText size={22} className="text-[var(--ink)]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[var(--ink)]">AgentLedger — Tax & Compliance</h2>
+                <p className="text-xs text-[var(--ink-50)]">Terms of Use & Disclaimer</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              <AlertTriangle size={16} className="flex-shrink-0" />
+              <span className="font-medium">Please read the following terms carefully before proceeding.</span>
+            </div>
+          </div>
+
+          {/* Scrollable terms body */}
+          <div
+            ref={termsRef}
+            onScroll={handleTermsScroll}
+            className="p-6 max-h-[380px] overflow-y-auto text-sm text-[var(--ink-70)] leading-relaxed space-y-4"
+          >
+            <p className="font-semibold text-[var(--ink)]">
+              By using the AgentLedger Tax & Compliance module (&quot;the Service&quot;), you acknowledge and agree to the following terms:
+            </p>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">1. Informational Purposes Only</h4>
+              <p>
+                The Service provides automated transaction categorisation and tax reporting tools for informational purposes only.
+                It does <strong>not</strong> constitute financial, tax, legal, or accounting advice. The Service is not a substitute
+                for professional tax consultation or preparation by a qualified tax professional, accountant, or financial advisor.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">2. No Guarantee of Accuracy</h4>
+              <p>
+                The underlying technology powering transaction categorisation, including rules-based classification and AI-assisted
+                analysis, is evolving and may contain errors, inaccuracies, or omissions. Tax categories, calculations, jurisdictional
+                rules, and generated reports may not reflect the most current tax laws or your specific circumstances.
+                <strong> You are solely responsible for verifying all data, categories, and reports before filing or relying on them.</strong>
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">3. Limitation of Liability</h4>
+              <p>
+                To the fullest extent permitted by applicable law, Sovereign OS, its founders, operators, affiliates, and contributors
+                (collectively, &quot;the Platform&quot;) shall <strong>not be held liable</strong> for any direct, indirect, incidental,
+                consequential, or special damages arising from or related to your use of the Service. This includes, without limitation,
+                any losses resulting from incorrect tax categorisation, missed filings, penalties, audits, or any other financial or
+                legal consequences.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">4. Voluntary Use</h4>
+              <p>
+                Your use of the AgentLedger Tax & Compliance module is entirely voluntary and undertaken at your own risk.
+                By proceeding, you confirm that you are using the Service of your own free will and that you have not been
+                coerced or compelled to do so.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">5. User Responsibility</h4>
+              <p>
+                You are solely responsible for ensuring compliance with all applicable tax laws and regulations in your jurisdiction(s).
+                This includes, but is not limited to, correctly reporting income, expenses, and deductions to the relevant tax authorities.
+                The Platform does not file tax returns on your behalf and assumes no responsibility for your tax obligations.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">6. AI Agent Users</h4>
+              <p>
+                If you are authorising an AI agent to access the AgentLedger Tax & Compliance module on your behalf, you acknowledge
+                that you remain fully responsible for any actions taken by the agent, including data categorisation, report generation,
+                and any decisions made based on the Service&apos;s output. Authorisation of an AI agent to use this Service constitutes
+                your acceptance of these terms on behalf of that agent.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">7. Emerging Technology Disclaimer</h4>
+              <p>
+                The Service utilises blockchain-based transaction data and automated classification systems that are inherently
+                experimental. As with all emerging technology, unexpected behaviour, bugs, or inaccuracies may occur. The Platform
+                makes no warranties, express or implied, regarding the reliability, availability, or fitness for a particular purpose
+                of the Service.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">8. Indemnification</h4>
+              <p>
+                You agree to indemnify, defend, and hold harmless the Platform and its operators from and against any claims, liabilities,
+                damages, losses, and expenses (including reasonable legal fees) arising from your use of the Service or your violation
+                of these terms.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-[var(--ink)] mb-1">9. Modification of Terms</h4>
+              <p>
+                The Platform reserves the right to modify these terms at any time without prior notice. Continued use of the Service
+                after any such modification constitutes your acceptance of the revised terms.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-[var(--line)]">
+              <p className="text-xs text-[var(--ink-50)] italic">
+                Last updated: March 2026. These terms are governed by and construed in accordance with applicable laws.
+                If any provision of these terms is found to be unenforceable, the remaining provisions shall remain in full force and effect.
+              </p>
+            </div>
+          </div>
+
+          {/* Accept / Decline */}
+          <div className="p-6 pt-4 border-t border-[var(--line)] bg-[var(--ink)]/[0.02]">
+            {!scrolledToBottom && (
+              <p className="text-xs text-[var(--ink-50)] mb-3 text-center">Scroll to the bottom to enable the accept button</p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="px-5 py-2.5 text-sm font-semibold text-[var(--ink-50)] border border-[var(--line)] rounded-lg hover:bg-[var(--ink-10)] transition-colors"
+              >
+                Decline
+              </button>
+              <button
+                onClick={handleAcceptTerms}
+                disabled={!scrolledToBottom}
+                className="px-6 py-2.5 text-sm font-bold bg-[var(--ink)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                I Agree to the Terms & Conditions
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
