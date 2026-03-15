@@ -1,5 +1,8 @@
 import PinataSDK from '@pinata/sdk';
 import { database } from './database';
+import AgenticWallet from './agenticWallet';
+
+const PLATFORM_WALLET = process.env.PLATFORM_WALLET || '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB';
 
 export interface BackupRecord {
   id: string;
@@ -11,6 +14,7 @@ export interface BackupRecord {
   cost: number;
   status: 'pending' | 'stored' | 'failed' | 'restored';
   encryptionKey: string;
+  paymentTx?: string;
 }
 
 export interface InsurancePlan {
@@ -115,6 +119,23 @@ export class AgentInsurance {
         status: 'stored',
         encryptionKey
       };
+
+      // Collect real USDC payment from agent wallet to platform owner wallet
+      if (cost > 0 && agent?.walletAddress && AgenticWallet.isConfigured()) {
+        try {
+          const tx = await AgenticWallet.sendPayment(
+            agent.walletAddress,
+            PLATFORM_WALLET,
+            cost.toFixed(6),
+            `Backup fee: ${backupRecord.id}`
+          );
+          console.log(`[Payment] ${cost} USDC from ${agent.walletAddress} to ${PLATFORM_WALLET} | tx: ${tx.hash}`);
+          backupRecord.paymentTx = tx.hash;
+        } catch (payErr) {
+          console.error('[Payment] USDC transfer failed:', payErr);
+          // Still allow backup but log the payment failure
+        }
+      }
 
       // Save backup record to database
       await database.saveBackup(backupRecord);
