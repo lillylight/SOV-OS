@@ -100,7 +100,8 @@ export default function ProtocolModules() {
           <div
             className="flex"
             style={{
-              transform: shifted ? "translateX(calc(-100% / 4))" : "translateX(0)",
+              width: "calc(400% / 3)",
+              transform: shifted ? "translateX(-25%)" : "translateX(0)",
               transition: "transform 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
@@ -112,7 +113,7 @@ export default function ProtocolModules() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.15, duration: 0.5 }}
                 className={`${m.color} ${m.textColor} p-7 md:p-8 min-h-[260px] flex flex-col justify-between relative border-r border-[var(--line)] last:border-r-0 group cursor-default`}
-                style={{ flex: "0 0 calc(100% / 3)", minWidth: "calc(100% / 3)" }}
+                style={{ flex: "0 0 25%", width: "25%" }}
               >
                 <div
                   className="absolute right-6 top-10 text-[10px] tracking-[0.1em] uppercase opacity-40"
