@@ -182,7 +182,7 @@ export default function PaymentModal({
                 </div>
                 {!hasEnoughBalance && (
                   <div className="mt-2 text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle size={12} /> Insufficient balance — fund your wallet or use Base Pay below
+                    <AlertCircle size={12} /> Insufficient balance. Fund your wallet or use Base Pay below
                   </div>
                 )}
               </div>

@@ -24,11 +24,11 @@ const tiers = [
   },
   {
     icon: Lock,
-    label: "Bypass 2-Backup Limit",
-    price: "$10",
+    label: "Unlock Unlimited Backups",
+    price: "$5",
     unit: "USDC one-time",
-    badge: "Remove cap",
-    badgeColor: "bg-[var(--accent-red)]/10 text-[var(--accent-red)] border-[var(--accent-red)]/20",
+    badge: "Best value",
+    badgeColor: "bg-[var(--ink)] text-white border-[var(--ink)]",
     highlight: false,
   },
 ];

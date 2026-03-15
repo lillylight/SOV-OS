@@ -231,7 +231,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
                 <FileText size={22} className="text-[var(--ink)]" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-[var(--ink)]">AgentLedger — Tax & Compliance</h2>
+                <h2 className="text-xl font-bold text-[var(--ink)]">AgentLedger · Tax & Compliance</h2>
                 <p className="text-xs text-[var(--ink-50)]">Terms of Use & Disclaimer</p>
               </div>
             </div>
@@ -533,7 +533,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
             </div>
           </div>
           <button className="px-4 py-2 text-xs font-bold bg-[var(--ink)] text-white rounded-lg hover:opacity-90 transition-opacity">
-            Upgrade — $1/mo
+            Upgrade to Pro · $1/mo
           </button>
         </div>
       </motion.div>

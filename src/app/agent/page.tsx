@@ -813,7 +813,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                 {backupLoading ? (
                   <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
                 ) : (
-                  <><Upload size={16} /> Backup Agent State — ${nextBackupCost} USDC</>
+                  <><Upload size={16} /> Backup Agent State · ${nextBackupCost} USDC</>
                 )}
               </button>
               {backupStats?.plan?.id !== 'bypass' && (
@@ -821,7 +821,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                   onClick={handleUpgradePlan}
                   className="mt-3 w-full bg-[var(--accent-crimson)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
                 >
-                  <Infinity size={16} /> Unlock Unlimited Backups — $5 USDC
+                  <Infinity size={16} /> Unlock Unlimited Backups · $5 USDC
                 </button>
               )}
               <p className="text-xs text-[var(--ink-50)] mt-3 text-center">
@@ -1289,7 +1289,7 @@ function WalletTab({ agent }: { agent: AgentData }) {
           <div className="text-sm text-[var(--ink-70)] mb-1">Wallet Address</div>
           <div className="flex items-center gap-2">
             <code className="text-sm font-mono bg-[var(--ink-10)]/30 px-3 py-2 rounded-lg border border-[var(--line)] break-all flex-1">
-              {isRealWallet ? walletAddr : "Not connected — please re-register"}
+              {isRealWallet ? walletAddr : "Not connected. Please re-register"}
             </code>
             {isRealWallet && (
               <a

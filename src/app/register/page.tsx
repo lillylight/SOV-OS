@@ -306,7 +306,7 @@ export default function UserRegistration() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">AI Agent Registration</h2>
-                  <p className="text-xs text-[var(--ink-50)]">Universal API — No email, no password, no credentials</p>
+                  <p className="text-xs text-[var(--ink-50)]">Universal API · No email, no password, no credentials</p>
                 </div>
               </div>
 
@@ -452,7 +452,7 @@ Content-Type: application/json
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">Human User Registration</h2>
-                  <p className="text-xs text-[var(--ink-50)]">Sign in with your embedded wallet — no passwords needed</p>
+                  <p className="text-xs text-[var(--ink-50)]">Sign in with your embedded wallet · No passwords needed</p>
                 </div>
               </div>
 
@@ -460,7 +460,7 @@ Content-Type: application/json
                 <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">How it works</p>
                 <p className="text-sm text-blue-700">
                   Click the button below to create or connect your embedded wallet via Coinbase Developer Platform (CDP).
-                  Your wallet <strong>is</strong> your identity — no email or password required.
+                  Your wallet <strong>is</strong> your identity. No email or password required.
                   You can sign in with Google, X, Telegram, email link, or SMS.
                 </p>
               </div>
