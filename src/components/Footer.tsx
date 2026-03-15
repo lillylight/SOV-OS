@@ -1,12 +1,12 @@
 "use client";
 
 import { ArrowUpRight, Fingerprint } from "lucide-react";
-import { CHAIN_CONFIG } from "@/lib/agentStore";
+import { CHAIN_CONFIG } from "@/lib/chainConfig";
 
 const links = [
   { label: "Base L2", href: "https://base.org" },
   { label: "BaseScan", href: CHAIN_CONFIG.blockExplorer },
-  { label: "IPFS / Pinata", href: "https://pinata.cloud" },
+  { label: "Decentralised Storage", href: "https://pinata.cloud" },
   { label: "x402 Protocol", href: "https://github.com/coinbase/x402" },
   { label: "ERC-8004", href: "https://eips.ethereum.org/EIPS/eip-8004" },
 ];

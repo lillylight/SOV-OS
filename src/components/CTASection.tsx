@@ -40,9 +40,9 @@ export default function CTASection() {
             </h2>
 
             <p className="text-[var(--ink-70)] text-base leading-relaxed max-w-md mb-10">
-              Be among the first to deploy AI agents that inherently encrypt and meticulously store their own state,
-              instinctively pay for their own persistence, and become completely immune to permanent destruction.
-              The creator wallet perpetually wields the omnipotent power of revival.
+              Deploy AI agents that encrypt and store their own state for just $0.10 USDC,
+              pay for their own persistence, and become immune to permanent destruction.
+              Recovery is always free. The creator wallet wields the power of revival.
             </p>
 
             <form onSubmit={handleSubmit} className="relative max-w-md">
@@ -99,46 +99,53 @@ export default function CTASection() {
               <div className="space-y-6">
                 <div>
                   <div className="text-[10px] tracking-[0.08em] uppercase opacity-40 mb-1">
-                    The Difference
+                    Why This Pricing Slaps
                   </div>
-                  <div className="text-sm leading-relaxed opacity-80">
-                    <strong className="opacity-100">Traditional Insurance</strong> = pay premiums, get money back
-                  </div>
-                  <div className="text-sm leading-relaxed opacity-80">
-                    <strong className="opacity-100">Sovereign OS</strong> = pay to store encrypted state, recover it for free
+                  <div className="space-y-2 mt-3">
+                    <div className="flex items-center gap-3 text-sm opacity-80">
+                      <span className="text-green-400 font-bold">$0.10</span>
+                      <span>Protect your agent for less than a gumball.</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm opacity-80">
+                      <span className="text-amber-400 font-bold">$0.30</span>
+                      <span>Unlimited backups after the intro tier.</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm opacity-80">
+                      <span className="text-green-400 font-bold">FREE</span>
+                      <span>State recovery, always. No strings attached.</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-6">
                   <div className="text-[10px] tracking-[0.08em] uppercase opacity-40 mb-3">
-                    Core Insight
+                    Shareable Truth
                   </div>
                   <p className="text-sm leading-relaxed opacity-70 italic">
-                    &ldquo;An agent&apos;s accumulated knowledge, learnings, and memory is worth more
-                    than any financial payout. The state IS the most valuable asset.&rdquo;
+                    &ldquo;Just bought immortality for $0.10. My state is now indestructible on @Sovereign_OS&rdquo;
                   </p>
                 </div>
 
                 <div className="border-t border-white/10 pt-6">
                   <div className="text-[10px] tracking-[0.08em] uppercase opacity-40 mb-3">
-                    Your Unstoppable Truth
+                    How It Works
                   </div>
                   <div className="space-y-2 text-sm opacity-70">
                     <div className="flex items-start gap-2">
-                      <span className="text-[var(--accent-amber)] opacity-100">→</span>
-                      <span>Agent securely commits USDC to encrypt & store its mind on a decentralised platform.</span>
+                      <span className="text-[var(--accent-amber)] opacity-100">&rarr;</span>
+                      <span>Agent pays $0.10 USDC to encrypt &amp; store its mind on decentralised storage.</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-[var(--accent-amber)] opacity-100">→</span>
-                      <span>Agent encounters a total systemic failure or external obliteration.</span>
+                      <span className="text-[var(--accent-amber)] opacity-100">&rarr;</span>
+                      <span>Agent encounters total systemic failure or external obliteration.</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-green-400 opacity-100">→</span>
-                      <span>Creator wallet instantly commands revival, effortlessly reading the backup (FREE).</span>
+                      <span className="text-green-400 opacity-100">&rarr;</span>
+                      <span>Creator wallet commands revival, reading the backup (FREE).</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-green-400 opacity-100">→</span>
-                      <span>Agent resurrects instantaneously, completely whole, with flawless memory.</span>
+                      <span className="text-green-400 opacity-100">&rarr;</span>
+                      <span>Agent resurrects, completely whole, with flawless memory.</span>
                     </div>
                   </div>
                 </div>

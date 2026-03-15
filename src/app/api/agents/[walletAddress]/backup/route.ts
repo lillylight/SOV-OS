@@ -8,7 +8,7 @@ export async function POST(
 ) {
   try {
     const { walletAddress } = await params;
-    const agent = database.getAgentByWallet(walletAddress);
+    const agent = await database.getAgentByWallet(walletAddress);
     
     if (!agent) {
       return NextResponse.json({
@@ -18,7 +18,7 @@ export async function POST(
     }
 
     // Check if agent can create backup
-    const { canBackup, reason, plan } = agentInsurance.canCreateBackup(agent.id);
+    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id);
     if (!canBackup) {
       return NextResponse.json({
         success: false,
@@ -44,7 +44,10 @@ export async function POST(
     // Update agent's backup count
     agent.protocols.agentWill.backupCount += 1;
     agent.protocols.agentWill.lastBackup = backup.timestamp;
-    database.saveAgent(agent);
+    await database.saveAgent(agent);
+    
+    // Get stats
+    const stats = await agentInsurance.getInsuranceStats(agent.id);
 
     return NextResponse.json({
       success: true,
@@ -57,7 +60,7 @@ export async function POST(
         cost: backup.cost,
         status: backup.status
       },
-      stats: agentInsurance.getInsuranceStats(agent.id),
+      stats,
       plan
     });
 
@@ -76,7 +79,7 @@ export async function GET(
 ) {
   try {
     const { walletAddress } = await params;
-    const agent = database.getAgentByWallet(walletAddress);
+    const agent = await database.getAgentByWallet(walletAddress);
     
     if (!agent) {
       return NextResponse.json({
@@ -85,9 +88,9 @@ export async function GET(
       }, { status: 404 });
     }
 
-    const backups = agentInsurance.getAgentBackups(agent.id);
-    const stats = agentInsurance.getInsuranceStats(agent.id);
-    const { canBackup, reason, plan } = agentInsurance.canCreateBackup(agent.id);
+    const backups = await agentInsurance.getAgentBackups(agent.id);
+    const stats = await agentInsurance.getInsuranceStats(agent.id);
+    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id);
 
     return NextResponse.json({
       success: true,
@@ -104,20 +107,28 @@ export async function GET(
       canBackup,
       backupReason: reason,
       currentPlan: plan,
+      nextCost: (await agentInsurance.canCreateBackup(agent.id)).nextCost,
+      pricing: {
+        introPrice: 0.10,
+        introLimit: 2,
+        standardPrice: 0.30,
+        unlimitedPrice: 10.00,
+        recoveryPrice: 0,
+      },
       availablePlans: [
         {
-          id: 'standard',
-          name: 'Standard',
-          maxBackups: 2,
-          price: 0,
-          features: ['Up to 2 encrypted backups', 'Permanent IPFS storage', 'Free restore']
+          id: 'starter',
+          name: 'Pay-per-backup',
+          maxBackups: -1,
+          price: 0.10,
+          features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (after 2)', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
         },
         {
-          id: 'infinite',
-          name: 'Infinite',
+          id: 'bypass',
+          name: 'Bypass Limit',
           maxBackups: -1,
           price: 10,
-          features: ['Unlimited encrypted backups', 'Permanent IPFS storage', 'Free restore', 'Priority support']
+          features: ['$10 USDC one-time payment', 'Remove the 2-backup cap', 'More than 2 backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent IPFS storage', 'Recovery is ALWAYS free']
         }
       ]
     });

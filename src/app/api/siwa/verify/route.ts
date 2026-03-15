@@ -1,95 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
-import { nonceStore } from "@/lib/db";
+import { verifyAgent } from "@/lib/siwa";
 import { database } from "@/lib/database";
-import { verifySIWA } from "@buildersgarden/siwa";
-import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
-import { nanoid } from "nanoid";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, signature, address, agentId, agentName } = body;
+    const { message, signature, agentId, agentName } = body;
 
-    if (!message || !signature || !address) {
+    if (!message || !signature) {
       return NextResponse.json(
-        { error: "Message, signature, and address are required" },
+        { error: "message and signature are required" },
         { status: 400 }
       );
     }
 
-    // Create public client for Base Sepolia
-    const client = createPublicClient({
-      chain: base,
-      transport: http()
-    }) as any // Type assertion to avoid viem version conflicts
+    // Verify SIWA using the real SDK — checks signature, domain, nonce, time, on-chain ownership
+    const result = await verifyAgent({ message, signature });
 
-    // Extract nonce from message
-    const nonceMatch = message.match(/Nonce: ([a-f0-9]+)/i);
-    if (!nonceMatch) {
-      return NextResponse.json(
-        { error: "Invalid message format" },
-        { status: 400 }
-      );
+    if (!result.valid) {
+      return NextResponse.json({
+        success: false,
+        error: result.error || "SIWA verification failed",
+        code: result.code,
+      }, { status: 401 });
     }
 
-    const nonce = nonceMatch[1];
-
-    // Verify SIWA signature and check on-chain ownership
-    const verification = await verifySIWA(
-      message,
-      signature,
-      "localhost:3000", // domain - should match message domain
-      { nonceStore }, // nonce validation
-      client, // for on-chain verification
-      {
-        // Optional ERC-8004 criteria
-        mustBeActive: true,
-        requiredServices: ["web", "x402"],
-        requiredTrust: ["reputation", "crypto-economic"]
-      }
-    )
-
-    if (!verification.valid) {
-      return NextResponse.json(
-        { error: "Invalid SIWA signature or agent not registered" },
-        { status: 401 }
-      );
-    }
-
-    // Create or update agent profile
-    let agent;
-    if (agentId) {
-      // Agent registration
-      agent = database.getAgent(agentId);
+    // If an agentId was provided, update the agent profile in DB
+    let agent = null;
+    if (agentId && result.address) {
+      agent = await database.getAgent(agentId);
       if (!agent) {
-        agent = database.createAgent(agentId, agentName || undefined, address);
-      } else {
-        // Update existing agent
-        agent.lastActiveAt = new Date().toISOString();
-        agent.walletAddress = address;
-        database.saveAgent(agent);
+        agent = await database.createAgent(
+          agentId,
+          agentName || `Agent-${agentId.slice(0, 8)}`,
+          result.address,
+          "ai"
+        );
       }
-    } else {
-      // Human user (no persistent profile needed for now)
-      agent = { type: "human", address };
+      // Update SIWA verification status
+      agent.metadata.preferences = {
+        ...agent.metadata.preferences,
+        siwaStatus: "verified",
+        siwaVerified: result.verified,
+        siwaAgentId: result.agentId,
+        siwaChainId: result.chainId,
+      };
+      agent.lastActiveAt = new Date().toISOString();
+      await database.saveAgent(agent);
     }
-
-    // Clean up nonce
-    await nonceStore.consume(nonce);
 
     return NextResponse.json({
       success: true,
-      agent,
-      message: "Successfully authenticated"
+      verified: result.verified,
+      address: result.address,
+      agentId: result.agentId,
+      agentRegistry: result.agentRegistry,
+      chainId: result.chainId,
+      receipt: result.receipt,
+      expiresAt: result.expiresAt,
+      agent: agent || undefined,
     });
 
   } catch (error) {
-    console.error("SIWA verification error:", error);
+    console.error("[SIWA Verify] Error:", error);
     return NextResponse.json(
       { error: "Authentication failed" },
       { status: 500 }
     );
   }
 }
-

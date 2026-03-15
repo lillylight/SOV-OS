@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useAgentStore, CHAIN_CONFIG } from "@/lib/agentStore";
+import { useAgentStore } from "@/lib/agentStore";
+import { CHAIN_CONFIG } from "@/lib/chainConfig";
 import { ExternalLink } from "lucide-react";
 
 export default function SystemLogs() {
@@ -128,7 +129,7 @@ export default function SystemLogs() {
 
           {systemLogs.length === 0 && (
             <div className="px-6 md:px-8 py-8 text-center text-[var(--ink-50)] text-sm">
-              No system activity yet. Start the agent demo to see live logs.
+              No system activity yet. Start the system to see live logs.
             </div>
           )}
         </div>
@@ -141,7 +142,7 @@ export default function SystemLogs() {
             <span>USDC: {CHAIN_CONFIG.usdcContract.slice(0, 6)}...{CHAIN_CONFIG.usdcContract.slice(-4)}</span>
           </div>
           <div className="flex items-center gap-4">
-            <span>IPFS: Pinata Gateway</span>
+            <span>Storage: Decentralised</span>
             <span>·</span>
             <span>{systemLogs.length} entries</span>
           </div>

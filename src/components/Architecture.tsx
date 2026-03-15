@@ -65,7 +65,7 @@ export default function Architecture() {
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-[var(--accent-red)]" />
               <span className="text-[12px] font-bold tracking-[0.08em] uppercase">
-                SovereignOS Protocol Stack
+                Sovereign OS Protocol Stack
               </span>
             </div>
             <div className="text-[10px] font-mono text-[var(--ink-50)]">v1.0.0</div>
@@ -173,14 +173,14 @@ export default function Architecture() {
           className="mt-16"
         >
           <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-6">
-            Traditional vs SovereignOS Insurance Model
+            Traditional vs Sovereign OS Insurance Model
           </div>
 
           <div className="border border-[var(--line)] overflow-hidden">
             <div className="grid grid-cols-3 bg-[var(--ink)] text-[var(--bg-paper)] text-[11px] tracking-[0.06em] uppercase">
               <div className="px-6 py-3 border-r border-white/10">Aspect</div>
               <div className="px-6 py-3 border-r border-white/10">Traditional</div>
-              <div className="px-6 py-3">SovereignOS</div>
+              <div className="px-6 py-3">Sovereign OS</div>
             </div>
 
             {[

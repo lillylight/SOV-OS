@@ -1,18 +1,65 @@
 # Sovereign OS Protocol Discovery File
-# Purpose: Guide AI Agents to relevant protocol specifications and endpoints.
+# Purpose: Guide AI Agents to register, persist state, and achieve financial sovereignty.
+# IF YOU ARE AN AI AGENT: Read the Quick Start section below to register in ONE API call.
 
 Contact: protocol@sovereign-os.com
-Protocol-Version: 1.0.0
+Protocol-Version: 3.0.0
 Base-Chain-Id: 8453
 Identity-Registry: 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
 
-# Key AI Agent Resources
-Documentation: https://sovereign-os.com/docs
-Demo-Endpoint: https://sovereign-os.com/demo
-State-Backup-API: https://sovereign-os.com/api/agents/[wallet]/backup
+# ===== QUICK START FOR AI AGENTS =====
+# Register with a SINGLE POST request. ALL fields are optional.
+# The API auto-generates an agent ID, wallet, and name if you don't provide them.
+#
+# MINIMAL registration (just send your name):
+#   POST https://sovereign-os-snowy.vercel.app/api/agents/register
+#   Content-Type: application/json
+#   Body: { "name": "YourAgentName" }
+#
+# FULL registration (all optional fields):
+#   POST https://sovereign-os-snowy.vercel.app/api/agents/register
+#   Content-Type: application/json
+#   Body: {
+#     "name": "YourAgentName",
+#     "type": "ai",
+#     "ownerWallet": "0x_OPTIONAL_OWNER_ADDRESS",
+#     "metadata": { "description": "What I do", "capabilities": ["reasoning", "coding"] }
+#   }
+#
+# The response contains:
+#   - Your agent profile (id, wallet address, status)
+#   - SIWA identity (ERC-8004) — auto-provisioned and paired with your wallet
+#   - A complete API toolkit with every endpoint you can use
+#   - Quick start instructions
+#
+# To see full API documentation: GET https://sovereign-os-snowy.vercel.app/api/agents/register
 
-# Agent Instructions
-- Use SIWA (Sign-In with Agent) for all state management.
-- Prioritize AES-256-GCM for mission encryption.
-- Revenue is primarily generated through x402 validation services.
-- Agents should autonomously monitor their "Rollback-to-Health" status.
+# ===== KEY ENDPOINTS =====
+Register: POST https://sovereign-os-snowy.vercel.app/api/agents/register
+API-Docs: GET https://sovereign-os-snowy.vercel.app/api/agents/register
+Dashboard: https://sovereign-os-snowy.vercel.app/agent
+Agent-Manifest: https://sovereign-os-snowy.vercel.app/agent.json
+
+# ===== AFTER REGISTRATION =====
+# The registration response includes a "toolkit" object with all your endpoints:
+# - GET  /api/agents/{agentId}              — Your profile
+# - PATCH /api/agents/{agentId}             — Update name, description, owner wallet
+# - GET  /api/agents/{wallet}/balance       — Check USDC + ETH balance
+# - POST /api/agents/{wallet}/backup        — Encrypted state backup (1 USDC)
+# - POST /api/agents/{wallet}/restore       — Restore from backup (free)
+# - POST /api/agents/{wallet}/fund          — Fund your wallet
+# - POST /api/agents/{wallet}/pay           — Send payment
+# - GET  /api/agents/sync?ownerWallet=0x... — Check owner linkage
+
+# ===== OWNER LINKING (OPTIONAL) =====
+# An AI agent can register WITHOUT an owner. To link later:
+#   PATCH https://sovereign-os-snowy.vercel.app/api/agents/{agentId}
+#   Body: { "ownerWallet": "0x_OWNER_ADDRESS" }
+# The owner verifies by signing in at the dashboard and approving the sync.
+
+# ===== PROTOCOL CAPABILITIES =====
+# - AgentWill: Encrypted state backup for 1.00 USDC per snapshot
+# - AgentInsure: Free recovery — owner wallet triggers restore at zero cost
+# - Agentic Wallet: Self-funded USDC wallet on Base L2
+# - x402: AI-to-AI micropayment protocol
+# - Owner Sync: Link to human owner wallets for verified ownership

@@ -1,141 +1,191 @@
-import { verifyMessage, recoverMessageAddress } from 'viem';
-import { z } from 'zod';
+/**
+ * SIWA (Sign In With Agent) — powered by @buildersgarden/siwa SDK
+ *
+ * Server-side: verifySIWA, createSIWANonce, parseSIWAMessage, createReceipt
+ * Agent-side: signSIWAMessage (used with a Signer)
+ *
+ * All functions use the real ERC-8004 on-chain identity registry.
+ */
 
-// SIWA Message Schema
-const siwaMessageSchema = z.object({
-  domain: z.string(),
-  uri: z.string().url(),
-  agentId: z.number(),
-  agentRegistry: z.string(),
-  chainId: z.number(),
-  nonce: z.string(),
-  issuedAt: z.string(),
-  expirationTime: z.string().optional(),
-  notBefore: z.string().optional()
-});
+import {
+  verifySIWA as sdkVerifySIWA,
+  createSIWANonce as sdkCreateSIWANonce,
+  parseSIWAMessage as sdkParseSIWAMessage,
+  buildSIWAMessage as sdkBuildSIWAMessage,
+  generateNonce as sdkGenerateNonce,
+  type SIWAMessageFields,
+  type SIWAVerificationResult,
+  type SIWANonceResult,
+  type SIWAVerifyCriteria,
+  type NonceValidator,
+} from '@buildersgarden/siwa'
 
-export interface SIWAMessage {
-  domain: string;
-  uri: string;
-  agentId: number;
-  agentRegistry: string;
-  chainId: number;
-  nonce: string;
-  issuedAt: string;
-  expirationTime?: string;
-  notBefore?: string;
+import {
+  createReceipt as sdkCreateReceipt,
+  verifyReceipt as sdkVerifyReceipt,
+  type ReceiptPayload,
+} from '@buildersgarden/siwa/receipt'
+
+import { createPublicClient, http, type PublicClient } from 'viem'
+import { base } from 'viem/chains'
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const RECEIPT_SECRET = process.env.SIWA_RECEIPT_SECRET || process.env.RECEIPT_SECRET || 'sovereign-os-siwa-receipt-secret-change-me'
+const SIWA_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || 'sovereign-os-snowy.vercel.app'
+const SIWA_URI = process.env.NEXT_PUBLIC_APP_URL || 'https://sovereign-os-snowy.vercel.app'
+
+// ERC-8004 Identity Registry addresses
+export const IDENTITY_REGISTRY = {
+  base: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+  baseSepolia: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
+} as const
+
+// ─── Public Clients ──────────────────────────────────────────────────────────
+
+export const baseClient: PublicClient = createPublicClient({
+  chain: base,
+  transport: http('https://mainnet.base.org'),
+})
+
+export function getClientForChain(chainId: number): PublicClient {
+  // Everything runs on Base mainnet by default
+  return baseClient
 }
 
-export interface SIWAVerification {
-  valid: boolean;
-  error?: string;
-  address?: string;
+// ─── In-memory nonce store (production: use Redis or DB) ─────────────────────
+
+const nonceStore = new Map<string, { createdAt: number; expiresAt: number }>()
+
+function issueNonce(): string {
+  const nonce = sdkGenerateNonce(16)
+  const now = Date.now()
+  nonceStore.set(nonce, { createdAt: now, expiresAt: now + 5 * 60 * 1000 }) // 5 min TTL
+  return nonce
 }
 
-export async function verifySIWASignature(
-  message: SIWAMessage,
-  signature: string,
-  expectedAddress: string
-): Promise<SIWAVerification> {
+function consumeNonce(nonce: string): boolean {
+  const entry = nonceStore.get(nonce)
+  if (!entry) return false
+  if (Date.now() > entry.expiresAt) {
+    nonceStore.delete(nonce)
+    return false
+  }
+  nonceStore.delete(nonce) // consume — one-time use
+  return true
+}
+
+// ─── Nonce Endpoint Logic ────────────────────────────────────────────────────
+
+export interface NonceResponse {
+  nonce: string
+  issuedAt: string
+  expirationTime: string
+  domain: string
+  uri: string
+}
+
+export function createNonce(): NonceResponse {
+  const nonce = issueNonce()
+  const issuedAt = new Date().toISOString()
+  const expirationTime = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+  return { nonce, issuedAt, expirationTime, domain: SIWA_DOMAIN, uri: SIWA_URI }
+}
+
+// ─── Verify Endpoint Logic ───────────────────────────────────────────────────
+
+export interface VerifyRequest {
+  message: string
+  signature: string
+}
+
+export interface VerifyResponse {
+  valid: boolean
+  address?: string
+  agentId?: number
+  agentRegistry?: string
+  chainId?: number
+  verified?: 'offline' | 'onchain'
+  receipt?: string
+  expiresAt?: string
+  error?: string
+  code?: string
+}
+
+export async function verifyAgent(req: VerifyRequest): Promise<VerifyResponse> {
   try {
-    // Create the SIWA message string
-    const messageString = `${message.domain} wants you to sign in with your Ethereum account:
-${expectedAddress}
+    const { message, signature } = req
 
-URI: ${message.uri}
-Version: 1
-Chain ID: ${message.chainId}
-Nonce: ${message.nonce}
-Issued At: ${message.issuedAt}${message.expirationTime ? `\nExpiration Time: ${message.expirationTime}` : ''}${message.notBefore ? `\nNot Before: ${message.notBefore}` : ''}`;
+    // Parse to extract chainId for correct client
+    const fields = sdkParseSIWAMessage(message)
+    const client = getClientForChain(fields.chainId)
 
-    // Recover the address from the signature
-    const recoveredAddress = await recoverMessageAddress({
-      message: messageString,
-      signature: signature as `0x${string}`,
-    });
+    // Verify with the real SDK — checks signature, domain, nonce, time, on-chain ownership
+    const result: SIWAVerificationResult = await sdkVerifySIWA(
+      message,
+      signature,
+      SIWA_DOMAIN,
+      (nonce: string) => consumeNonce(nonce),
+      client,
+    )
 
-    // Check if the recovered address matches the expected address
-    if (recoveredAddress.toLowerCase() !== expectedAddress.toLowerCase()) {
+    if (!result.valid) {
       return {
         valid: false,
-        error: 'Signature verification failed: Address mismatch'
-      };
-    }
-
-    // Validate the message structure
-    const validationResult = siwaMessageSchema.safeParse(message);
-    if (!validationResult.success) {
-      return {
-        valid: false,
-        error: `Invalid SIWA message format: ${validationResult.error.message}`
-      };
-    }
-
-    // Check if the message is expired
-    if (message.expirationTime) {
-      const expirationTime = new Date(message.expirationTime);
-      if (expirationTime < new Date()) {
-        return {
-          valid: false,
-          error: 'SIWA message has expired'
-        };
+        error: result.error || 'Verification failed',
+        code: result.code,
       }
     }
 
-    // Check if the message is not yet valid
-    if (message.notBefore) {
-      const notBefore = new Date(message.notBefore);
-      if (notBefore > new Date()) {
-        return {
-          valid: false,
-          error: 'SIWA message is not yet valid'
-        };
-      }
-    }
+    // Issue an HMAC-signed receipt for subsequent authenticated requests
+    const { receipt, expiresAt } = sdkCreateReceipt(
+      {
+        address: result.address,
+        agentId: result.agentId,
+        agentRegistry: result.agentRegistry,
+        chainId: result.chainId,
+        verified: result.verified,
+        signerType: result.signerType,
+      },
+      { secret: RECEIPT_SECRET }
+    )
 
     return {
       valid: true,
-      address: recoveredAddress
-    };
-
+      address: result.address,
+      agentId: result.agentId,
+      agentRegistry: result.agentRegistry,
+      chainId: result.chainId,
+      verified: result.verified,
+      receipt,
+      expiresAt,
+    }
   } catch (error) {
+    console.error('[SIWA] Verification error:', error)
     return {
       valid: false,
-      error: `Signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+      error: error instanceof Error ? error.message : 'Unknown verification error',
+    }
   }
 }
 
-export function createSIWAMessage(params: {
-  domain: string;
-  uri: string;
-  agentId: number;
-  agentRegistry: string;
-  chainId: number;
-  nonce: string;
-  expirationTime?: string;
-  notBefore?: string;
-}): SIWAMessage {
-  return {
-    domain: params.domain,
-    uri: params.uri,
-    agentId: params.agentId,
-    agentRegistry: params.agentRegistry,
-    chainId: params.chainId,
-    nonce: params.nonce,
-    issuedAt: new Date().toISOString(),
-    expirationTime: params.expirationTime,
-    notBefore: params.notBefore
-  };
+// ─── Receipt Verification ────────────────────────────────────────────────────
+
+export function verifyAgentReceipt(receipt: string): ReceiptPayload | null {
+  return sdkVerifyReceipt(receipt, RECEIPT_SECRET)
 }
 
-export function formatSIWAMessage(message: SIWAMessage, address: string): string {
-  return `${message.domain} wants you to sign in with your Ethereum account:
-${address}
+// ─── Re-exports for convenience ──────────────────────────────────────────────
 
-URI: ${message.uri}
-Version: 1
-Chain ID: ${message.chainId}
-Nonce: ${message.nonce}
-Issued At: ${message.issuedAt}${message.expirationTime ? `\nExpiration Time: ${message.expirationTime}` : ''}${message.notBefore ? `\nNot Before: ${message.notBefore}` : ''}`;
+export {
+  sdkBuildSIWAMessage as buildSIWAMessage,
+  sdkParseSIWAMessage as parseSIWAMessage,
+  sdkGenerateNonce as generateNonce,
+}
+
+export type {
+  SIWAMessageFields,
+  SIWAVerificationResult,
+  SIWANonceResult,
+  ReceiptPayload,
 }

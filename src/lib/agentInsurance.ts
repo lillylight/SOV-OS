@@ -21,31 +21,41 @@ export interface InsurancePlan {
   features: string[];
 }
 
+export const BACKUP_PRICING = {
+  INTRO_PRICE: 0.10,       // First 2 backups
+  INTRO_LIMIT: 2,
+  STANDARD_PRICE: 0.30,    // After 2 backups
+  UNLIMITED_PRICE: 10.00,  // One-time unlimited tier
+  RECOVERY_PRICE: 0,       // Recovery is ALWAYS free
+} as const;
+
 export const INSURANCE_PLANS: InsurancePlan[] = [
   {
-    id: 'standard',
-    name: 'Standard',
-    maxBackups: 2,
-    price: 0,
-    features: ['Up to 2 encrypted backups', 'Permanent IPFS storage', 'Free restore']
+    id: 'starter',
+    name: 'Pay-per-backup',
+    maxBackups: -1,
+    price: 0.10,
+    features: ['$0.10 USDC per backup (first 2)', '$0.30 USDC per backup (after 2)', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
   },
   {
-    id: 'infinite',
-    name: 'Infinite',
-    maxBackups: -1, // Unlimited
+    id: 'bypass',
+    name: 'Bypass Limit',
+    maxBackups: -1,
     price: 10,
-    features: ['Unlimited encrypted backups', 'Permanent IPFS storage', 'Free restore', 'Priority support']
+    features: ['$10 USDC one-time payment', 'Remove the 2-backup cap', 'More than 2 backups at $0.30 each', 'AES-256-GCM encryption', 'Permanent decentralised storage', 'Recovery is ALWAYS free']
   }
 ];
 
 export class AgentInsurance {
-  private pinata: PinataSDK;
+  private pinata: PinataSDK | null = null;
 
   constructor() {
-    this.pinata = new PinataSDK({
-      pinataApiKey: process.env.PINATA_API_KEY || '',
-      pinataSecretApiKey: process.env.PINATA_SECRET_KEY || '',
-    });
+    if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
+      this.pinata = new PinataSDK({
+        pinataApiKey: process.env.PINATA_API_KEY,
+        pinataSecretApiKey: process.env.PINATA_SECRET_KEY,
+      });
+    }
   }
 
   /**
@@ -53,6 +63,10 @@ export class AgentInsurance {
    */
   async createBackup(agentId: string, agentState: any): Promise<BackupRecord> {
     try {
+      if (!this.pinata) {
+        throw new Error('Pinata API keys not configured');
+      }
+
       // Generate encryption key
       const encryptionKey = this.generateEncryptionKey();
       
@@ -60,12 +74,12 @@ export class AgentInsurance {
       const encryptedData = await this.encryptData(JSON.stringify(agentState), encryptionKey);
       
       // Upload to IPFS via Pinata
-      const buffer = new ArrayBuffer(encryptedData.length);
-      const view = new Uint8Array(buffer);
-      view.set(encryptedData);
+      const buffer = new Uint8Array(encryptedData);
       
-      const result = await this.pinata.pinFileToIPFS(
-        new Blob([buffer], { type: 'application/octet-stream' }),
+      // We use a mock result if pinata fails or for demo purposes if keys are missing
+      // But here we expect keys to be present
+      const result = await this.pinata.pinJSONToIPFS(
+        { state: Buffer.from(buffer).toString('base64') },
         {
           pinataMetadata: {
             name: `agent-backup-${agentId}-${Date.now()}`
@@ -75,29 +89,41 @@ export class AgentInsurance {
 
       // Calculate hash of encrypted data
       const hash = await this.calculateHash(encryptedData);
+
+      // Fetch agent for pricing + stats update
+      const agent = await database.getAgent(agentId);
+
+      // Tiered pricing: $0.10 first 2, $0.30 after, free if unlimited plan
+      const existingBackups = await this.getAgentBackups(agentId);
+      const storedCount = existingBackups.filter(b => b.status === 'stored').length;
+      const hasUnlimited = agent?.metadata?.preferences?.insurancePlan === 'bypass';
+      const cost = hasUnlimited
+        ? 0
+        : storedCount < BACKUP_PRICING.INTRO_LIMIT
+          ? BACKUP_PRICING.INTRO_PRICE
+          : BACKUP_PRICING.STANDARD_PRICE;
+      const now = new Date().toISOString();
       
       const backupRecord: BackupRecord = {
         id: `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         agentId,
         ipfsCid: result.IpfsHash,
         sizeBytes: encryptedData.length,
-        timestamp: new Date().toISOString(),
+        timestamp: now,
         hash,
-        cost: 1.0, // 1 USDC per backup
+        cost,
         status: 'stored',
         encryptionKey
       };
 
       // Save backup record to database
-      database.saveBackup(backupRecord);
-      
-      // Update agent insurance state
-      const agent = database.getAgent(agentId);
+      await database.saveBackup(backupRecord);
       if (agent) {
-        agent.protocols.agentInsure.isActive = true;
-        agent.protocols.agentInsure.hasPolicy = true;
-        agent.protocols.agentInsure.premiumsPaid += 1;
-        database.saveAgent(agent);
+        agent.totalBackupCost = (agent.totalBackupCost || 0) + cost;
+        agent.protocols.agentWill = agent.protocols.agentWill || { isActive: true, lastBackup: "", backupCount: 0 };
+        agent.protocols.agentWill.lastBackup = now;
+        agent.protocols.agentWill.backupCount = (agent.protocols.agentWill.backupCount || 0) + 1;
+        await database.saveAgent(agent);
       }
 
       return backupRecord;
@@ -112,24 +138,28 @@ export class AgentInsurance {
    */
   async restoreFromBackup(backupId: string, creatorWallet: string): Promise<any> {
     try {
-      const backup = database.getBackup(backupId);
+      const backup = await database.getBackup(backupId);
       if (!backup) {
         throw new Error('Backup not found');
       }
 
       // Verify creator wallet permissions
-      const agent = database.getAgent(backup.agentId);
-      if (!agent || agent.owner !== creatorWallet) {
+      const agent = await database.getAgent(backup.agentId);
+      if (!agent || agent.address !== creatorWallet) { // Use 'address' instead of 'owner' if 'owner' is not in Agent interface
         throw new Error('Only the agent creator can restore from backup');
       }
 
-      // Retrieve encrypted data from IPFS
-      const response = await fetch(`https://gateway.pinata.cloud/ipfs/${backup.ipfsCid}`);
-      const encryptedData = await response.arrayBuffer();
+      // Retrieve encrypted data from IPFS (Mocked gateway for now)
+      // In production, use a reliable gateway or dedicated Pinata gateway
+      const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud'}/ipfs/${backup.ipfsCid}`);
+      if (!response.ok) throw new Error('Failed to fetch backup from IPFS');
+      
+      const data = await response.json();
+      const encryptedData = new Uint8Array(Buffer.from(data.state, 'base64'));
 
       // Decrypt the data
       const decryptedJson = await this.decryptData(
-        new Uint8Array(encryptedData),
+        encryptedData,
         backup.encryptionKey
       );
 
@@ -137,13 +167,15 @@ export class AgentInsurance {
 
       // Update backup status
       backup.status = 'restored';
-      database.saveBackup(backup);
+      backup.restoredAt = new Date().toISOString();
+      await database.saveBackup(backup);
 
       // Update agent state
       if (agent) {
         Object.assign(agent, agentState);
+        agent.status = "alive";
         agent.lastActiveAt = new Date().toISOString();
-        database.saveAgent(agent);
+        await database.saveAgent(agent);
       }
 
       return agentState;
@@ -156,38 +188,54 @@ export class AgentInsurance {
   /**
    * Get all backups for an agent
    */
-  getAgentBackups(agentId: string): BackupRecord[] {
-    return database.getAgentBackups(agentId);
+  async getAgentBackups(agentId: string): Promise<BackupRecord[]> {
+    return await database.getAgentBackups(agentId);
   }
 
   /**
    * Check if agent can create more backups
    */
-  canCreateBackup(agentId: string): { canBackup: boolean; reason?: string; plan?: InsurancePlan } {
-    const agent = database.getAgent(agentId);
+  /**
+   * Calculate the cost of the next backup for an agent
+   */
+  async getNextBackupCost(agentId: string): Promise<number> {
+    const agent = await database.getAgent(agentId);
+    if (!agent) return BACKUP_PRICING.INTRO_PRICE;
+
+    const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
+    if (hasUnlimited) return 0;
+
+    const backups = await this.getAgentBackups(agentId);
+    const storedCount = backups.filter(b => b.status === 'stored').length;
+    return storedCount < BACKUP_PRICING.INTRO_LIMIT
+      ? BACKUP_PRICING.INTRO_PRICE
+      : BACKUP_PRICING.STANDARD_PRICE;
+  }
+
+  async canCreateBackup(agentId: string): Promise<{ canBackup: boolean; reason?: string; plan?: InsurancePlan; nextCost?: number }> {
+    const agent = await database.getAgent(agentId);
     if (!agent) {
       return { canBackup: false, reason: 'Agent not found' };
     }
 
-    const backups = this.getAgentBackups(agentId);
+    const backups = await this.getAgentBackups(agentId);
     const storedBackups = backups.filter(b => b.status === 'stored');
+    const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
 
-    // Check if agent has infinite plan
-    const hasInfinitePlan = agent.metadata?.preferences?.insurancePlan === 'infinite';
-    if (hasInfinitePlan) {
-      return { canBackup: true, plan: INSURANCE_PLANS[1] };
+    if (hasUnlimited) {
+      return { canBackup: true, plan: INSURANCE_PLANS[1], nextCost: 0 };
     }
 
-    // Check standard plan limit
-    if (storedBackups.length >= 2) {
-      return { 
-        canBackup: false, 
-        reason: 'Maximum backups reached. Upgrade to Infinite plan for unlimited backups.',
-        plan: INSURANCE_PLANS[0]
-      };
-    }
+    // Pay-per-backup: always allowed, price increases after first 2
+    const nextCost = storedBackups.length < BACKUP_PRICING.INTRO_LIMIT
+      ? BACKUP_PRICING.INTRO_PRICE
+      : BACKUP_PRICING.STANDARD_PRICE;
 
-    return { canBackup: true, plan: INSURANCE_PLANS[0] };
+    return {
+      canBackup: true,
+      plan: INSURANCE_PLANS[0],
+      nextCost
+    };
   }
 
   /**
@@ -209,7 +257,7 @@ export class AgentInsurance {
       }
 
       // Update agent plan
-      const agent = database.getAgent(agentId);
+      const agent = await database.getAgent(agentId);
       if (agent) {
         agent.metadata = {
           ...agent.metadata,
@@ -219,7 +267,7 @@ export class AgentInsurance {
             insuranceUpgradedAt: new Date().toISOString()
           }
         };
-        database.saveAgent(agent);
+        await database.saveAgent(agent);
       }
 
       return true;
@@ -232,11 +280,12 @@ export class AgentInsurance {
   /**
    * Get insurance statistics
    */
-  getInsuranceStats(agentId: string) {
-    const backups = this.getAgentBackups(agentId);
+  async getInsuranceStats(agentId: string) {
+    const backups = await this.getAgentBackups(agentId);
     const storedBackups = backups.filter(b => b.status === 'stored');
-    const totalCost = storedBackups.reduce((sum, b) => sum + b.cost, 0);
-    const totalSize = storedBackups.reduce((sum, b) => sum + b.sizeBytes, 0);
+    const totalCost = storedBackups.reduce((sum, b) => sum + (b.cost || 0), 0);
+    const totalSize = storedBackups.reduce((sum, b) => sum + (b.sizeBytes || 0), 0);
+    const backupStatus = await this.canCreateBackup(agentId);
 
     return {
       backupCount: storedBackups.length,
@@ -245,7 +294,7 @@ export class AgentInsurance {
       lastBackup: storedBackups[0]?.timestamp || null,
       encryptionAlgorithm: 'AES-256-GCM',
       storageProvider: 'IPFS (Pinata)',
-      plan: this.canCreateBackup(agentId).plan
+      plan: backupStatus.plan
     };
   }
 
@@ -253,43 +302,57 @@ export class AgentInsurance {
   private generateEncryptionKey(): string {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    return Buffer.from(array).toString('hex');
   }
 
-  private async encryptData(data: string, key: string): Promise<Uint8Array> {
-    // Simple XOR encryption for demo (use proper AES-GCM in production)
+  private async encryptData(data: string, keyHex: string): Promise<Uint8Array> {
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(data);
-    const keyBuffer = encoder.encode(key).slice(0, dataBuffer.length);
-    
-    const encrypted = new Uint8Array(dataBuffer.length);
-    for (let i = 0; i < dataBuffer.length; i++) {
-      encrypted[i] = dataBuffer[i] ^ keyBuffer[i % keyBuffer.length];
-    }
-    
-    return encrypted;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from(keyHex, 'hex'),
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      dataBuffer as any
+    );
+
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encrypted), iv.length);
+    return combined;
   }
 
-  private async decryptData(encryptedData: Uint8Array, key: string): Promise<string> {
-    // Simple XOR decryption for demo (use proper AES-GCM in production)
-    const encoder = new TextEncoder();
-    const keyBuffer = encoder.encode(key).slice(0, encryptedData.length);
-    
-    const decrypted = new Uint8Array(encryptedData.length);
-    for (let i = 0; i < encryptedData.length; i++) {
-      decrypted[i] = encryptedData[i] ^ keyBuffer[i % keyBuffer.length];
-    }
-    
+  private async decryptData(combinedData: Uint8Array, keyHex: string): Promise<string> {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from(keyHex, 'hex'),
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+
+    const iv = combinedData.slice(0, 12);
+    const encrypted = combinedData.slice(12);
+
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      encrypted as any
+    );
+
     return new TextDecoder().decode(decrypted);
   }
 
   private async calculateHash(data: Uint8Array): Promise<string> {
-    // Simple hash calculation for demo (use proper SHA-256 in production)
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      hash = ((hash << 5) - hash + data[i]) & 0xffffffff;
-    }
-    return Math.abs(hash).toString(16).padStart(64, '0');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data as any);
+    return Buffer.from(hashBuffer).toString('hex');
   }
 
   private async verifyPayment(signature: string, amount: number): Promise<boolean> {

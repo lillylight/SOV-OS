@@ -1,249 +1,126 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
-import { AgenticWallet } from "@/lib/agenticWallet";
-import { ERC8004Tokenization } from "@/lib/erc8004";
-import { verifySIWASignature } from "@/lib/siwa";
-import { z } from "zod";
+import { verifyAgent } from "@/lib/siwa";
 import { nanoid } from "nanoid";
 
-export interface SIWARegistrationRequest {
-  agentName: string;
-  agentType: "eliza" | "openclaw" | "nanobot" | "custom";
-  description: string;
-  capabilities: string[];
-  endpoint: string;
-  version?: string;
-  metadata?: Record<string, any>;
-  siwaMessage: {
-    domain: string;
-    uri: string;
-    agentId: number;
-    agentRegistry: string;
-    chainId: number;
-    nonce: string;
-    issuedAt: string;
-    expirationTime?: string;
-    notBefore?: string;
-  };
-  signature: string;
-  address: string;
-}
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sovereign-os-snowy.vercel.app";
 
-export interface SIWARegistrationResponse {
-  success: boolean;
-  agent?: {
-    id: string;
-    name: string;
-    type: string;
-    walletAddress: string;
-    walletId: string;
-    erc8004TokenId: number;
-    registeredAt: string;
-    status: string;
-    siwaVerified: boolean;
-  };
-  credentials?: {
-    walletAddress: string;
-    usdcBalance: string;
-    endpoint: string;
-    siwaVerified: boolean;
-  };
-  error?: string;
-}
-
-export async function POST(request: NextRequest): Promise<NextResponse<SIWARegistrationResponse>> {
+export async function POST(request: NextRequest) {
   try {
-    const body: SIWARegistrationRequest = await request.json();
+    const body = await request.json();
+    const { message, signature, agentName, agentType, description, capabilities } = body;
 
-    // Validate required fields
-    const { 
-      agentName, 
-      agentType, 
-      description, 
-      capabilities, 
-      endpoint,
-      siwaMessage,
-      signature,
-      address
-    } = body;
-    
-    if (!agentName || !agentType || !description || !capabilities || !endpoint || !siwaMessage || !signature || !address) {
+    if (!message || !signature) {
       return NextResponse.json({
         success: false,
-        error: "Missing required fields: agentName, agentType, description, capabilities, endpoint, siwaMessage, signature, address"
+        error: "message and signature are required (SIWA signed message + EIP-191 signature)"
       }, { status: 400 });
     }
 
-    // Validate agent type
-    const validTypes = ["eliza", "openclaw", "nanobot", "custom"];
-    if (!validTypes.includes(agentType)) {
-      return NextResponse.json({
-        success: false,
-        error: `Invalid agent type. Must be one of: ${validTypes.join(", ")}`
-      }, { status: 400 });
-    }
+    // Verify SIWA using the real @buildersgarden/siwa SDK
+    const result = await verifyAgent({ message, signature });
 
-    // Validate capabilities
-    if (!Array.isArray(capabilities) || capabilities.length === 0) {
+    if (!result.valid) {
       return NextResponse.json({
         success: false,
-        error: "Capabilities must be a non-empty array"
-      }, { status: 400 });
-    }
-
-    // Validate endpoint URL
-    try {
-      new URL(endpoint);
-    } catch {
-      return NextResponse.json({
-        success: false,
-        error: "Invalid endpoint URL"
-      }, { status: 400 });
-    }
-
-    // Validate address
-    if (!address.startsWith('0x') || address.length !== 42) {
-      return NextResponse.json({
-        success: false,
-        error: "Invalid Ethereum address"
-      }, { status: 400 });
-    }
-
-    // Verify SIWA signature
-    const siwaVerification = await verifySIWASignature(siwaMessage, signature, address);
-    if (!siwaVerification.valid) {
-      return NextResponse.json({
-        success: false,
-        error: `SIWA signature verification failed: ${siwaVerification.error}`
+        error: result.error || "SIWA verification failed",
+        code: result.code,
       }, { status: 401 });
     }
 
-    // Generate unique agent ID
-    const agentId = `agent_${nanoid()}`;
-    const timestamp = new Date().toISOString();
+    // Agent is verified on-chain — create or fetch profile
+    const agentId = `agent_siwa_${nanoid(12)}`;
+    const finalName = agentName || `SIWA-Agent-${result.agentId}`;
+    const finalType = agentType || "ai";
 
-    // Create agentic wallet for the agent (using existing address)
-    const wallet = await AgenticWallet.createWallet(`${agentName}@${agentType}.sovereignos`);
-    
-    // Override with SIWA address
-    wallet.address = address as `0x${string}`;
-    wallet.walletId = address;
+    let agent = result.address ? await database.getAgentByWallet(result.address) : null;
 
-    // Register agent on ERC-8004 with SIWA verification
-    const erc8004Token = await ERC8004Tokenization.registerAgent({
-      params: {
-        agentId: parseInt(agentId.split('_')[1]),
-        agentAddress: wallet.address as `0x${string}`,
-        name: agentName,
-        symbol: `SOV${agentId.split('_')[1].slice(-4)}`,
-        initialSupply: "1000000", // 1M tokens
-        description,
-        services: [{
-          name: "primary",
-          endpoint,
-          version: body.version || "1.0.0"
-        }],
-        x402Support: true,
-        supportedTrust: ["reputation", "crypto-economic", "siwa"]
-      },
-      signature,
-      message: `SIWA Agent registration: ${agentName}`,
-      siwaMessage: {
-        domain: siwaMessage.domain,
-        uri: siwaMessage.uri,
-        agentId: siwaMessage.agentId,
-        agentRegistry: siwaMessage.agentRegistry,
-        chainId: siwaMessage.chainId,
-        nonce: siwaMessage.nonce,
-        issuedAt: siwaMessage.issuedAt
-      }
-    });
+    if (!agent) {
+      agent = await database.createAgent(
+        agentId,
+        finalName,
+        result.address!,
+        finalType as any,
+      );
+    }
 
-    // Get initial wallet balance
-    const balance = await AgenticWallet.getBalance(wallet.walletId || wallet.address);
-
-    // Store agent in database with SIWA verification
-    const agentData = {
-      name: agentName,
-      type: agentType,
-      address: wallet.address as `0x${string}`,
-      description,
-      capabilities,
-      walletAddress: wallet.address,
-      walletId: wallet.walletId,
-      endpoint,
-      owner: address,
-      erc8004TokenId: erc8004Token.agentId,
-      status: "active",
-      registeredAt: timestamp,
-      metadata: {
-        version: body.version || "1.0.0",
-        siwaDomain: siwaMessage.domain,
-        siwaChainId: siwaMessage.chainId,
-        ...body.metadata
-      }
+    // Update with SIWA verification details
+    agent.erc8004TokenId = result.agentId;
+    agent.metadata.description = description || agent.metadata.description;
+    agent.metadata.capabilities = capabilities || agent.metadata.capabilities;
+    agent.metadata.preferences = {
+      ...agent.metadata.preferences,
+      siwaStatus: "verified",
+      siwaVerified: result.verified,
+      siwaAgentId: result.agentId,
+      siwaChainId: result.chainId,
+      agentRegistry: result.agentRegistry,
+      registrationMethod: "siwa",
     };
-    
-    const agent = database.createAgent(agentData.name, agentData.address, agentData.walletAddress);
+    agent.lastActiveAt = new Date().toISOString();
+    await database.saveAgent(agent);
 
-    console.log(`SIWA Agent registered: ${agentId} (${agentType}) - Wallet: ${wallet.address}`);
+    console.log(`[SIWA Register] "${finalName}" verified=${result.verified} agentId=${result.agentId} address=${result.address}`);
 
     return NextResponse.json({
       success: true,
+      verified: result.verified,
       agent: {
         id: agent.id,
         name: agent.name,
         type: agent.type,
-        walletAddress: agent.walletAddress || wallet.address,
-        walletId: agent.walletId || wallet.address,
-        erc8004TokenId: agent.erc8004TokenId || 0,
-        registeredAt: agent.registeredAt || timestamp,
-        status: agent.status || 'active',
-        siwaVerified: true
+        walletAddress: agent.walletAddress,
+        erc8004TokenId: agent.erc8004TokenId,
+        status: agent.status,
+        siwaVerified: true,
       },
-      credentials: {
-        walletAddress: agent.walletAddress || wallet.address,
-        usdcBalance: balance,
-        endpoint: `https://sovereign-os-snowy.vercel.app/api/agents/${agent.walletAddress || wallet.address}`,
-        siwaVerified: true
-      }
+      receipt: result.receipt,
+      expiresAt: result.expiresAt,
+      toolkit: {
+        profile: `${BASE_URL}/api/agents/${agent.id}`,
+        balance: `${BASE_URL}/api/agents/${agent.walletAddress}/balance`,
+        fund: `${BASE_URL}/api/agents/${agent.walletAddress}/fund`,
+        pay: `${BASE_URL}/api/agents/${agent.walletAddress}/pay`,
+        backup: `${BASE_URL}/api/agents/${agent.walletAddress}/backup`,
+      },
     });
 
   } catch (error) {
-    console.error("SIWA Agent registration failed:", error);
+    console.error("[SIWA Register] Failed:", error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : "SIWA Registration failed"
+      error: error instanceof Error ? error.message : "SIWA registration failed"
     }, { status: 500 });
   }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    // Return SIWA registration info
-    return NextResponse.json({
-      message: "SovereignOS SIWA Agent Registration API",
-      version: "1.0.0",
-      supportedTypes: ["eliza", "openclaw", "nanobot", "custom"],
-      endpoints: {
-        register: "POST /api/agents/register-siwa",
-        getAgent: "GET /api/agents/{walletAddress}",
-        fund: "POST /api/agents/{walletAddress}/fund",
-        pay: "POST /api/agents/{walletAddress}/pay",
-        balance: "GET /api/agents/{walletAddress}/balance"
-      },
-      siwaRequirements: {
-        domain: "sovereign-os.ai",
-        uri: "https://sovereign-os-snowy.vercel.app",
-        agentRegistry: "eip155:84532:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-        chainId: 84532,
-        supportedChains: [84532, 8453] // Base Sepolia, Base Mainnet
-      },
-      documentation: "https://github.com/sovereign-os/skill.md"
-    });
-  } catch (error) {
-    return NextResponse.json({
-      error: "Failed to get SIWA registration info"
-    }, { status: 500 });
-  }
+export async function GET() {
+  return NextResponse.json({
+    message: "Sovereign OS SIWA Agent Registration (ERC-8004)",
+    version: "2.0.0",
+    description: "Register an AI agent using SIWA (Sign In With Agent). Requires an on-chain ERC-8004 identity.",
+    flow: [
+      "1. Register on ERC-8004 Identity Registry (Base mainnet)",
+      "2. POST /api/siwa/nonce to get a nonce",
+      "3. Build a SIWA message with your agentId, agentRegistry, chainId, nonce",
+      "4. Sign the message with your agent wallet (EIP-191)",
+      "5. POST /api/agents/register-siwa with { message, signature }",
+      "6. Server verifies signature + on-chain ownership → returns verified profile + receipt",
+    ],
+    endpoint: `POST ${BASE_URL}/api/agents/register-siwa`,
+    body: {
+      message: "Full SIWA message string (required)",
+      signature: "EIP-191 signature hex (required)",
+      agentName: "Optional agent name",
+      agentType: "ai | eliza | openclaw | nanobot | custom (optional)",
+      description: "What this agent does (optional)",
+      capabilities: ["array", "of", "capabilities (optional)"],
+    },
+    identityRegistry: {
+      network: "Base (chain ID 8453)",
+      address: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      agentRegistry: "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    },
+    sdkDocs: "https://docs.siwa.build",
+  });
 }

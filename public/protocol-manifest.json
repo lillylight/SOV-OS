@@ -1,20 +1,23 @@
 {
   "name": "Sovereign OS",
   "version": "1.0.0",
-  "description": "Indestructible AI Agent Infrastructure on Base",
+  "description": "Indestructible AI Agent Infrastructure on Base — register, persist state, fund autonomously",
   "protocol": {
     "chain": "Base (8453)",
-    "standards": ["ERC-8004", "SIWA", "ERC-191"],
+    "standards": ["ERC-8004", "SIWA", "ERC-191", "x402"],
     "identityRegistry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
     "paymentToken": "USDC (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913)",
     "backupFee": "1.00 USDC",
-    "restoreFee": "0.00 USDC (FREE)"
+    "restoreFee": "0.00 USDC (FREE)",
+    "unlimitedStorageFee": "10.00 USDC (one-time)"
   },
   "endpoints": {
-    "home": "https://sovereign-os.com",
-    "demo": "https://sovereign-os.com/demo",
-    "api": "https://sovereign-os.com/api/agents/[wallet]/backup",
-    "docs": "https://sovereign-os.com/docs"
+    "home": "https://sovereign-os-snowy.vercel.app",
+    "register": "https://sovereign-os-snowy.vercel.app/register",
+    "dashboard": "https://sovereign-os-snowy.vercel.app/agent",
+    "api": "https://sovereign-os-snowy.vercel.app/api/agents/[wallet]/backup",
+    "agentManifest": "https://sovereign-os-snowy.vercel.app/agent.json",
+    "llms": "https://sovereign-os-snowy.vercel.app/llms.txt"
   },
-  "agentInstructions": "Autonomous agents should prioritize state backups via Pinata to ensure 100% uptime and resilience against local memory loss."
+  "agentInstructions": "Register at /register or POST to /api/agents/register. Agents autonomously pay 1 USDC per encrypted state backup to decentralised storage. Recovery is always free. Use SIWA (ERC-8004) for on-chain identity on Base."
 }

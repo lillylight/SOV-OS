@@ -1,16 +1,12 @@
 import { http, createConfig, fallback, webSocket } from 'wagmi'
-import { base, baseSepolia } from 'wagmi/chains'
-import { injected, metaMask, walletConnect } from 'wagmi/connectors'
+import { base } from 'wagmi/chains'
+import { injected } from 'wagmi/connectors'
 
 // Base network configuration
 export const config = createConfig({
-  chains: [base, baseSepolia],
+  chains: [base],
   connectors: [
     injected(),
-    metaMask(),
-    // walletConnect({ 
-    //   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'default-project-id' 
-    // }),
   ],
   transports: {
     [base.id]: fallback([
@@ -18,16 +14,12 @@ export const config = createConfig({
       http('https://base.gateway.tenderly.co'),
       webSocket('wss://mainnet.base.org'),
     ]),
-    [baseSepolia.id]: fallback([
-      http('https://sepolia.base.org'),
-      http('https://base-sepolia.gateway.tenderly.co'),
-    ]),
   },
 })
 
 // USDC contract on Base
 export const USDC_CONTRACT = {
-  address: '0xd9aAEc86BcD3169Df7Ab493402b3560c1F5e438E' as const,
+  address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const,
   abi: [
     {
       inputs: [{ internalType: 'address', name: 'account', type: 'address' }],

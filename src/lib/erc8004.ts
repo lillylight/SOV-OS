@@ -244,7 +244,7 @@ export class ERC8004Tokenization {
   /**
    * Get agent information from ERC-8004 Identity Registry
    */
-  static async getAgentInfo(agentId: number, chainId: number = 84532): Promise<ERC8004Token | null> {
+  static async getAgentInfo(agentId: number, chainId: number = 8453): Promise<ERC8004Token | null> {
     try {
       const identityRegistry = this.IDENTITY_REGISTRY_ADDRESSES[chainId as keyof typeof this.IDENTITY_REGISTRY_ADDRESSES]
       if (!identityRegistry) {
@@ -433,7 +433,7 @@ export class ERC8004Tokenization {
     return `${siwaParams.domain} wants you to sign in with your Agent account:
 ${params.agentAddress}
 
-I authorize the registration of this AI agent on SovereignOS
+I authorize the registration of this AI agent on Sovereign OS
 
 URI: ${siwaParams.uri}
 Version: 1

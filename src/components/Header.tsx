@@ -6,14 +6,14 @@ import { Menu, X, ArrowUpRight, Fingerprint } from "lucide-react";
 
 const navItems = [
   { label: "Protocol", href: "#protocol" },
-  { label: "System Logs", href: "#logs" },
-  { label: "Register Agent", href: "/register" },
+  { label: "Capabilities", href: "#capabilities" },
+  { label: "Pricing", href: "#pricing" },
+  { label: "Register", href: "/register" },
 ];
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -21,38 +21,7 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleHumanConnect = async () => {
-    setIsConnecting(true);
-    
-    try {
-      if (!window.ethereum) {
-        alert("Please install MetaMask or another Web3 wallet");
-        return;
-      }
 
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-
-      const address = accounts[0];
-      
-      // Store human auth state
-      localStorage.setItem("sovereign_human_auth", JSON.stringify({
-        address,
-        type: "human",
-        timestamp: Date.now(),
-      }));
-      
-      // Redirect to dashboard or stay on page
-      alert("Connected as human operator");
-      
-    } catch (error) {
-      console.error("Human connect error:", error);
-      alert("Connection error");
-    } finally {
-      setIsConnecting(false);
-    }
-  };
 
   return (
     <motion.header
@@ -83,19 +52,12 @@ export default function Header() {
               {item.label}
             </a>
           ))}
-          <button
-            onClick={handleHumanConnect}
-            disabled={isConnecting}
-            className="px-4 py-2 border border-[var(--line)] text-[var(--ink)] font-semibold text-sm rounded hover:bg-black/5 transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            <Fingerprint size={16} />
-            {isConnecting ? "Connecting..." : "Human Connect"}
-          </button>
+
         </div>
 
         <div className="hidden md:flex items-center gap-4">
           <a
-            href="/demo"
+            href="/register"
             className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.06em] uppercase border-b border-[var(--ink)] pb-0.5 hover:border-[var(--accent-red)] hover:text-[var(--accent-red)] transition-colors"
           >
             Launch App
@@ -129,7 +91,7 @@ export default function Header() {
             </a>
           ))}
           <a
-            href="/demo"
+            href="/register"
             onClick={() => setMenuOpen(false)}
             className="inline-flex items-center gap-2 text-sm font-semibold tracking-wide uppercase mt-4 border-b border-[var(--ink)] pb-0.5"
           >

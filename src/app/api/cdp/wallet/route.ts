@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
 
     // Coinbase CDP API endpoint
     const cdpApiUrl = 'https://api.cdp.coinbase.com/wallets';
-    const projectId = "8d885400-2c82-473e-b9d0-bf5c580a9a5f";
+    // Use environment variable with fallback
+    const projectId = process.env.NEXT_PUBLIC_CDP_PROJECT_ID || "8d885400-2c82-473e-b9d0-bf5c580a9a5f";
+    const host = request.headers.get("host") || "localhost:3000";
+    const protocol = host.includes("localhost") ? "http" : "https";
 
     // Make request to Coinbase CDP API
     const response = await fetch(cdpApiUrl, {
@@ -16,7 +19,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${projectId}`,
         'X-Project-Id': projectId,
-        'Origin': 'http://localhost:3000'
+        'Origin': `${protocol}://${host}`
       },
       body: JSON.stringify({
         authenticationMethod,
@@ -26,52 +29,25 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      // If CDP API fails, create a mock wallet for demo
-      console.warn('CDP API not available, creating mock wallet');
-      
-      const mockWalletAddress = `0x${Math.random().toString(36).substr(2, 40)}`;
-      const mockWalletData = {
-        address: mockWalletAddress,
-        walletId: `wallet_${Date.now()}`,
-        network: "base",
-        type: "smart",
-        createdAt: new Date().toISOString(),
-        status: "active"
-      };
-
+      const errorData = await response.json().catch(() => ({}));
       return NextResponse.json({
-        success: true,
-        wallet: mockWalletData,
-        mock: true
-      });
+        success: false,
+        error: errorData.message || `Coinbase CDP API error: ${response.status} ${response.statusText}`
+      }, { status: response.status });
     }
 
     const walletData = await response.json();
 
     return NextResponse.json({
       success: true,
-      wallet: walletData,
-      mock: false
+      wallet: walletData
     });
 
   } catch (error) {
     console.error('CDP Wallet creation error:', error);
-    
-    // Fallback to mock wallet
-    const mockWalletAddress = `0x${Math.random().toString(36).substr(2, 40)}`;
-    const mockWalletData = {
-      address: mockWalletAddress,
-      walletId: `wallet_${Date.now()}`,
-      network: "base",
-      type: "smart",
-      createdAt: new Date().toISOString(),
-      status: "active"
-    };
-
     return NextResponse.json({
-      success: true,
-      wallet: mockWalletData,
-      mock: true
-    });
+      success: false,
+      error: error instanceof Error ? error.message : "Internal server error during wallet creation"
+    }, { status: 500 });
   }
 }

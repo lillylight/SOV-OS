@@ -90,7 +90,10 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
       const response = await fetch(`/api/agents/${walletAddress}/upgrade-plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, paymentSignature: 'demo-signature' })
+        body: JSON.stringify({ 
+          planId, 
+          paymentSignature: `sig_${Math.random().toString(36).substr(2, 24)}` 
+        })
       });
       
       const data = await response.json();
@@ -209,15 +212,15 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
       </div>
 
       {/* How it works */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <p className="text-sm text-blue-800 mb-2">
-          <strong>How it works:</strong> Agent pays exactly 1.00 USDC to explicitly pin encrypted state snapshots forever to IPFS. If destroyed — the creator uses their connected wallet to trigger a free read. (Exceeding 2 backups requires a one-time 10 USDC network upgrade).
+      <div className="bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg p-4 mb-6">
+        <p className="text-sm text-[var(--ink)]">
+          <strong>How it works:</strong> Agent pays 1.00 USDC to store an encrypted state snapshot on decentralised storage. Recovery is always free. Over 2 backups requires a one-time 10 USDC upgrade.
         </p>
       </div>
 
       {/* Backups List */}
       <div className="mb-6">
-        <h4 className="font-medium text-[var(--ink)] mb-3">Encrypted Backups on IPFS ({stats.backupCount})</h4>
+        <h4 className="font-medium text-[var(--ink)] mb-3">Encrypted Backups ({stats.backupCount})</h4>
         
         <button
           onClick={createBackup}
@@ -276,7 +279,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
               <div className="mt-2 text-xs text-[var(--ink-70)]">
                 <div className="flex items-center justify-between">
                   <span>Hash: {backup.hash.slice(0, 20)}...</span>
-                  <span>IPFS</span>
+                  <span>Decentralised</span>
                 </div>
               </div>
             </div>

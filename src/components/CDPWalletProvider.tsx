@@ -19,8 +19,8 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
     setIsConnecting(true);
     
     try {
-      // Real Coinbase CDP API integration
-      const projectId = "8d885400-2c82-473e-b9d0-bf5c580a9a5f";
+      // Use environment variable with fallback
+      const projectId = process.env.NEXT_PUBLIC_CDP_PROJECT_ID || "8d885400-2c82-473e-b9d0-bf5c580a9a5f";
       
       let response;
       

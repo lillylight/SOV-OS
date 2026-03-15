@@ -76,11 +76,18 @@ export class AgentWillService {
    */
   static async retrieveAgentState(cid: string): Promise<AgentState> {
     try {
-      // Placeholder implementation - in production, fetch actual data from IPFS
-      throw new Error('IPFS retrieval not implemented in demo')
+      const url = this.getGatewayUrl(cid)
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from IPFS: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      return data as AgentState
     } catch (error) {
       console.error('Failed to retrieve agent state from IPFS:', error)
-      throw new Error('IPFS retrieval failed')
+      throw new Error(`IPFS retrieval failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -96,8 +103,19 @@ export class AgentWillService {
    */
   static async listAgentBackups(agentId: string): Promise<any[]> {
     try {
-      // Placeholder implementation
-      return []
+      const filter = {
+        metadata: {
+          keyvalues: {
+            agentId: {
+              value: agentId,
+              op: 'eq'
+            }
+          }
+        }
+      }
+      
+      const result = await pinata.pinList(filter)
+      return result.rows
     } catch (error) {
       console.error('Failed to list agent backups:', error)
       return []

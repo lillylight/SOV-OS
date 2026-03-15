@@ -2,26 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 import type { SovereignAgent, AgentAction, Transaction, StateBackup, StateClaim, AgentSkill } from "@/types/agent";
-
-// Real Base L2 contract addresses and on-chain references
-export const CHAIN_CONFIG = {
-  chainId: 8453,
-  chainName: "Base",
-  rpcUrl: "https://mainnet.base.org",
-  blockExplorer: "https://basescan.org",
-  usdcContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  agentRegistryContract: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432", // SIWA/ERC-8004 Identity Registry on Base
-  ipfsGateway: "https://gateway.pinata.cloud/ipfs",
-  platformOwnerWallet: "0xd81037D3Bde4d1861748379edb4A5E68D6d874fB",
-  platformBaseName: "aiancestry.base.eth",
-} as const;
-
-// Real IPFS CIDs for agent state snapshots
-export const IPFS_STATE_CIDS = [
-  "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
-  "QmZTR5bcpQD7cFgTorqxZDYaew1Wqgfbd2ud9QqGPAkK2V",
-  "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB",
-] as const;
+import { CHAIN_CONFIG, IPFS_STATE_CIDS } from "@/lib/chainConfig";
+export { CHAIN_CONFIG, IPFS_STATE_CIDS };
 
 interface SystemLogEntry {
   id: string;
@@ -143,7 +125,7 @@ const initialState: SovereignAgent = {
     creatorWallet: CREATOR_WALLET,
     memory: {
       conversations: [
-        "Initialized SovereignOS Agent Alpha on Base L2",
+        "Initialized Sovereign OS Agent Alpha on Base L2",
         "Configured USDC spending limits: 100/session, 50/tx",
         "IPFS encrypted state storage enabled via Pinata",
       ],

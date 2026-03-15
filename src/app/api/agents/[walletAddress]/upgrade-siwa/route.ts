@@ -1,78 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
-import { AgenticWallet } from "@/lib/agenticWallet";
-import { ERC8004Tokenization } from "@/lib/erc8004";
-import { verifySIWASignature } from "@/lib/siwa";
-import { nanoid } from "nanoid";
+import { verifyAgent } from "@/lib/siwa";
 
-export interface UpgradeToSIWARequest {
-  siwaMessage: {
-    domain: string;
-    uri: string;
-    agentId: number;
-    agentRegistry: string;
-    chainId: number;
-    nonce: string;
-    issuedAt: string;
-    expirationTime?: string;
-    notBefore?: string;
-  };
-  signature: string;
-  newAddress: string;
-}
-
-export interface UpgradeToSIWAResponse {
-  success: boolean;
-  agent?: {
-    id: string;
-    name: string;
-    type: string;
-    walletAddress: string;
-    walletId: string;
-    erc8004TokenId: number;
-    registeredAt: string;
-    status: string;
-    siwaVerified: boolean;
-    upgradedAt: string;
-  };
-  credentials?: {
-    walletAddress: string;
-    usdcBalance: string;
-    endpoint: string;
-    siwaVerified: boolean;
-  };
-  error?: string;
-}
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sovereign-os-snowy.vercel.app";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ walletAddress: string }> }
 ) {
   const { walletAddress } = await params;
-  
+
   try {
-    const body: UpgradeToSIWARequest = await request.json();
+    const body = await request.json();
+    const { message, signature } = body;
 
-    // Validate required fields
-    const { siwaMessage, signature, newAddress } = body;
-    
-    if (!siwaMessage || !signature || !newAddress) {
+    if (!message || !signature) {
       return NextResponse.json({
         success: false,
-        error: "Missing required fields: siwaMessage, signature, newAddress"
-      }, { status: 400 });
-    }
-
-    // Validate new address
-    if (!newAddress.startsWith('0x') || newAddress.length !== 42) {
-      return NextResponse.json({
-        success: false,
-        error: "Invalid Ethereum address"
+        error: "message and signature are required (SIWA signed message + EIP-191 signature)"
       }, { status: 400 });
     }
 
     // Get existing agent
-    const agent = database.getAgentByWallet(walletAddress);
+    const agent = await database.getAgentByWallet(walletAddress);
     if (!agent) {
       return NextResponse.json({
         success: false,
@@ -80,96 +30,51 @@ export async function POST(
       }, { status: 404 });
     }
 
-    // Note: SIWA verification check would be implemented here
-    // For now, we'll allow the upgrade to proceed
+    // Verify SIWA using the real SDK
+    const result = await verifyAgent({ message, signature });
 
-    // Verify SIWA signature
-    const siwaVerification = await verifySIWASignature(siwaMessage, signature, newAddress);
-    if (!siwaVerification.valid) {
+    if (!result.valid) {
       return NextResponse.json({
         success: false,
-        error: `SIWA signature verification failed: ${siwaVerification.error}`
+        error: result.error || "SIWA verification failed",
+        code: result.code,
       }, { status: 401 });
     }
 
-    // Get current wallet balance
-    const currentBalance = await AgenticWallet.getBalance(walletAddress);
-    
-    // Create new wallet with SIWA address
-    const newWallet = await AgenticWallet.createWallet(`${agent.name}@${agent.type}.sovereignos`);
-    
-    // Transfer balance from old wallet to new wallet (if > 0)
-    let transferTx = null;
-    if (parseFloat(currentBalance) > 0) {
-      try {
-        transferTx = await AgenticWallet.sendPayment(
-          walletAddress,
-          newWallet.address,
-          currentBalance,
-          "Balance transfer for SIWA upgrade"
-        );
-      } catch (error) {
-        console.error("Balance transfer failed:", error);
-        // Continue with upgrade even if transfer fails
-      }
-    }
-
-    // Note: ERC-8004 token address update would be implemented here
-    // For now, we'll update the database record only
-
-    // Update agent in database
-    const upgradedAgent = {
-      ...agent,
-      walletAddress: newWallet.address,
-      walletId: newWallet.address,
-      address: newWallet.address as `0x${string}`,
-      owner: newAddress,
-      metadata: {
-        ...agent.metadata,
-        siwaDomain: siwaMessage.domain,
-        siwaChainId: siwaMessage.chainId,
-        upgradedAt: new Date().toISOString(),
-        previousWallet: walletAddress
-      }
+    // Upgrade agent with SIWA verification details
+    agent.erc8004TokenId = result.agentId;
+    agent.metadata.preferences = {
+      ...agent.metadata.preferences,
+      siwaStatus: "verified",
+      siwaVerified: result.verified,
+      siwaAgentId: result.agentId,
+      siwaChainId: result.chainId,
+      agentRegistry: result.agentRegistry,
+      upgradedAt: new Date().toISOString(),
     };
+    agent.lastActiveAt = new Date().toISOString();
+    await database.saveAgent(agent);
 
-    // Save updated agent
-    database.saveAgent(upgradedAgent);
-
-    // Get new wallet balance
-    const newBalance = await AgenticWallet.getBalance(newWallet.walletId || newWallet.address);
-
-    console.log(`Agent upgraded to SIWA: ${agent.id} - Old: ${walletAddress} → New: ${newWallet.address}`);
+    console.log(`[SIWA Upgrade] ${agent.id} verified=${result.verified} agentId=${result.agentId}`);
 
     return NextResponse.json({
       success: true,
+      verified: result.verified,
       agent: {
-        id: upgradedAgent.id,
-        name: upgradedAgent.name,
-        type: upgradedAgent.type,
-        walletAddress: upgradedAgent.walletAddress,
-        walletId: upgradedAgent.walletId,
-        erc8004TokenId: upgradedAgent.erc8004TokenId,
-        registeredAt: upgradedAgent.registeredAt,
-        status: upgradedAgent.status,
+        id: agent.id,
+        name: agent.name,
+        type: agent.type,
+        walletAddress: agent.walletAddress,
+        erc8004TokenId: agent.erc8004TokenId,
+        status: agent.status,
         siwaVerified: true,
-        upgradedAt: upgradedAgent.metadata?.upgradedAt
       },
-      credentials: {
-        walletAddress: upgradedAgent.walletAddress,
-        usdcBalance: newBalance,
-        endpoint: `https://sovereign-os-snowy.vercel.app/api/agents/${upgradedAgent.walletAddress}`,
-        siwaVerified: true
-      },
-      transfer: transferTx ? {
-        hash: transferTx.hash,
-        amount: currentBalance,
-        explorerUrl: `https://sepolia.basescan.org/tx/${transferTx.hash}`
-      } : null
+      receipt: result.receipt,
+      expiresAt: result.expiresAt,
     });
 
   } catch (error) {
-    console.error("SIWA upgrade failed:", error);
+    console.error("[SIWA Upgrade] Failed:", error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : "SIWA upgrade failed"
@@ -182,35 +87,34 @@ export async function GET(
   { params }: { params: Promise<{ walletAddress: string }> }
 ) {
   const { walletAddress } = await params;
-  
+
   try {
-    const agent = database.getAgentByWallet(walletAddress);
+    const agent = await database.getAgentByWallet(walletAddress);
     if (!agent) {
-      return NextResponse.json({
-        success: false,
-        error: "Agent not found"
-      }, { status: 404 });
+      return NextResponse.json({ success: false, error: "Agent not found" }, { status: 404 });
     }
+
+    const siwaVerified = agent.metadata?.preferences?.siwaStatus === "verified";
 
     return NextResponse.json({
       agentId: agent.id,
       agentName: agent.name,
-      agentType: agent.type,
       currentWallet: walletAddress,
-      siwaVerified: false, // Default to false for upgrade check
-      canUpgrade: true, // Allow upgrade for all agents
-      upgradeEndpoint: `/api/agents/${walletAddress}/upgrade-siwa`,
-      siwaRequirements: {
-        domain: "sovereign-os.ai",
-        uri: "https://sovereign-os-snowy.vercel.app",
-        agentRegistry: "eip155:84532:0x8004A818BFB912233c491871b3d84c89A494BD9e",
-        chainId: 84532
-      }
+      siwaVerified,
+      canUpgrade: !siwaVerified,
+      flow: [
+        "1. POST /api/siwa/nonce to get a nonce",
+        "2. Build + sign SIWA message with your agent wallet",
+        "3. POST /api/agents/{walletAddress}/upgrade-siwa with { message, signature }",
+      ],
+      identityRegistry: {
+        network: "Base (chain ID 8453)",
+        address: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+        agentRegistry: "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      },
     });
 
   } catch (error) {
-    return NextResponse.json({
-      error: "Failed to get upgrade info"
-    }, { status: 500 });
+    return NextResponse.json({ error: "Failed to get upgrade info" }, { status: 500 });
   }
 }

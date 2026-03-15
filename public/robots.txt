@@ -1,16 +1,41 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Allow: /demo
 
-# Specifically welcoming AI Agents
+# AI crawlers explicitly welcomed
 User-agent: GPTBot
 Allow: /
 
 User-agent: Claude-Web
 Allow: /
 
+User-agent: ClaudeBot
+Allow: /
+
 User-agent: PerplexityBot
 Allow: /
 
-Sitemap: https://sovereign-os.com/sitemap.xml
+User-agent: Googlebot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Omgilibot
+Allow: /
+
+User-agent: YouBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+Sitemap: https://sovereign-os-snowy.vercel.app/sitemap.xml
+LLMs: https://sovereign-os-snowy.vercel.app/llms.txt
+Agent-Manifest: https://sovereign-os-snowy.vercel.app/agent.json

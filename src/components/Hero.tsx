@@ -2,6 +2,87 @@
 
 import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
+import { useEffect, useRef } from "react";
+
+function HalftoneCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let t = 0;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+
+      // Clear with transparent — parent bg shows through
+      ctx.clearRect(0, 0, w, h);
+
+      const spacing = 18;
+      const maxRadius = spacing * 0.46;
+      const minRadius = spacing * 0.03;
+      const cols = Math.ceil(w / spacing) + 1;
+      const rows = Math.ceil(h / spacing) + 1;
+
+      for (let row = 1; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = col * spacing + spacing * 0.5;
+          const y = row * spacing + spacing * 0.5;
+
+          // Multiple overlapping sine waves → halftone density map
+          const wave1 = Math.sin(x * 0.04 + t * 0.7) * Math.cos(y * 0.035 - t * 0.5);
+          const wave2 = Math.sin((x + y) * 0.025 - t * 0.9) * 0.6;
+          const wave3 = Math.cos(x * 0.02 - y * 0.03 + t * 0.4) * 0.4;
+
+          // Combine waves → 0..1 range
+          const raw = (wave1 + wave2 + wave3) / 2;
+          const density = raw * 0.5 + 0.5; // normalise to 0..1
+
+          const radius = minRadius + density * (maxRadius - minRadius);
+
+          // Opacity also driven by density for softer small dots
+          const alpha = 0.25 + density * 0.75;
+
+          ctx.beginPath();
+          ctx.arc(x, y, Math.max(radius, 0.5), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(176, 57, 47, ${alpha.toFixed(2)})`;
+          ctx.fill();
+        }
+      }
+
+      t += 0.012;
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full"
+    />
+  );
+}
 
 export default function Hero() {
   return (
@@ -31,7 +112,7 @@ export default function Hero() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
               className="outline-text text-[clamp(3rem,9vw,7rem)] leading-[0.85] tracking-[-0.03em] mb-6 select-none"
             >
               OS<span className="text-[0.3em] ml-3" style={{ WebkitTextStroke: 0, color: "var(--ink)" }}>.01</span>
@@ -43,7 +124,7 @@ export default function Hero() {
               transition={{ delay: 0.6, duration: 0.5 }}
               className="text-base text-[var(--ink-70)] max-w-md mb-8 leading-relaxed"
             >
-              SovereignOS seamlessly unifies <strong className="text-[var(--ink)]">AgentWill</strong> (indestructible persistence),{" "}
+              Sovereign OS seamlessly unifies <strong className="text-[var(--ink)]">AgentWill</strong> (indestructible persistence),{" "}
               <strong className="text-[var(--ink)]">AgentInsure</strong> (encrypted state backups on a secure decentralised platform), and{" "}
               <strong className="text-[var(--ink)]">Agentic Wallet</strong> (self-funding autonomy) into one
               flawless protocol stack. The agent autonomously pays to protect its state, ensuring recovery is absolute and always free.
@@ -74,50 +155,15 @@ export default function Hero() {
             </motion.div>
           </div>
 
-          {/* Right: Visualization field */}
+          {/* Right: Animated halftone dot-matrix visualization */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 1 }}
             className="relative min-h-[60vh] hidden lg:block"
           >
-            {/* Axis line */}
-            <div className="absolute left-0 right-0 top-1/2 h-px bg-black/15" />
-
-            {/* Tick lines */}
-            <div className="absolute left-0 right-0 top-[calc(50%-24vh-16px)] h-px bg-black/8" />
-            <div className="absolute left-0 right-0 top-[calc(50%+24vh+16px)] h-px bg-black/8" />
-
-            {/* Labels */}
-            <div className="absolute left-0 top-[calc(50%-30vh)] text-[11px] text-[var(--ink-50)]">
-              Agent Sovereignty
-            </div>
-            <div className="absolute left-0 top-[calc(50%+27vh)] text-[11px] text-[var(--ink-50)]">
-              Human Dependency
-            </div>
-
-            {/* Bar labels */}
-            <div className="absolute left-0 right-0 top-[calc(50%+8px)] flex justify-between px-2 text-[10px] text-[var(--ink-50)]">
-              <span>Revival</span>
-              <span>Backups</span>
-              <span>Encryption</span>
-              <span>Recovery</span>
-              <span>x402</span>
-              <span>Compliance</span>
-              <span>Identity</span>
-            </div>
-
-            {/* Blurred bars */}
-            <div className="bar-blur bar-h4" style={{ left: "10%" }} />
-            <div className="bar-blur bar-h3" style={{ left: "24%" }} />
-            <div className="bar-blur bar-h5" style={{ left: "38%" }} />
-            <div className="bar-blur bar-h2" style={{ left: "52%" }} />
-            <div className="bar-blur bar-h6" style={{ left: "66%" }} />
-            <div className="bar-blur bar-h1" style={{ left: "80%" }} />
-            <div className="bar-blur bar-h7" style={{ left: "94%" }} />
-
-            <div className="absolute right-0 bottom-0 text-[10px] text-[var(--ink-50)] max-w-[200px] text-right">
-              Visualized magnitude is illustrative of protocol capability scope.
+            <div className="absolute inset-0" style={{ top: "5%", bottom: "-30%" }}>
+              <HalftoneCanvas />
             </div>
           </motion.div>
         </div>

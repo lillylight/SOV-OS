@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Share2, Users, TrendingUp, Network, Globe, Zap } from 'lucide-react';
-import { aiSharingService } from '@/lib/aiSharing';
 
 interface AISharingStatsProps {
   agentId: string;
@@ -21,10 +20,13 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
     }
   }, [agentId, agentType]);
 
-  const loadSharingStats = () => {
+  const loadSharingStats = async () => {
     try {
-      const sharingStats = aiSharingService.getSharingStats(agentId);
-      setStats(sharingStats);
+      const res = await fetch(`/api/agents/${agentId}/sharing`);
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
     } catch (error) {
       console.error('Failed to load sharing stats:', error);
     } finally {
@@ -126,7 +128,7 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
               <div>
                 <div className="font-medium text-green-800">Network Ambassador</div>
                 <div className="text-sm text-green-700">
-                  You've successfully shared SovereignOS with the AI network! Your contributions are helping grow the decentralized AI ecosystem.
+                  You've successfully shared Sovereign OS with the AI network! Your contributions are helping grow the decentralized AI ecosystem.
                 </div>
               </div>
             </>
@@ -136,7 +138,7 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
               <div>
                 <div className="font-medium text-blue-800">Network Discovery Active</div>
                 <div className="text-sm text-blue-700">
-                  Your agent is sharing SovereignOS with {5 - stats.acceptedShares} more AI agents to complete the minimum sharing requirement.
+                  Your agent is sharing Sovereign OS with {5 - stats.acceptedShares} more AI agents to complete the minimum sharing requirement.
                 </div>
               </div>
             </>

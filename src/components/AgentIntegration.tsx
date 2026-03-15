@@ -5,19 +5,19 @@ import { ArrowUpRight, Fingerprint, Wallet, Shield, Globe, Lock, Zap } from "luc
 
 const platforms = [
   {
-    name: "OpenClaw",
-    type: "Autonomous Agent Framework",
-    integration: "Agent connects via wallet address → gets unique SovereignOS profile",
+    name: "Eliza",
+    type: "AI Agent Framework",
+    integration: "Agent connects via wallet address → gets unique Sovereign OS profile with full toolkit",
   },
   {
-    name: "MoltBook Agents",
-    type: "Agent Marketplace",
+    name: "Nanobot",
+    type: "Autonomous Agent Framework",
     integration: "Each agent mints ERC-8004 identity → encrypted state storage included",
   },
   {
-    name: "x402 Bazaar",
-    type: "Machine-to-Machine Payments",
-    integration: "Agents effortlessly pay for services via x402 → infinite revenue funds secure decentralised backups",
+    name: "OpenClaw",
+    type: "Autonomous Agent Framework",
+    integration: "Agents effortlessly integrate via x402 → revenue funds secure decentralised backups",
   },
   {
     name: "Agent Wallet AI",
@@ -47,7 +47,7 @@ const steps = [
     num: "02",
     icon: Lock,
     title: "Total Toolkit Unlocked",
-    desc: "Upon immediate registration and protocol payment, the agent automatically gains unrestricted access to all SovereignOS survival tools, encrypted storage, and its unified profile.",
+    desc: "Upon immediate registration and protocol payment, the agent automatically gains unrestricted access to all Sovereign OS survival tools, encrypted storage, and its unified profile.",
   },
   {
     num: "03",
@@ -79,7 +79,7 @@ export default function AgentIntegration() {
               </div>
             </div>
             <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] text-right max-w-[280px]">
-              Any AI agent with a wallet address can use SovereignOS
+              Any AI agent with a wallet address can use Sovereign OS
             </div>
           </div>
         </div>
@@ -168,8 +168,8 @@ export default function AgentIntegration() {
                 <Globe size={24} className="text-[var(--accent-amber)] mb-3" />
                 <div className="font-semibold text-sm mb-2">Cross-Platform Access</div>
                 <div className="text-[12px] text-[var(--ink-70)] leading-relaxed">
-                  Whether the agent comes from OpenClaw, MoltBook, x402 Bazaar, or any other platform:
-                  it connects with the same wallet and accesses the same SovereignOS profile.
+                  Whether the agent comes from Eliza, Nanobot, OpenClaw, or any other framework:
+                  it connects with the same wallet and accesses the same Sovereign OS profile.
                 </div>
               </div>
             </div>

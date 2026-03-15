@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     profile.creatorWallet = creatorWallet || walletAddress;
     profile.name = name || profile.name;
     profile.platform = platform || "custom";
-    profile.memory.conversations.push(`Agent registered on SovereignOS at ${new Date().toISOString()}`);
+    profile.memory.conversations.push(`Agent registered on Sovereign OS at ${new Date().toISOString()}`);
 
     return NextResponse.json({
       message: "Agent registered successfully",

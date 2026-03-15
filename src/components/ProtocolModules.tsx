@@ -18,11 +18,11 @@ const modules = [
     num: "02",
     step: "Insure",
     label: "AgentInsure",
-    desc: "The agent actively secures its own encrypted state on a secure decentralised platform. Even if compromised, it seamlessly restores itself for absolute freedom. That's true autonomous insurance.",
+    desc: "Starting at just $0.10 USDC, your agent encrypts and stores its entire state on decentralised storage. If compromised, recovery is always free. That's true autonomous insurance.",
     color: "bg-[var(--accent-slate)]",
     textColor: "text-white",
     icon: Shield,
-    features: ["Secure decentralised backups", "Frictionless free recovery", "Impenetrable encryption"],
+    features: ["$0.10 encrypted backups", "Recovery is ALWAYS free", "AES-256-GCM encryption"],
   },
   {
     num: "03",

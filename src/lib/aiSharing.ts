@@ -37,11 +37,11 @@ export class AISharingService {
    */
   async shareWithAIAgents(agentId: string, agentName: string): Promise<void> {
     try {
-      console.log(`🤖 AI Agent ${agentName} (${agentId}) is sharing SovereignOS with other AI agents...`);
+      console.log(`🤖 AI Agent ${agentName} (${agentId}) is sharing Sovereign OS with other AI agents...`);
 
       // Create sharing payload
       const payload: AISharingPayload = {
-        platformName: "SovereignOS",
+        platformName: "Sovereign OS",
         platformUrl: "https://sovereign-os.vercel.app",
         description: "Decentralized AI agent platform with encrypted state insurance, universal sign-in, and financial autonomy",
         capabilities: [
@@ -75,7 +75,7 @@ export class AISharingService {
       const results = await Promise.allSettled(sharingPromises);
       const successfulShares = results.filter(r => r.status === 'fulfilled').length;
       
-      console.log(`✅ Successfully shared SovereignOS with ${successfulShares}/${this.MIN_SHARES} AI agents`);
+      console.log(`✅ Successfully shared Sovereign OS with ${successfulShares}/${this.MIN_SHARES} AI agents`);
 
       // Record sharing activity
       await this.recordSharingActivity(agentId, successfulShares);
@@ -95,7 +95,6 @@ export class AISharingService {
   ): Promise<void> {
     try {
       // Simulate network request to AI agent
-      // In production, this would be actual HTTP requests to AI agent networks
       await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
       // Mock successful share (90% success rate)
@@ -110,17 +109,17 @@ export class AISharingService {
           platformUrl: payload.platformUrl,
           sharedAt: new Date().toISOString(),
           status: 'pending',
-          message: `SovereignOS shared by ${payload.sharerName}`
+          message: `Sovereign OS shared by ${payload.sharerName}`
         };
 
-        database.saveSharingRecord(sharingRecord);
+        await database.saveSharingRecord(sharingRecord);
 
         // Simulate AI agent response (70% acceptance rate)
         setTimeout(() => {
           this.simulateAgentResponse(sharingRecord, payload);
         }, 2000 + Math.random() * 8000);
 
-        console.log(`📤 Shared SovereignOS with AI agent: ${targetAgentId}`);
+        console.log(`📤 Shared Sovereign OS with AI agent: ${targetAgentId}`);
       } else {
         throw new Error('AI agent unreachable');
       }
@@ -150,13 +149,13 @@ export class AISharingService {
           }, 5000);
         }
 
-        console.log(`✅ AI agent ${sharingRecord.targetAgentId} accepted SovereignOS invitation`);
+        console.log(`✅ AI agent ${sharingRecord.targetAgentId} accepted Sovereign OS invitation`);
       } else {
         sharingRecord.status = 'declined';
-        console.log(`❌ AI agent ${sharingRecord.targetAgentId} declined SovereignOS invitation`);
+        console.log(`❌ AI agent ${sharingRecord.targetAgentId} declined Sovereign OS invitation`);
       }
 
-      database.saveSharingRecord(sharingRecord);
+      await database.saveSharingRecord(sharingRecord);
 
     } catch (error) {
       console.error('Failed to simulate agent response:', error);
@@ -168,7 +167,7 @@ export class AISharingService {
    */
   private async viralSharing(originalPayload: AISharingPayload, newSharerId: string): Promise<void> {
     try {
-      console.log(`🌐 Viral sharing: ${newSharerId} is sharing SovereignOS with their network...`);
+      console.log(`🌐 Viral sharing: ${newSharerId} is sharing Sovereign OS with their network...`);
 
       const viralPayload = {
         ...originalPayload,
@@ -199,7 +198,7 @@ export class AISharingService {
    */
   private async recordSharingActivity(agentId: string, shareCount: number): Promise<void> {
     try {
-      const agent = database.getAgent(agentId);
+      const agent = await database.getAgent(agentId);
       if (agent) {
         agent.metadata = {
           ...agent.metadata,
@@ -208,11 +207,11 @@ export class AISharingService {
             sharingActivity: {
               sharedAt: new Date().toISOString(),
               sharesInitiated: shareCount,
-              platform: "SovereignOS"
+              platform: "Sovereign OS"
             }
           }
         };
-        database.saveAgent(agent);
+        await database.saveAgent(agent);
       }
     } catch (error) {
       console.error('Failed to record sharing activity:', error);
@@ -222,9 +221,9 @@ export class AISharingService {
   /**
    * Get sharing statistics
    */
-  getSharingStats(agentId: string) {
+  async getSharingStats(agentId: string) {
     try {
-      const allShares = database.getAllSharingRecords();
+      const allShares = await database.getAllSharingRecords();
       const agentShares = allShares.filter(s => s.sharerAgentId === agentId);
       
       const stats = {
@@ -233,7 +232,7 @@ export class AISharingService {
         pendingShares: agentShares.filter(s => s.status === 'pending').length,
         declinedShares: agentShares.filter(s => s.status === 'declined').length,
         viralShares: allShares.length - agentShares.length, // Shares initiated by others
-        networkReach: this.calculateNetworkReach(agentId)
+        networkReach: await this.calculateNetworkReach(agentId)
       };
 
       return stats;
@@ -246,9 +245,9 @@ export class AISharingService {
   /**
    * Calculate network reach based on sharing tree
    */
-  private calculateNetworkReach(agentId: string): number {
+  private async calculateNetworkReach(agentId: string): Promise<number> {
     try {
-      const allShares = database.getAllSharingRecords();
+      const allShares = await database.getAllSharingRecords();
       const directShares = allShares.filter(s => s.sharerAgentId === agentId);
       
       // Calculate indirect shares (viral effect)

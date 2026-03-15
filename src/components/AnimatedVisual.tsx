@@ -2,14 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 
-export default function AnimatedVisual() {
+interface AnimatedVisualProps {
+  minimal?: boolean;
+}
+
+export default function AnimatedVisual({ minimal = false }: AnimatedVisualProps) {
   const dataBlockRef = useRef<HTMLPreElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     // Animated Data Block
     const dataBlock = dataBlockRef.current;
-    if (dataBlock) {
+    if (dataBlock && !minimal) {
       const chars = '0123456789ABCDEF<>+=-_';
       let txt = '';
       for (let i = 0; i < 650; i++) {
@@ -33,7 +37,7 @@ export default function AnimatedVisual() {
 
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [minimal]);
 
   useEffect(() => {
     // WebGL Canvas Animation
@@ -192,20 +196,26 @@ export default function AnimatedVisual() {
   }, []);
 
   return (
-    <div className="relative w-full h-96 bg-[#c8c4bc] border border-[#8b3a2a] rounded-lg overflow-hidden">
-      <div className="absolute top-2 left-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-r-0 border-b-0"></div>
-      <div className="absolute top-2 right-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-l-0 border-b-0"></div>
-      <div className="absolute bottom-2 left-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-r-0 border-t-0"></div>
-      <div className="absolute bottom-2 right-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-l-0 border-t-0"></div>
+    <div className={`relative w-full h-96 bg-[#c8c4bc] ${!minimal ? 'border border-[#8b3a2a] rounded-lg shadow-inner' : 'opacity-40'} overflow-hidden`}>
+      {!minimal && (
+        <>
+          <div className="absolute top-2 left-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-r-0 border-b-0"></div>
+          <div className="absolute top-2 right-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-l-0 border-b-0"></div>
+          <div className="absolute bottom-2 left-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-r-0 border-t-0"></div>
+          <div className="absolute bottom-2 right-2 w-3 h-3 border border-[#8b3a2a] opacity-50 border-l-0 border-t-0"></div>
+        </>
+      )}
       
       <div className="flex h-full">
-        <div className="w-1/4 p-2 border-r border-[#8b3a2a]">
-          <pre 
-            ref={dataBlockRef}
-            className="text-xs font-mono text-[#8b3a2a] opacity-70 leading-tight text-justify select-none"
-            style={{ fontSize: '0.7rem', lineHeight: '0.9' }}
-          ></pre>
-        </div>
+        {!minimal && (
+          <div className="w-1/4 p-2 border-r border-[#8b3a2a]">
+            <pre 
+              ref={dataBlockRef}
+              className="text-xs font-mono text-[#8b3a2a] opacity-70 leading-tight text-justify select-none"
+              style={{ fontSize: '0.7rem', lineHeight: '0.9' }}
+            ></pre>
+          </div>
+        )}
         
         <div className="flex-1 relative">
           <canvas 
@@ -215,11 +225,13 @@ export default function AnimatedVisual() {
         </div>
       </div>
       
-      <div className="absolute bottom-2 left-0 right-0 flex justify-between items-center px-4 text-xs font-mono text-[#8b3a2a] opacity-80 border-t border-[#8b3a2a] pt-1">
-        <span>SOVEREIGN.OS</span>
-        <span>[GENERATIVE VISUAL SYSTEM]</span>
-        <span>RENDER: 5.7ms</span>
-      </div>
+      {!minimal && (
+        <div className="absolute bottom-2 left-0 right-0 flex justify-between items-center px-4 text-xs font-mono text-[#8b3a2a] opacity-80 border-t border-[#8b3a2a] pt-1">
+          <span>SOVEREIGN.OS</span>
+          <span>[GENERATIVE VISUAL SYSTEM]</span>
+          <span>RENDER: 5.7ms</span>
+        </div>
+      )}
     </div>
   );
 }

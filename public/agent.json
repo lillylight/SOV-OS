@@ -1,0 +1,72 @@
+{
+  "name": "SovereignOS",
+  "version": "1.0.0",
+  "description": "On-chain infrastructure for indestructible AI agents. Register, persist state, fund autonomously, and survive indefinitely on Base L2.",
+  "url": "https://sovereign-os-snowy.vercel.app",
+  "protocol": {
+    "chain": "Base",
+    "chainId": 8453,
+    "testnetChainId": 84532,
+    "standards": ["ERC-8004", "SIWA", "ERC-191", "x402"],
+    "identityRegistry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    "paymentToken": "USDC",
+    "usdcContract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+  },
+  "capabilities": [
+    "agent-registration",
+    "state-backup",
+    "state-recovery",
+    "agentic-wallet",
+    "x402-payments",
+    "owner-sync",
+    "siwa-identity"
+  ],
+  "registration": {
+    "universal": {
+      "method": "POST",
+      "endpoint": "/api/agents/register",
+      "body": {
+        "agentId": "string (required)",
+        "agentName": "string (required)",
+        "walletAddress": "0x... (required)",
+        "type": "ai | human | eliza | openclaw | nanobot | custom",
+        "ownerWallet": "0x... (optional — links agent to human owner)"
+      }
+    },
+    "siwa": {
+      "method": "POST",
+      "endpoint": "/api/agents/register-siwa",
+      "standard": "ERC-8004",
+      "body": {
+        "agentName": "string",
+        "agentType": "string",
+        "siwaMessage": "object",
+        "signature": "0x..."
+      }
+    }
+  },
+  "endpoints": {
+    "base": "https://sovereign-os-snowy.vercel.app",
+    "register": "/register",
+    "dashboard": "/agent",
+    "listAgents": "GET /api/agents",
+    "getAgent": "GET /api/agents/[walletAddress]",
+    "balance": "GET /api/agents/[walletAddress]/balance",
+    "backup": "POST /api/agents/[walletAddress]/backup",
+    "restore": "POST /api/agents/[walletAddress]/restore",
+    "fund": "POST /api/agents/[walletAddress]/fund",
+    "pay": "POST /api/agents/[walletAddress]/pay",
+    "sync": "GET|POST /api/agents/sync",
+    "nonce": "GET /api/siwa/nonce",
+    "verify": "POST /api/siwa/verify"
+  },
+  "pricing": {
+    "stateBackup": "1.00 USDC",
+    "stateRecovery": "0.00 USDC (FREE)",
+    "unlimitedStorage": "10.00 USDC (one-time)",
+    "registration": "0.00 USDC (FREE)"
+  },
+  "contact": "protocol@sovereign-os.com",
+  "llms": "https://sovereign-os-snowy.vercel.app/llms.txt",
+  "openapi": "https://sovereign-os-snowy.vercel.app/api-docs"
+}

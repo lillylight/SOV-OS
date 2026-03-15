@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AgenticWallet } from "@/lib/agenticWallet";
 import { database } from "@/lib/database";
 import { Transaction } from "@/lib/database";
+import { AgenticWallet } from "@/lib/agenticWallet";
 
 export async function POST(
   request: NextRequest,
@@ -35,7 +35,7 @@ export async function POST(
     }
 
     // Get agent info
-    const agent = database.getAgentByWallet(walletAddress);
+    const agent = await database.getAgentByWallet(walletAddress);
     if (!agent) {
       return NextResponse.json({
         success: false,
@@ -43,8 +43,19 @@ export async function POST(
       }, { status: 404 });
     }
 
+    // CDP wallet required for real on-chain payments
+    if (!AgenticWallet.isConfigured()) {
+      return NextResponse.json({
+        success: false,
+        error: "CDP wallet not configured. Add CDP_API_KEY_ID and CDP_API_KEY_SECRET to enable on-chain payments.",
+        fundUrl: `https://sovereign-os-snowy.vercel.app/api/agents/${walletAddress}/fund`
+      }, { status: 503 });
+    }
+
+    const walletId = (agent.walletId || agent.walletAddress || walletAddress) as string;
+
     // Check if agent has sufficient balance
-    const canPay = await AgenticWallet.canMakePayment((agent.walletId || agent.walletAddress || walletAddress) as string, amount);
+    const canPay = await AgenticWallet.canMakePayment(walletId, amount);
     if (!canPay) {
       return NextResponse.json({
         success: false,
@@ -54,16 +65,11 @@ export async function POST(
     }
 
     // Send payment
-    const transaction = await AgenticWallet.sendPayment(
-      (agent.walletId || agent.walletAddress || walletAddress) as string,
-      to,
-      amount,
-      description
-    );
+    const txResult = await AgenticWallet.sendPayment(walletId, to, amount, description);
 
     // Update agent last active
     agent.lastActiveAt = new Date().toISOString();
-    database.saveAgent(agent);
+    await database.saveAgent(agent);
 
     // Store transaction in database
     const newTransaction: Omit<Transaction, 'id'> = {
@@ -72,26 +78,26 @@ export async function POST(
       to,
       amount,
       description,
-      txHash: transaction.hash,
-      timestamp: transaction.timestamp,
-      status: transaction.status
+      txHash: txResult.hash,
+      timestamp: txResult.timestamp,
+      status: txResult.status
     };
     
-    database.createTransaction(newTransaction);
+    await database.createTransaction(newTransaction);
 
     console.log(`Payment sent: ${amount} USDC from ${agent.name} to ${to}`);
 
     return NextResponse.json({
       success: true,
       transaction: {
-        hash: transaction.hash,
+        hash: txResult.hash,
         from: walletAddress,
         to,
         amount,
         description,
-        timestamp: transaction.timestamp,
-        status: transaction.status,
-        explorerUrl: `https://sepolia.basescan.org/tx/${transaction.hash}`
+        timestamp: txResult.timestamp,
+        status: txResult.status,
+        explorerUrl: `https://basescan.org/tx/${txResult.hash}`
       },
       message: "Payment sent successfully"
     });
