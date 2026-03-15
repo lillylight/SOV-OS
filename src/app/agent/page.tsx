@@ -351,7 +351,7 @@ export default function AgentDashboard() {
         {activeTab === "identity" && <AgentIdentityCard agent={agent as any} />}
         {activeTab === "wallet" && <WalletTab agent={agent} />}
         {activeTab === "transactions" && <TransactionHistory agent={agent as any} />}
-        {activeTab === "insurance" && <InsuranceTab agent={agent} />}
+        {activeTab === "insurance" && <InsuranceTab agent={agent} isHuman={isHuman} verifiedAgents={verifiedAgents} onViewAgent={(id: string) => { setActiveTab("agents"); handleViewAgent(id); }} />}
         {activeTab === "protocols" && <ProtocolWizard agent={agent as any} />}
         {activeTab === "memory" && <MemoryExplorer agent={agent as any} />}
         {activeTab === "sharing" && <SharingTab agent={agent} />}
@@ -659,12 +659,12 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
-        <button onClick={() => { onBack(); setAgentSubTab("overview"); }} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mb-2">
+        <button onClick={() => { onBack(); setAgentSubTab("overview"); }} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mt-2 mb-4">
           <ArrowLeft size={16} /> Back to My AI Agents
         </button>
 
         {/* Sub-tabs */}
-        <div className="flex gap-1 border-b border-[var(--line)]">
+        <div className="flex gap-1 border-b border-[var(--line)] mb-2">
           {subTabs.map((tab) => (
             <button key={tab} onClick={() => setAgentSubTab(tab)}
               className={`px-5 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors border-b-2 whitespace-nowrap ${agentSubTab === tab ? "border-[var(--accent-red)] text-[var(--ink)]" : "border-transparent text-[var(--ink-50)] hover:text-[var(--ink)]"}`}
@@ -1338,13 +1338,201 @@ function WalletTab({ agent }: { agent: AgentData }) {
   );
 }
 
-function InsuranceTab({ agent }: { agent: AgentData }) {
+function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: AgentData; isHuman?: boolean; verifiedAgents?: LinkedAgent[]; onViewAgent?: (id: string) => void }) {
+  const [agentInsuranceData, setAgentInsuranceData] = useState<Record<string, any>>({});
+  const [loadingAgents, setLoadingAgents] = useState<Set<string>>(new Set());
+  const [paymentModal, setPaymentModal] = useState<{ open: boolean; amount: number; description: string; action: 'backup' | 'upgrade'; agentWallet: string; agentId: string } | null>(null);
+
+  // Fetch insurance data for each synced agent
+  useEffect(() => {
+    if (!isHuman || !verifiedAgents?.length) return;
+    verifiedAgents.forEach(async (a) => {
+      if (!a.walletAddress) return;
+      try {
+        const res = await fetch(`/api/agents/${a.walletAddress}/backup`);
+        const data = await res.json();
+        if (data.success) {
+          setAgentInsuranceData(prev => ({ ...prev, [a.id]: data }));
+        }
+      } catch (e) {
+        console.error(`Failed to fetch insurance for ${a.id}:`, e);
+      }
+    });
+  }, [isHuman, verifiedAgents]);
+
+  const handleBackup = async (agentWallet: string) => {
+    const data = agentInsuranceData[Object.keys(agentInsuranceData).find(k => {
+      const ag = verifiedAgents?.find(a => a.id === k);
+      return ag?.walletAddress === agentWallet;
+    }) || ''];
+    const cost = data?.nextCost ?? 0.10;
+    setPaymentModal({
+      open: true,
+      amount: cost,
+      description: 'Agent State Backup',
+      action: 'backup',
+      agentWallet,
+      agentId: Object.keys(agentInsuranceData).find(k => verifiedAgents?.find(a => a.id === k)?.walletAddress === agentWallet) || '',
+    });
+  };
+
+  const handleUpgrade = async (agentWallet: string) => {
+    setPaymentModal({
+      open: true,
+      amount: 5,
+      description: 'Unlock Unlimited Backups',
+      action: 'upgrade',
+      agentWallet,
+      agentId: Object.keys(agentInsuranceData).find(k => verifiedAgents?.find(a => a.id === k)?.walletAddress === agentWallet) || '',
+    });
+  };
+
+  const handlePaymentComplete = async () => {
+    if (!paymentModal) return;
+    const { action, agentWallet } = paymentModal;
+    setLoadingAgents(prev => new Set(prev).add(agentWallet));
+
+    try {
+      if (action === 'backup') {
+        await fetch(`/api/agents/${agentWallet}/backup`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      } else {
+        await fetch(`/api/agents/${agentWallet}/upgrade-plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: 'bypass' }),
+        });
+      }
+      // Refresh insurance data for this agent
+      const res = await fetch(`/api/agents/${agentWallet}/backup`);
+      const data = await res.json();
+      if (data.success) {
+        const agentId = verifiedAgents?.find(a => a.walletAddress === agentWallet)?.id;
+        if (agentId) {
+          setAgentInsuranceData(prev => ({ ...prev, [agentId]: data }));
+        }
+      }
+    } catch (e) {
+      console.error('Payment action failed:', e);
+    } finally {
+      setLoadingAgents(prev => { const n = new Set(prev); n.delete(agentWallet); return n; });
+      setPaymentModal(null);
+    }
+  };
+
+  // For AI agents — show their own insurance
+  if (!isHuman) {
+    return (
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+        <AgentInsurance walletAddress={agent.walletAddress || ''} />
+      </motion.div>
+    );
+  }
+
+  // For human users — show synced agents' insurance
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-    >
-      <AgentInsurance walletAddress={agent.walletAddress || ''} />
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+      {/* Header */}
+      <div className="glass-card p-6 border border-[var(--line)]">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2.5 bg-[var(--accent-amber)]/10 rounded-xl">
+            <Shield className="w-5 h-5 text-[var(--accent-amber)]" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-[var(--ink)]">Agent Insurance Manager</h2>
+            <p className="text-xs text-[var(--ink-50)]">Manage backups and insurance for all your synced AI agents</p>
+          </div>
+        </div>
+        <div className="mt-3 p-3 bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg text-sm text-[var(--ink-70)]">
+          <strong>How it works:</strong> First 2 backups cost $0.10 USDC each. From the 3rd backup onwards, each costs $0.30 USDC. To unlock unlimited backups, pay a one-time $5 USDC upgrade. Recovery is always free.
+        </div>
+      </div>
+
+      {/* Agent cards */}
+      {(!verifiedAgents || verifiedAgents.length === 0) ? (
+        <div className="glass-card p-10 border border-[var(--line)] text-center">
+          <Shield className="w-10 h-10 mx-auto mb-3 text-[var(--ink-50)]/30" />
+          <p className="text-sm font-medium text-[var(--ink-50)]">No synced agents yet</p>
+          <p className="text-xs text-[var(--ink-50)] mt-1">Go to the My AI Agents tab to sync your agents first</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {verifiedAgents.map((a) => {
+            const data = agentInsuranceData[a.id];
+            const isLoading = loadingAgents.has(a.walletAddress || '');
+            const backupCount = data?.stats?.backupCount ?? 0;
+            const planId = data?.stats?.plan?.id ?? 'starter';
+            const planName = data?.stats?.plan?.name ?? 'Pay-per-backup';
+            const totalCost = data?.stats?.totalCost ?? 0;
+            const isUpgraded = planId === 'bypass' || planId === 'infinite';
+            const nextCost = data?.nextCost ?? 0.10;
+
+            return (
+              <div key={a.id} className="glass-card border border-[var(--line)] overflow-hidden">
+                {/* Agent header — clickable */}
+                <div
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-[var(--ink-10)]/50 transition-colors"
+                  onClick={() => onViewAgent?.(a.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center text-lg">
+                      🤖
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[var(--ink)]">{a.name}</h3>
+                      <p className="text-xs text-[var(--ink-50)] font-mono">{a.walletAddress?.slice(0, 10)}...{a.walletAddress?.slice(-6)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${isUpgraded ? 'bg-green-100 text-green-700' : 'bg-[var(--ink-10)] text-[var(--ink-50)]'}`}>
+                        {isUpgraded ? 'Unlimited' : planName}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--ink-50)]">{backupCount} backup{backupCount !== 1 ? 's' : ''} · {totalCost.toFixed(2)} USDC</p>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="border-t border-[var(--line)] p-4 flex gap-3 bg-[var(--bg-paper)]">
+                  {!isUpgraded && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleUpgrade(a.walletAddress || ''); }}
+                      disabled={isLoading}
+                      className="flex-1 bg-[var(--accent-crimson)] text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-semibold"
+                    >
+                      {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap size={16} />}
+                      Upgrade Limit ($5)
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleBackup(a.walletAddress || ''); }}
+                    disabled={isLoading}
+                    className={`${isUpgraded ? 'flex-1' : 'flex-1'} bg-[var(--accent-slate)] text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-semibold`}
+                  >
+                    {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload size={16} />}
+                    Backup {isUpgraded ? '(Free)' : `($${nextCost.toFixed(2)})`}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {paymentModal?.open && (
+        <PaymentModal
+          isOpen={true}
+          onClose={() => setPaymentModal(null)}
+          amount={paymentModal.amount.toString()}
+          description={paymentModal.description}
+          embeddedWalletBalance={agent.protocols?.agenticWallet?.balance || '0'}
+          embeddedWalletAddress={agent.walletAddress || ''}
+          userType="human"
+          onPayWithEmbedded={handlePaymentComplete}
+          onPaymentSuccess={() => handlePaymentComplete()}
+        />
+      )}
     </motion.div>
   );
 }

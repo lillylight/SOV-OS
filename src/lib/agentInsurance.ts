@@ -54,14 +54,15 @@ export class AgentInsurance {
   private pinata: PinataSDK | null = null;
 
   constructor() {
-    if (process.env.PINATA_JWT) {
+    const jwt = (process.env.PINATA_JWT || '').trim().replace(/[\r\n]/g, '');
+    if (jwt) {
       this.pinata = new PinataSDK({
-        pinataJWTKey: process.env.PINATA_JWT,
+        pinataJWTKey: jwt,
       });
     } else if (process.env.PINATA_API_KEY && process.env.PINATA_SECRET_KEY) {
       this.pinata = new PinataSDK({
-        pinataApiKey: process.env.PINATA_API_KEY,
-        pinataSecretApiKey: process.env.PINATA_SECRET_KEY,
+        pinataApiKey: process.env.PINATA_API_KEY!.trim(),
+        pinataSecretApiKey: process.env.PINATA_SECRET_KEY!.trim(),
       });
     }
   }

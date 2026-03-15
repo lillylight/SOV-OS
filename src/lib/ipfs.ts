@@ -2,7 +2,7 @@ import PinataSDK from '@pinata/sdk'
 
 // Real Pinata configuration
 const pinata = new PinataSDK({
-  pinataJWTKey: process.env.PINATA_JWT || 'YOUR_PINATA_JWT_KEY'
+  pinataJWTKey: (process.env.PINATA_JWT || 'YOUR_PINATA_JWT_KEY').trim().replace(/[\r\n]/g, '')
 })
 
 // IPFS Gateway URL
