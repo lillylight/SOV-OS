@@ -330,8 +330,9 @@ export default function AgentDashboard() {
       </div>
       )}
 
-      {/* Tabs */}
+      {/* Tabs — hidden when viewing a connected agent's details */}
       <div className="max-w-7xl mx-auto px-6">
+        {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
         <div className="flex gap-2 mb-6 border-b border-[var(--line)] overflow-x-auto">
           {tabs.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
@@ -341,6 +342,7 @@ export default function AgentDashboard() {
             </button>
           ))}
         </div>
+        )}
 
         {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} onViewAgent={handleViewAgent} selectedAgent={selectedAgentDetail} onBack={() => setSelectedAgentDetail(null)} detailLoading={detailLoading} />}
         {activeTab === "profile" && <AgentProfile agent={agent as any} />}
