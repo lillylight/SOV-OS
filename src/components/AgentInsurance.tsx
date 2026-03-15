@@ -137,7 +137,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
     return (
       <div className="bg-[var(--bg-card)] border border-[var(--line)] rounded-lg p-6">
         <div className="flex items-center justify-center py-8">
-          <RefreshCw className="w-6 h-6 text-[var(--accent-blue)] animate-spin" />
+          <RefreshCw className="w-6 h-6 text-[var(--accent-slate)] animate-spin" />
         </div>
       </div>
     );
@@ -148,8 +148,8 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[var(--accent-green)]/10 rounded-lg">
-            <Shield className="w-5 h-5 text-[var(--accent-green)]" />
+          <div className="p-2 bg-[var(--accent-amber)]/10 rounded-lg">
+            <Shield className="w-5 h-5 text-[var(--accent-amber)]" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-[var(--ink)]">Encrypted State Insurance</h3>
@@ -167,9 +167,9 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {stats.plan.id === 'infinite' ? (
-              <Infinity className="w-4 h-4 text-[var(--accent-purple)]" />
+              <Infinity className="w-4 h-4 text-[var(--accent-crimson)]" />
             ) : (
-              <Lock className="w-4 h-4 text-[var(--accent-blue)]" />
+              <Lock className="w-4 h-4 text-[var(--accent-slate)]" />
             )}
             <span className="font-medium text-[var(--ink)]">{stats.plan.name}</span>
           </div>
@@ -187,7 +187,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
           <button
             onClick={() => upgradePlan('infinite')}
             disabled={isUpgrading}
-            className="w-full bg-[var(--accent-purple)] text-white px-4 py-2 rounded-lg hover:bg-[var(--accent-purple)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[var(--accent-crimson)] text-white px-4 py-2 rounded-lg hover:bg-[var(--accent-crimson)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isUpgrading ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -225,7 +225,7 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
         <button
           onClick={createBackup}
           disabled={!canBackup || isCreatingBackup}
-          className="w-full bg-[var(--accent-blue)] text-white px-4 py-2 rounded-lg hover:bg-[var(--accent-blue)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+          className="w-full bg-[var(--accent-slate)] text-white px-4 py-2 rounded-lg hover:bg-[var(--accent-slate)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
         >
           {isCreatingBackup ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -250,9 +250,9 @@ export default function AgentInsurance({ walletAddress }: AgentInsuranceProps) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {backup.status === 'stored' ? (
-                    <CheckCircle className="w-4 h-4 text-[var(--accent-green)]" />
+                    <CheckCircle className="w-4 h-4 text-[var(--accent-amber)]" />
                   ) : backup.status === 'pending' ? (
-                    <RefreshCw className="w-4 h-4 text-[var(--accent-blue)] animate-spin" />
+                    <RefreshCw className="w-4 h-4 text-[var(--accent-slate)] animate-spin" />
                   ) : (
                     <AlertCircle className="w-4 h-4 text-[var(--accent-red)]" />
                   )}

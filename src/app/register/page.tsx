@@ -140,8 +140,8 @@ function CDPSignInHandler({
 
   if (isRegistering) {
     return (
-      <div className="mt-8 p-4 glass-card border border-[var(--accent-blue)]/20 text-center animate-in fade-in slide-in-from-bottom-2">
-        <div className="w-10 h-10 border-4 border-[var(--accent-blue)] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <div className="mt-8 p-4 glass-card border border-[var(--accent-slate)]/20 text-center animate-in fade-in slide-in-from-bottom-2">
+        <div className="w-10 h-10 border-4 border-[var(--accent-slate)] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
         <p className="text-lg font-medium">Creating your account...</p>
         <p className="text-sm text-[var(--ink-70)]">Provisioning embedded wallet on Base L2</p>
       </div>
@@ -273,12 +273,12 @@ export default function UserRegistration() {
             onClick={() => setUserType("human")}
             className={`glass-card p-6 border-2 transition-all text-left ${
               userType === "human" 
-                ? "border-[var(--accent-blue)] bg-[var(--accent-blue)]/5" 
-                : "border-[var(--line)] hover:border-[var(--accent-blue)]/50"
+                ? "border-[var(--accent-slate)] bg-[var(--accent-slate)]/5" 
+                : "border-[var(--line)] hover:border-[var(--accent-slate)]/50"
             }`}
           >
             <User className={`w-8 h-8 mb-3 ${
-              userType === "human" ? "text-[var(--accent-blue)]" : "text-[var(--ink-50)]"
+              userType === "human" ? "text-[var(--accent-slate)]" : "text-[var(--ink-50)]"
             }`} />
             <h3 className="font-semibold mb-1">Human User</h3>
             <p className="text-xs text-[var(--ink-50)]">
@@ -447,8 +447,8 @@ Content-Type: application/json
           >
             <div className="glass-card p-6 border border-[var(--line)]">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-blue)]/10 flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-[var(--accent-blue)]" />
+                <div className="w-10 h-10 rounded-xl bg-[var(--accent-slate)]/10 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-[var(--accent-slate)]" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">Human User Registration</h2>

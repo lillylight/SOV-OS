@@ -42,7 +42,7 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
     return (
       <div className="bg-[var(--bg-card)] border border-[var(--line)] rounded-lg p-6">
         <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-2 border-[var(--accent-blue)] border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-[var(--accent-slate)] border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
     );
@@ -64,8 +64,8 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[var(--accent-purple)]/10 rounded-lg">
-            <Share2 className="w-5 h-5 text-[var(--accent-purple)]" />
+          <div className="p-2 bg-[var(--accent-crimson)]/10 rounded-lg">
+            <Share2 className="w-5 h-5 text-[var(--accent-crimson)]" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-[var(--ink)]">AI Network Sharing</h3>
@@ -77,19 +77,19 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
       {/* Main Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg p-4 text-center">
-          <Users className="w-6 h-6 text-[var(--accent-blue)] mx-auto mb-2" />
+          <Users className="w-6 h-6 text-[var(--accent-slate)] mx-auto mb-2" />
           <div className="text-2xl font-bold text-[var(--ink)]">{stats.totalShares}</div>
           <div className="text-xs text-[var(--ink-70)]">Direct Shares</div>
         </div>
         
         <div className="bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg p-4 text-center">
-          <TrendingUp className="w-6 h-6 text-[var(--accent-green)] mx-auto mb-2" />
+          <TrendingUp className="w-6 h-6 text-[var(--accent-amber)] mx-auto mb-2" />
           <div className="text-2xl font-bold text-[var(--ink)]">{stats.acceptedShares}</div>
           <div className="text-xs text-[var(--ink-70)]">Accepted</div>
         </div>
         
         <div className="bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg p-4 text-center">
-          <Network className="w-6 h-6 text-[var(--accent-purple)] mx-auto mb-2" />
+          <Network className="w-6 h-6 text-[var(--accent-crimson)] mx-auto mb-2" />
           <div className="text-2xl font-bold text-[var(--ink)]">{stats.networkReach}</div>
           <div className="text-xs text-[var(--ink-70)]">Network Reach</div>
         </div>
@@ -109,7 +109,7 @@ export default function AISharingStats({ agentId, agentType }: AISharingStatsPro
         </div>
         <div className="w-full bg-[var(--line)] rounded-full h-2">
           <div 
-            className="bg-gradient-to-r from-[var(--accent-blue)] to-[var(--accent-purple)] h-2 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-[var(--accent-slate)] to-[var(--accent-crimson)] h-2 rounded-full transition-all duration-500"
             style={{ width: `${Math.min((stats.acceptedShares / 5) * 100, 100)}%` }}
           />
         </div>

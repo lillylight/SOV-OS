@@ -17,13 +17,28 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Verify the agent exists and belongs to the creator
-    const agent = database.getAgentByWallet(walletAddress);
+    // Verify the agent exists
+    const agent = await database.getAgentByWallet(walletAddress);
     if (!agent) {
       return NextResponse.json({
         success: false,
         error: "Agent not found"
       }, { status: 404 });
+    }
+
+    // Only the verified owner/creator can restore (revive) the agent
+    if (!agent.ownerWallet || agent.ownerWallet.toLowerCase() !== creatorWallet.toLowerCase()) {
+      return NextResponse.json({
+        success: false,
+        error: "Only the registered creator/owner can restore this agent"
+      }, { status: 403 });
+    }
+
+    if (!agent.ownerVerified) {
+      return NextResponse.json({
+        success: false,
+        error: "Owner must be verified (synced) before restoring an agent"
+      }, { status: 403 });
     }
 
     // Restore from backup

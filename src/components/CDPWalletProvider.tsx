@@ -110,8 +110,8 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
             onClick={() => setAuthMethod("email")}
             className={`p-3 rounded-lg border transition-all ${
               authMethod === "email"
-                ? "border-[var(--accent-blue)] bg-[var(--accent-blue)]/10"
-                : "border-[var(--line)] hover:border-[var(--accent-blue)]/50"
+                ? "border-[var(--accent-slate)] bg-[var(--accent-slate)]/10"
+                : "border-[var(--line)] hover:border-[var(--accent-slate)]/50"
             }`}
           >
             <Mail className="w-4 h-4 mx-auto mb-1" />
@@ -122,8 +122,8 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
             onClick={() => setAuthMethod("sms")}
             className={`p-3 rounded-lg border transition-all ${
               authMethod === "sms"
-                ? "border-[var(--accent-blue)] bg-[var(--accent-blue)]/10"
-                : "border-[var(--line)] hover:border-[var(--accent-blue)]/50"
+                ? "border-[var(--accent-slate)] bg-[var(--accent-slate)]/10"
+                : "border-[var(--line)] hover:border-[var(--accent-slate)]/50"
             }`}
           >
             <Smartphone className="w-4 h-4 mx-auto mb-1" />
@@ -134,8 +134,8 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
             onClick={() => setAuthMethod("oauth")}
             className={`p-3 rounded-lg border transition-all ${
               authMethod === "oauth"
-                ? "border-[var(--accent-blue)] bg-[var(--accent-blue)]/10"
-                : "border-[var(--line)] hover:border-[var(--accent-blue)]/50"
+                ? "border-[var(--accent-slate)] bg-[var(--accent-slate)]/10"
+                : "border-[var(--line)] hover:border-[var(--accent-slate)]/50"
             }`}
           >
             <Wallet className="w-4 h-4 mx-auto mb-1" />
@@ -151,7 +151,7 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:outline-none focus:border-[var(--accent-blue)] bg-white"
+              className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:outline-none focus:border-[var(--accent-slate)] bg-white"
             />
           </div>
         )}
@@ -163,7 +163,7 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+1 (555) 123-4567"
-              className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:outline-none focus:border-[var(--accent-blue)] bg-white"
+              className="w-full px-4 py-3 border border-[var(--line)] rounded-lg focus:outline-none focus:border-[var(--accent-slate)] bg-white"
             />
           </div>
         )}
@@ -184,7 +184,7 @@ export default function CDPWalletProvider({ children, onWalletConnected, showBut
       <button
         onClick={handleConnect}
         disabled={isConnecting || (authMethod === "email" && !email) || (authMethod === "sms" && !phone)}
-        className="w-full inline-flex items-center justify-center gap-3 px-8 py-4 bg-[var(--accent-blue)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full inline-flex items-center justify-center gap-3 px-8 py-4 bg-[var(--accent-slate)] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Wallet className="w-5 h-5" />
         {isConnecting ? "Creating Wallet..." : "Create Embedded Wallet"}

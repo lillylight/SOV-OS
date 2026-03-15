@@ -164,10 +164,10 @@ export class AgentInsurance {
         throw new Error('Backup not found');
       }
 
-      // Verify creator wallet permissions
+      // Verify creator wallet permissions - only the registered owner can restore
       const agent = await database.getAgent(backup.agentId);
-      if (!agent || agent.address !== creatorWallet) { // Use 'address' instead of 'owner' if 'owner' is not in Agent interface
-        throw new Error('Only the agent creator can restore from backup');
+      if (!agent || !agent.ownerWallet || agent.ownerWallet.toLowerCase() !== creatorWallet.toLowerCase()) {
+        throw new Error('Only the agent creator/owner can restore from backup');
       }
 
       // Retrieve encrypted data from IPFS (Mocked gateway for now)
