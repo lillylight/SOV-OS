@@ -4,12 +4,19 @@ import PinataSDK from '@pinata/sdk';
 export async function GET() {
   try {
     // Test 1: Check if PINATA_JWT exists
-    const jwt = (process.env.PINATA_JWT || '').trim().replace(/[\r\n]/g, '');
+    const rawJwt = process.env.PINATA_JWT || '';
+    const jwt = rawJwt.trim().replace(/[\r\n]/g, '');
+
     if (!jwt || jwt === 'YOUR_PINATA_JWT_KEY') {
       return NextResponse.json({
         success: false,
         error: 'PINATA_JWT not configured in Vercel environment variables',
-        step: 'env_check'
+        step: 'env_check',
+        debug: {
+          rawLength: rawJwt.length,
+          trimmedLength: jwt.length,
+          isEmpty: jwt.length === 0,
+        }
       }, { status: 500 });
     }
 
@@ -18,15 +25,37 @@ export async function GET() {
       pinataJWTKey: jwt,
     });
 
-    // Test 3: Test authentication by listing pins (lightweight test)
+    // Test 3: Test authentication
     try {
       await pinata.testAuthentication();
     } catch (authError: any) {
+      // Auth failed — try direct API call to get more detail
+      let directTestResult = null;
+      try {
+        const directRes = await fetch('https://api.pinata.cloud/data/testAuthentication', {
+          headers: { 'Authorization': `Bearer ${jwt}` }
+        });
+        directTestResult = {
+          status: directRes.status,
+          statusText: directRes.statusText,
+          body: await directRes.text()
+        };
+      } catch (e: any) {
+        directTestResult = { error: e.message };
+      }
+
       return NextResponse.json({
         success: false,
         error: 'Pinata authentication failed',
-        details: authError.message,
-        step: 'auth_test'
+        step: 'auth_test',
+        debug: {
+          sdkError: authError.message,
+          jwtLength: jwt.length,
+          jwtPrefix: jwt.substring(0, 10) + '...',
+          jwtSuffix: '...' + jwt.substring(jwt.length - 10),
+          hasNewlines: rawJwt !== jwt,
+          directApiTest: directTestResult
+        }
       }, { status: 500 });
     }
 
@@ -35,7 +64,6 @@ export async function GET() {
       test: true,
       timestamp: new Date().toISOString(),
       message: 'Sovereign OS Pinata Test',
-      encrypted: Buffer.from('test-encrypted-data').toString('base64')
     };
 
     const result = await pinata.pinJSONToIPFS(testData, {
@@ -44,13 +72,12 @@ export async function GET() {
       }
     });
 
-    // Test 5: Verify the upload
     const ipfsCid = result.IpfsHash;
     const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${ipfsCid}`;
 
     return NextResponse.json({
       success: true,
-      message: 'Pinata is working correctly on Vercel!',
+      message: 'Pinata is working correctly!',
       tests: {
         env_configured: true,
         auth_successful: true,
@@ -67,7 +94,6 @@ export async function GET() {
       success: false,
       error: 'Pinata test failed',
       details: error.message,
-      stack: error.stack?.split('\n').slice(0, 3)
     }, { status: 500 });
   }
 }
