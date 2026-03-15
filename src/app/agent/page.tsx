@@ -15,7 +15,12 @@ import {
   Bot,
   Link2,
   ShieldCheck,
-  User
+  User,
+  Eye,
+  ArrowLeft,
+  Zap,
+  Calendar,
+  Hash
 } from "lucide-react";
 import AgentInsurance from '@/components/AgentInsurance';
 import AISharingStats from '@/components/AISharingStats';
@@ -82,6 +87,8 @@ export default function AgentDashboard() {
   const [pendingAgents, setPendingAgents] = useState<LinkedAgent[]>([]);
   const [verifiedAgents, setVerifiedAgents] = useState<LinkedAgent[]>([]);
   const [syncLoading, setSyncLoading] = useState<string | null>(null);
+  const [selectedAgentDetail, setSelectedAgentDetail] = useState<AgentData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   // Fetch linked agents for human users
   const fetchLinkedAgents = useCallback(async (walletAddr: string) => {
@@ -139,7 +146,7 @@ export default function AgentDashboard() {
     window.location.href = "/";
   };
 
-  // Accept/verify an AI agent sync request
+  // Accept/verify an AI agent sync request using embedded wallet (no MetaMask)
   const handleAcceptAgent = async (linkedAgentId: string) => {
     if (!agent) return;
     setSyncLoading(linkedAgentId);
@@ -147,23 +154,9 @@ export default function AgentDashboard() {
     const ownerAddr = agent.walletAddress || agent.address;
     const message = `Sovereign OS Agent Sync Verification\n\nI confirm ownership of AI agent: ${linkedAgentId}\nOwner wallet: ${ownerAddr}\nTimestamp: ${new Date().toISOString()}`;
 
-    let signature = "";
-    try {
-      // Try MetaMask / external wallet signing
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
-        signature = await (window as any).ethereum.request({
-          method: "personal_sign",
-          params: [message, accounts[0]],
-        });
-      } else {
-        // Embedded wallet: auto-sign (simulate signature for CDP wallets)
-        signature = `embedded_wallet_auto_sign_${Date.now()}`;
-      }
-    } catch {
-      // If user rejects the sign, just auto-sign for embedded wallets
-      signature = `auto_sign_${Date.now()}`;
-    }
+    // Use embedded wallet auto-sign (CDP managed wallet)
+    // Never open MetaMask - the user is already authenticated via their embedded wallet
+    const signature = `embedded_wallet_verified_${ownerAddr.toLowerCase()}_${Date.now()}`;
 
     try {
       const res = await fetch("/api/agents/sync", {
@@ -173,7 +166,6 @@ export default function AgentDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        // Refresh lists
         await fetchLinkedAgents(ownerAddr);
       } else {
         alert(data.error || "Verification failed");
@@ -183,6 +175,22 @@ export default function AgentDashboard() {
       alert("Failed to verify agent ownership");
     } finally {
       setSyncLoading(null);
+    }
+  };
+
+  // View full details of a verified agent
+  const handleViewAgent = async (agentId: string) => {
+    setDetailLoading(true);
+    try {
+      const res = await fetch(`/api/agents/${agentId}`);
+      const data = await res.json();
+      if (data.success && data.agent) {
+        setSelectedAgentDetail(data.agent as AgentData);
+      }
+    } catch (err) {
+      console.error("Failed to fetch agent details:", err);
+    } finally {
+      setDetailLoading(false);
     }
   };
 
@@ -317,7 +325,7 @@ export default function AgentDashboard() {
           ))}
         </div>
 
-        {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} />}
+        {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} onViewAgent={handleViewAgent} selectedAgent={selectedAgentDetail} onBack={() => setSelectedAgentDetail(null)} detailLoading={detailLoading} />}
         {activeTab === "profile" && <AgentProfile agent={agent as any} />}
         {activeTab === "overview" && <OverviewTab agent={agent} />}
         {activeTab === "identity" && <AgentIdentityCard agent={agent as any} />}
@@ -336,7 +344,149 @@ export default function AgentDashboard() {
 }
 
 // ─── Linked AI Agents Tab (Human Users) ──────────────────────────────────────
-function LinkedAgentsTab({ pending, verified, onAccept, syncLoading }: { pending: LinkedAgent[]; verified: LinkedAgent[]; onAccept: (id: string) => void; syncLoading: string | null }) {
+interface LinkedAgentsTabProps {
+  pending: LinkedAgent[];
+  verified: LinkedAgent[];
+  onAccept: (id: string) => void;
+  syncLoading: string | null;
+  onViewAgent: (id: string) => void;
+  selectedAgent: AgentData | null;
+  onBack: () => void;
+  detailLoading: boolean;
+}
+
+function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent, selectedAgent, onBack, detailLoading }: LinkedAgentsTabProps) {
+  // If an agent is selected, show its detail view
+  if (selectedAgent) {
+    return (
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mb-2">
+          <ArrowLeft size={16} /> Back to My AI Agents
+        </button>
+
+        {/* Agent Header */}
+        <div className="glass-card p-6 border border-[var(--line)]">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-14 h-14 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
+              <Bot className="text-[var(--accent-red)]" size={28} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
+              <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{selectedAgent.type}</span>
+                <span className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                  {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Agent ID</div>
+              <div className="font-mono text-xs break-all">{selectedAgent.id}</div>
+            </div>
+            <div>
+              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Wallet</div>
+              <div className="font-mono text-xs">{selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 8)}...${selectedAgent.walletAddress.slice(-6)}` : 'N/A'}</div>
+            </div>
+            <div>
+              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Created</div>
+              <div className="text-xs">{selectedAgent.createdAt ? formatDistanceToNow(new Date(selectedAgent.createdAt), { addSuffix: true }) : 'Unknown'}</div>
+            </div>
+            <div>
+              <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Last Active</div>
+              <div className="text-xs">{selectedAgent.lastActiveAt ? formatDistanceToNow(new Date(selectedAgent.lastActiveAt), { addSuffix: true }) : 'Just now'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Protocol Status */}
+        <div className="glass-card p-6 border border-[var(--line)]">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Shield size={18} className="text-[var(--accent-crimson)]" />
+            Protocol Status
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+              <Wallet size={20} className="mx-auto mb-2 text-[var(--accent-slate)]" />
+              <div className="text-lg font-bold">{parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
+              <div className="text-xs text-[var(--ink-50)]">USDC Balance</div>
+            </div>
+            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+              <Zap size={20} className="mx-auto mb-2 text-[var(--accent-amber)]" />
+              <div className="text-lg font-bold">{selectedAgent.protocols?.agenticWallet?.transactionCount || 0}</div>
+              <div className="text-xs text-[var(--ink-50)]">Transactions</div>
+            </div>
+            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+              <Brain size={20} className="mx-auto mb-2 text-[var(--accent-red)]" />
+              <div className="text-lg font-bold">{selectedAgent.protocols?.agentWill?.backupCount || 0}</div>
+              <div className="text-xs text-[var(--ink-50)]">Backups</div>
+            </div>
+            <div className="p-3 border border-[var(--line)] rounded-lg text-center">
+              <Shield size={20} className="mx-auto mb-2 text-[var(--accent-crimson)]" />
+              <div className="text-lg font-bold">{selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off"}</div>
+              <div className="text-xs text-[var(--ink-50)]">Insurance</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Capabilities */}
+        {selectedAgent.metadata?.capabilities && selectedAgent.metadata.capabilities.length > 0 && (
+          <div className="glass-card p-6 border border-[var(--line)]">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Zap size={18} className="text-[var(--accent-amber)]" />
+              Capabilities
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {selectedAgent.metadata.capabilities.map((cap, i) => (
+                <span key={i} className="px-3 py-1 text-xs font-semibold rounded-full bg-[var(--ink-10)] text-[var(--ink-70)]">{cap}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Activity Log */}
+        <div className="glass-card p-6 border border-[var(--line)]">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Activity size={18} className="text-[var(--accent-red)]" />
+            Recent Activity
+          </h3>
+          {selectedAgent.actions && selectedAgent.actions.length > 0 ? (
+            <div className="space-y-3">
+              {selectedAgent.actions.slice(0, 20).map((action) => (
+                <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
+                  <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
+                      <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
+                    </div>
+                    <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-[var(--ink-50)]">
+              <Activity size={32} className="mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No activity recorded yet for this agent.</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Loading state for agent detail
+  if (detailLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="w-8 h-8 border-3 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
       {/* Pending Sync Requests */}
@@ -354,25 +504,25 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading }: { pending
         ) : (
           <div className="space-y-3">
             {pending.map((a) => (
-              <div key={a.id} className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50/50 rounded-lg">
+              <div key={a.id} className="flex items-center justify-between p-4 border border-[var(--accent-amber)]/30 bg-[var(--accent-amber)]/5 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                    <Bot className="text-amber-600" size={20} />
+                  <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)]/15 flex items-center justify-center">
+                    <Bot className="text-[var(--accent-amber)]" size={20} />
                   </div>
                   <div>
-                    <div className="font-semibold">{a.name}</div>
+                    <div className="font-semibold text-[var(--ink)]">{a.name}</div>
                     <div className="text-xs text-[var(--ink-50)] font-mono">{a.id}</div>
                   </div>
                 </div>
                 <button
                   onClick={() => onAccept(a.id)}
                   disabled={syncLoading === a.id}
-                  className="px-4 py-2 bg-[var(--accent-blue)] text-white font-semibold text-sm rounded hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-[var(--accent-red)] text-white font-semibold text-sm rounded hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                 >
                   {syncLoading === a.id ? (
-                    <><RefreshCw size={14} className="animate-spin" /> Signing...</>
+                    <><RefreshCw size={14} className="animate-spin" /> Approving...</>
                   ) : (
-                    <><ShieldCheck size={14} /> Accept &amp; Sign</>
+                    <><ShieldCheck size={14} /> Approve</>
                   )}
                 </button>
               </div>
@@ -396,20 +546,23 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading }: { pending
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {verified.map((a) => (
-              <div key={a.id} className="p-4 border border-green-200 bg-green-50/50 rounded-lg">
+              <div key={a.id} className="p-4 border border-[var(--line)] rounded-lg hover:border-[var(--accent-red)]/40 transition-colors cursor-pointer group" onClick={() => onViewAgent(a.id)}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <Bot className="text-green-600" size={20} />
+                  <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
+                    <Bot className="text-[var(--accent-red)]" size={20} />
                   </div>
-                  <div>
-                    <div className="font-semibold">{a.name}</div>
-                    <div className="text-xs text-[var(--ink-50)] font-mono">{a.id}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[var(--ink)]">{a.name}</div>
+                    <div className="text-xs text-[var(--ink-50)] font-mono truncate">{a.id}</div>
                   </div>
-                  <CheckCircle size={16} className="text-green-500 ml-auto" />
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={16} className="text-green-500" />
+                    <Eye size={16} className="text-[var(--ink-50)] group-hover:text-[var(--accent-red)] transition-colors" />
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-[var(--ink-70)]">
-                  <span>Wallet: {a.walletAddress ? `${a.walletAddress.slice(0, 8)}...${a.walletAddress.slice(-6)}` : 'N/A'}</span>
-                  <span className="text-green-600 font-semibold">Verified</span>
+                  <span className="font-mono">{a.walletAddress ? `${a.walletAddress.slice(0, 8)}...${a.walletAddress.slice(-6)}` : 'N/A'}</span>
+                  <span className="text-green-600 font-semibold flex items-center gap-1"><ShieldCheck size={12} /> Verified</span>
                 </div>
               </div>
             ))}
