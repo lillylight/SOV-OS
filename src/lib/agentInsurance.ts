@@ -70,11 +70,14 @@ export class AgentInsurance {
   /**
    * Create encrypted backup of agent state
    */
-  async createBackup(agentId: string, agentState: any): Promise<BackupRecord> {
+  async createBackup(agentId: string, agentState: any, options?: { skipPayment?: boolean; externalPaymentTx?: string | null }): Promise<BackupRecord> {
     try {
       if (!this.pinata) {
         throw new Error('Pinata API keys not configured');
       }
+
+      const skipPayment = options?.skipPayment || false;
+      const externalPaymentTx = options?.externalPaymentTx || null;
 
       // Generate encryption key
       const encryptionKey = this.generateEncryptionKey();
@@ -123,8 +126,13 @@ export class AgentInsurance {
         encryptionKey
       };
 
-      // Collect real USDC payment from agent wallet to platform owner wallet
-      if (cost > 0 && agent?.walletAddress && AgenticWallet.isConfigured()) {
+      // If payment was already collected externally (via /pay API or Base Pay), record the tx
+      if (skipPayment && externalPaymentTx) {
+        backupRecord.paymentTx = externalPaymentTx;
+        console.log(`[Payment] Backup ${backupRecord.id}: payment already collected via pay API (tx: ${externalPaymentTx})`);
+      }
+      // Otherwise, collect real USDC payment from agent wallet to platform owner wallet
+      else if (cost > 0 && !skipPayment && agent?.walletAddress && AgenticWallet.isConfigured()) {
         try {
           const tx = await AgenticWallet.sendPayment(
             agent.walletAddress,
@@ -136,7 +144,7 @@ export class AgentInsurance {
           backupRecord.paymentTx = tx.hash;
         } catch (payErr) {
           console.error('[Payment] USDC transfer failed:', payErr);
-          // Still allow backup but log the payment failure
+          throw new Error('Payment failed. Please ensure your wallet has sufficient USDC balance.');
         }
       }
 

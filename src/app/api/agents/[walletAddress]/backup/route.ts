@@ -9,6 +9,11 @@ export async function POST(
 ) {
   try {
     const { walletAddress } = await params;
+    let body: any = {};
+    try { body = await request.json(); } catch { /* no body is fine */ }
+    const paidViaPay = body?.paidViaPay === true;
+    const externalPaymentTx = body?.paymentTx || body?.bpTxId || null;
+
     const agent = await database.getAgentByWallet(walletAddress);
     
     if (!agent) {
@@ -40,7 +45,9 @@ export async function POST(
     };
 
     // Create encrypted backup
-    const backup = await agentInsurance.createBackup(agent.id, agentState);
+    // If paidViaPay is true, payment was already collected via /api/agents/[wallet]/pay
+    // so skip the internal USDC transfer in createBackup
+    const backup = await agentInsurance.createBackup(agent.id, agentState, { skipPayment: paidViaPay, externalPaymentTx });
 
     // Update agent's backup count
     agent.protocols.agentWill.backupCount += 1;

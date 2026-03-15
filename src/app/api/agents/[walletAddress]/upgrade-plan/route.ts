@@ -29,8 +29,14 @@ export async function POST(
     }
 
     // For bypass plan ($5 USDC), collect real payment to platform wallet first
+    // If paymentSignature starts with 'pay_' or 'basepay_', payment was already collected externally
     let paymentTx: string | undefined;
-    if (planId === 'bypass' && agent.walletAddress && AgenticWallet.isConfigured()) {
+    const alreadyPaid = paymentSignature && (paymentSignature.startsWith('pay_') || paymentSignature.startsWith('basepay_'));
+
+    if (alreadyPaid) {
+      paymentTx = paymentSignature.replace(/^(pay_|basepay_)/, '');
+      console.log(`[Payment] Bypass plan: payment already collected externally (tx: ${paymentTx})`);
+    } else if (planId === 'bypass' && agent.walletAddress && AgenticWallet.isConfigured()) {
       try {
         const tx = await AgenticWallet.sendPayment(
           agent.walletAddress,

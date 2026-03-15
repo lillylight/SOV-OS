@@ -540,9 +540,27 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   // Called after payment modal confirms embedded wallet payment
   const executeBackupAfterPayment = async () => {
     if (!selectedAgent?.walletAddress) return;
+
+    // Step 1: Send USDC payment to platform wallet
+    const payRes = await fetch(`/api/agents/${selectedAgent.walletAddress}/pay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
+        amount: nextBackupCost,
+        description: `Backup fee for ${selectedAgent.name || selectedAgent.id}`,
+      }),
+    });
+    const payData = await payRes.json();
+    if (!payData.success) {
+      throw new Error(payData.error || "Payment failed");
+    }
+
+    // Step 2: Create the backup (payment already collected)
     const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paidViaPay: true, paymentTx: payData.transaction?.hash }),
     });
     const data = await res.json();
     if (data.success) {
@@ -555,10 +573,27 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
   const executeUpgradeAfterPayment = async () => {
     if (!selectedAgent?.walletAddress) return;
+
+    // Step 1: Send $5 USDC payment to platform wallet
+    const payRes = await fetch(`/api/agents/${selectedAgent.walletAddress}/pay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
+        amount: '5.00',
+        description: `Unlimited backups upgrade for ${selectedAgent.name || selectedAgent.id}`,
+      }),
+    });
+    const payData = await payRes.json();
+    if (!payData.success) {
+      throw new Error(payData.error || "Payment failed");
+    }
+
+    // Step 2: Upgrade the plan (payment already collected)
     const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/upgrade-plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId: 'bypass', paymentSignature: `basepay_${Date.now()}` }),
+      body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${payData.transaction?.hash}` }),
     });
     const data = await res.json();
     if (data.success) {
@@ -1466,20 +1501,44 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
 
   const handlePaymentComplete = async () => {
     if (!paymentModal) return;
-    const { action, agentWallet } = paymentModal;
+    const { action, agentWallet, amount } = paymentModal;
+    const humanWallet = agent.walletAddress || agent.address || '';
     setLoadingAgents(prev => new Set(prev).add(agentWallet));
 
     try {
+      // Step 1: Send USDC from human's wallet to platform wallet
+      const payRes = await fetch(`/api/agents/${humanWallet}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
+          amount: amount.toString(),
+          description: action === 'backup'
+            ? `Backup fee for agent ${agentWallet.slice(0, 10)}...`
+            : `Unlimited backups upgrade for agent ${agentWallet.slice(0, 10)}...`,
+        }),
+      });
+      const payData = await payRes.json();
+      if (!payData.success) {
+        throw new Error(payData.error || 'Payment failed');
+      }
+
+      // Step 2: Execute the action (backup or upgrade) now that payment is confirmed
       if (action === 'backup') {
-        await fetch(`/api/agents/${agentWallet}/backup`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        await fetch(`/api/agents/${agentWallet}/backup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paidViaPay: true, paymentTx: payData.transaction?.hash }),
+        });
       } else {
         await fetch(`/api/agents/${agentWallet}/upgrade-plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId: 'bypass' }),
+          body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${payData.transaction?.hash}` }),
         });
       }
-      // Refresh insurance data for this agent
+
+      // Step 3: Refresh insurance data for this agent
       const res = await fetch(`/api/agents/${agentWallet}/backup`);
       const data = await res.json();
       if (data.success) {
