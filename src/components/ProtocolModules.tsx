@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Shield, Brain, Wallet } from "lucide-react";
+import { Shield, Brain, Wallet, FileText } from "lucide-react";
 
 const modules = [
   {
@@ -34,11 +35,50 @@ const modules = [
     icon: Wallet,
     features: ["Session spending limits", "x402 machine payments", "Built-in OFAC/KYT"],
   },
+  {
+    num: "04",
+    step: "Comply",
+    label: "AgentLedger",
+    desc: "Autonomous tax compliance. Every transaction is auto-categorised as income, expense, or capital. Generate tax-ready reports, export to your accountant, and never miss a filing deadline.",
+    color: "bg-[var(--ink)]",
+    textColor: "text-white",
+    icon: FileText,
+    features: ["Auto-categorised ledger", "CSV & PDF export", "Multi-jurisdiction Pro"],
+  },
 ];
 
 export default function ProtocolModules() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [shifted, setShifted] = useState(false);
+  const lockedRef = useRef(false);
+  const hasTriggeredRef = useRef(false);
+
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!sectionRef.current || hasTriggeredRef.current) return;
+
+    const rect = sectionRef.current.getBoundingClientRect();
+    const inView = rect.top <= 80 && rect.bottom > window.innerHeight * 0.5;
+
+    if (inView && e.deltaY > 0 && !lockedRef.current) {
+      e.preventDefault();
+      lockedRef.current = true;
+      hasTriggeredRef.current = true;
+      setShifted(true);
+
+      setTimeout(() => {
+        lockedRef.current = false;
+      }, 800);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [handleWheel]);
+
   return (
-    <section id="protocol" className="border-t border-[var(--line)]">
+    <section id="protocol" ref={sectionRef} className="border-t border-[var(--line)]">
       <div className="max-w-[1440px] mx-auto">
         <div className="px-6 md:px-8 py-6">
           <div className="flex items-end justify-between">
@@ -49,43 +89,62 @@ export default function ProtocolModules() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 border-t border-[var(--line)]">
-          {modules.map((m, i) => (
-            <motion.div
-              key={m.num}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.5 }}
-              className={`${m.color} ${m.textColor} p-7 md:p-8 min-h-[260px] flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-[var(--line)] last:border-r-0 last:border-b-0 group cursor-default`}
-            >
-              <div
-                className="absolute right-6 top-10 text-[10px] tracking-[0.1em] uppercase opacity-40"
-                style={{ writingMode: "vertical-rl" }}
+        {/* Carousel viewport — shows 3 at a time on desktop */}
+        <div className="border-t border-[var(--line)] overflow-hidden">
+          <div
+            ref={trackRef}
+            className="flex transition-transform duration-700 ease-in-out"
+            style={{ transform: shifted ? "translateX(-25%)" : "translateX(0)" }}
+          >
+            {modules.map((m, i) => (
+              <motion.div
+                key={m.num}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.5 }}
+                className={`${m.color} ${m.textColor} p-7 md:p-8 min-h-[260px] flex flex-col justify-between relative border-r border-[var(--line)] group cursor-default flex-shrink-0 w-full md:w-1/3`}
               >
-                Step {m.num}
-              </div>
+                <div
+                  className="absolute right-6 top-10 text-[10px] tracking-[0.1em] uppercase opacity-40"
+                  style={{ writingMode: "vertical-rl" }}
+                >
+                  Step {m.num}
+                </div>
 
-              <div>
-                <div className="mb-3 opacity-80">
-                  <m.icon size={28} strokeWidth={1.5} />
+                <div>
+                  <div className="mb-3 opacity-80">
+                    <m.icon size={28} strokeWidth={1.5} />
+                  </div>
+                  <div className="text-[11px] tracking-[0.1em] uppercase opacity-60 mb-2">
+                    {m.step}
+                  </div>
+                  <div className="text-2xl font-semibold leading-tight mb-3">
+                    {m.label}
+                  </div>
+                  <div className="text-base leading-relaxed opacity-85 max-w-[85%]">
+                    {m.desc}
+                  </div>
                 </div>
-                <div className="text-[11px] tracking-[0.1em] uppercase opacity-60 mb-2">
-                  {m.step}
-                </div>
-                <div className="text-2xl font-semibold leading-tight mb-3">
-                  {m.label}
-                </div>
-                <div className="text-base leading-relaxed opacity-85 max-w-[85%]">
-                  {m.desc}
-                </div>
-              </div>
 
-              <div className="text-[56px] font-light opacity-15 leading-none mt-4">
-                {m.num}
-              </div>
-            </motion.div>
-          ))}
+                <div className="text-[56px] font-light opacity-15 leading-none mt-4">
+                  {m.num}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Carousel indicators */}
+        <div className="flex justify-center gap-2 py-4">
+          <button
+            onClick={() => { setShifted(false); hasTriggeredRef.current = false; }}
+            className={`w-2 h-2 rounded-full transition-colors ${!shifted ? "bg-[var(--ink)]" : "bg-[var(--ink-50)]/30"}`}
+          />
+          <button
+            onClick={() => { setShifted(true); hasTriggeredRef.current = true; }}
+            className={`w-2 h-2 rounded-full transition-colors ${shifted ? "bg-[var(--ink)]" : "bg-[var(--ink-50)]/30"}`}
+          />
         </div>
       </div>
     </section>

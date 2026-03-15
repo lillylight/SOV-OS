@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { agentInsurance } from "@/lib/agentInsurance";
+import { categoriseTransaction, type TaxTransaction } from "@/lib/taxLedger";
 
 export async function POST(
   request: NextRequest,
@@ -48,6 +49,25 @@ export async function POST(
     
     // Get stats
     const stats = await agentInsurance.getInsuranceStats(agent.id);
+
+    // Auto-log to tax ledger
+    try {
+      const PLATFORM_WALLET = process.env.PLATFORM_WALLET || '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB';
+      const taxRes = await fetch(new URL(`/api/agents/${walletAddress}/tax`, request.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'log',
+          fromAddress: walletAddress,
+          toAddress: PLATFORM_WALLET,
+          amount: backup.cost || 0,
+          description: `Backup fee: ${backup.id}`,
+          txHash: backup.hash || undefined,
+        }),
+      });
+    } catch (taxErr) {
+      console.error('Tax logging failed (non-blocking):', taxErr);
+    }
 
     return NextResponse.json({
       success: true,

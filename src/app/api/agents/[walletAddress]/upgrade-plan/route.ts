@@ -28,7 +28,7 @@ export async function POST(
       }, { status: 404 });
     }
 
-    // For bypass plan ($10 USDC), collect real payment to platform wallet first
+    // For bypass plan ($5 USDC), collect real payment to platform wallet first
     let paymentTx: string | undefined;
     if (planId === 'bypass' && agent.walletAddress && AgenticWallet.isConfigured()) {
       try {
@@ -39,7 +39,7 @@ export async function POST(
           `Bypass plan purchase: ${agent.id}`
         );
         paymentTx = tx.hash;
-        console.log(`[Payment] $10 USDC bypass plan from ${agent.walletAddress} to ${PLATFORM_WALLET} | tx: ${tx.hash}`);
+        console.log(`[Payment] $5 USDC bypass plan from ${agent.walletAddress} to ${PLATFORM_WALLET} | tx: ${tx.hash}`);
       } catch (payErr) {
         console.error('[Payment] Bypass plan USDC transfer failed:', payErr);
         return NextResponse.json({
@@ -57,6 +57,24 @@ export async function POST(
         success: false,
         error: "Plan upgrade failed"
       }, { status: 400 });
+    }
+
+    // Auto-log to tax ledger
+    try {
+      const taxRes = await fetch(new URL(`/api/agents/${walletAddress}/tax`, request.url).toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'log',
+          fromAddress: walletAddress,
+          toAddress: PLATFORM_WALLET,
+          amount: BACKUP_PRICING.UNLIMITED_PRICE,
+          description: `Unlock Unlimited Backups (bypass plan)`,
+          txHash: paymentTx || undefined,
+        }),
+      });
+    } catch (taxErr) {
+      console.error('Tax logging failed (non-blocking):', taxErr);
     }
 
     return NextResponse.json({

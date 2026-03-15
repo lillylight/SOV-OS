@@ -46,6 +46,7 @@ import AgentIdentityCard from '@/components/AgentIdentityCard';
 import MemoryExplorer from '@/components/MemoryExplorer';
 import ProtocolWizard from '@/components/ProtocolWizard';
 import AgentProfile from '@/components/AgentProfile';
+import TaxCompliance from '@/components/TaxCompliance';
 import { formatDistanceToNow } from "date-fns";
 
 interface AgentData {
@@ -237,8 +238,8 @@ export default function AgentDashboard() {
 
   const isHuman = agent.type === "human" || userType === "human";
   const tabs = isHuman
-    ? ["agents", "profile", "overview", "wallet", "insurance", "settings"] as const
-    : ["profile", "overview", "identity", "wallet", "transactions", "insurance", "protocols", "memory", "sharing", "actions", "skills", "settings"] as const;
+    ? ["agents", "profile", "overview", "wallet", "insurance", "tax", "settings"] as const
+    : ["profile", "overview", "identity", "wallet", "transactions", "insurance", "tax", "protocols", "memory", "sharing", "actions", "skills", "settings"] as const;
 
   return (
     <div className="min-h-screen bg-[var(--bg-paper)] pt-20">
@@ -356,6 +357,7 @@ export default function AgentDashboard() {
         {activeTab === "sharing" && <SharingTab agent={agent} />}
         {activeTab === "actions" && <ActionsTab agent={agent} />}
         {activeTab === "skills" && <SkillsTab agent={agent} />}
+        {activeTab === "tax" && <TaxCompliance agent={agent as any} />}
         {activeTab === "settings" && <AgentSettings agent={agent as any} />}
       </div>
     </div>
