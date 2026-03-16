@@ -127,7 +127,7 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
           <button
             key={stat.key}
             onClick={() => setTypeFilter(stat.key)}
-            className={`glass-card p-4 border transition-all text-left ${typeFilter === stat.key ? "border-[var(--accent-red)] shadow-sm" : "border-[var(--line)] hover:border-[var(--ink-50)]"}`}
+            className={`p-4 border transition-all text-left ${typeFilter === stat.key ? "border-[var(--accent-red)] border-l-2 border-l-[var(--accent-red)]" : "border-[var(--line)] hover:border-[var(--ink-50)]"}`}
           >
             <stat.icon size={18} className={`${stat.color} mb-2`} />
             <div className="text-2xl font-bold">{counts[stat.key]}</div>
@@ -137,7 +137,7 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
       </div>
 
       {/* Search & Actions */}
-      <div className="glass-card p-4 border border-[var(--line)]">
+      <div className="p-4 border border-[var(--line)]">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-50)]" />
@@ -146,7 +146,7 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search memory entries..."
-              className="w-full pl-9 pr-4 py-2.5 border border-[var(--line)] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all"
+              className="w-full pl-9 pr-4 py-2.5 border border-[var(--line)] bg-white text-sm focus:outline-none focus:border-[var(--accent-slate)] transition-all"
             />
             {searchQuery && (
               <button
@@ -159,7 +159,7 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${showAddForm ? "bg-[var(--accent-red)] text-white" : "border border-[var(--line)] text-[var(--ink-70)] hover:bg-black/5"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${showAddForm ? "bg-[var(--accent-red)] text-white" : "border border-[var(--line)] text-[var(--ink-70)] hover:border-[var(--ink)]"}`}
           >
             <Plus size={16} />
             Add Entry
@@ -179,13 +179,13 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setNewEntryType("conversation")}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${newEntryType === "conversation" ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600"}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${newEntryType === "conversation" ? "bg-[var(--accent-slate)] text-white" : "border border-[var(--line)] text-[var(--accent-slate)]"}`}
                   >
                     Conversation
                   </button>
                   <button
                     onClick={() => setNewEntryType("learning")}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${newEntryType === "learning" ? "bg-amber-600 text-white" : "bg-amber-50 text-amber-600"}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${newEntryType === "learning" ? "bg-[var(--accent-amber)] text-[var(--ink)]" : "border border-[var(--line)] text-[var(--accent-amber)]"}`}
                   >
                     Learning
                   </button>
@@ -195,19 +195,19 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
                   onChange={(e) => setNewEntryContent(e.target.value)}
                   placeholder={newEntryType === "conversation" ? "Add a conversation entry..." : "Add a learning insight..."}
                   rows={2}
-                  className="w-full px-4 py-2.5 border border-[var(--line)] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all resize-none"
+                  className="w-full px-4 py-2.5 border border-[var(--line)] bg-white text-sm focus:outline-none focus:border-[var(--accent-slate)] transition-all resize-none"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddEntry}
                     disabled={!newEntryContent.trim()}
-                    className="px-4 py-2 bg-[var(--accent-red)] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40"
+                    className="px-4 py-2 bg-[var(--accent-red)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-40"
                   >
                     Save Entry
                   </button>
                   <button
                     onClick={() => { setShowAddForm(false); setNewEntryContent(""); }}
-                    className="px-4 py-2 border border-[var(--line)] text-[var(--ink-70)] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-black/5 transition-colors"
+                    className="px-4 py-2 border border-[var(--line)] text-[var(--ink-70)] text-[11px] font-bold uppercase tracking-wider hover:border-[var(--ink)] transition-colors"
                   >
                     Cancel
                   </button>
@@ -221,7 +221,7 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
       {/* Memory Entries */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <div className="glass-card border border-[var(--line)] text-center py-16">
+          <div className="border border-[var(--line)] text-center py-16">
             <Brain size={32} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
             <p className="text-sm text-[var(--ink-50)]">
               {searchQuery ? "No matching memory entries" : "No memory entries yet"}
@@ -238,10 +238,10 @@ export default function MemoryExplorer({ agent }: MemoryExplorerProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.02 }}
                 onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-                className="glass-card border border-[var(--line)] p-4 hover:border-[var(--ink-50)] transition-all cursor-pointer group"
+                className="border border-[var(--line)] p-4 hover:border-[var(--ink-50)] transition-all cursor-pointer group"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`w-8 h-8 rounded-lg ${entry.bgColor} flex items-center justify-center flex-shrink-0`}>
+                  <div className={`w-8 h-8 ${entry.bgColor} flex items-center justify-center flex-shrink-0`}>
                     <Icon size={14} className={entry.color} />
                   </div>
                   <div className="flex-1 min-w-0">

@@ -171,13 +171,13 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
             <motion.div
               key={proto.key}
               layout
-              className={`glass-card border rounded-xl overflow-hidden transition-all ${proto.isActive || wasJustActivated ? proto.borderColor : "border-[var(--line)]"} ${wasJustActivated ? "ring-2 ring-green-400/50" : ""}`}
+              className={`border overflow-hidden transition-all ${proto.isActive || wasJustActivated ? proto.borderColor : "border-[var(--line)]"} ${wasJustActivated ? "border-l-2 border-l-[var(--accent-amber)]" : ""}`}
             >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl ${proto.bgColor} flex items-center justify-center`}>
+                    <div className={`w-10 h-10 ${proto.bgColor} flex items-center justify-center`}>
                       <Icon size={20} className={proto.color} />
                     </div>
                     <div>
@@ -185,8 +185,8 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                       <span className="text-[10px] uppercase tracking-wider text-[var(--ink-50)] font-semibold">{proto.cost}</span>
                     </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    proto.isActive || wasJustActivated ? "bg-green-100 text-green-700" : "bg-[var(--ink-10)] text-[var(--ink-50)]"
+                  <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                    proto.isActive || wasJustActivated ? "border-[var(--accent-amber)]/30 text-[var(--accent-amber)]" : "border-[var(--line)] text-[var(--ink-50)]"
                   }`}>
                     {wasJustActivated ? "Just Activated!" : proto.isActive ? "Active" : "Inactive"}
                   </div>
@@ -216,7 +216,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                 ) : (
                   <button
                     onClick={() => { setActiveWizard(proto.key); setWizardStep(0); }}
-                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${proto.bgColor} ${proto.color} hover:opacity-80`}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all ${proto.bgColor} ${proto.color} hover:opacity-80`}
                   >
                     Activate {proto.name}
                     <ArrowRight size={14} />
@@ -243,7 +243,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden"
+              className="bg-white border border-[var(--line)] shadow-2xl max-w-lg w-full overflow-hidden"
             >
               {(() => {
                 const proto = protocols.find((p) => p.key === activeWizard)!;
@@ -253,7 +253,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                     {/* Modal Header */}
                     <div className={`${proto.bgColor} px-6 py-5 flex items-center justify-between`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center`}>
+                        <div className={`w-10 h-10 bg-white/80 flex items-center justify-center`}>
                           <Icon size={20} className={proto.color} />
                         </div>
                         <div>
@@ -262,7 +262,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                         </div>
                       </div>
                       {!activating && (
-                        <button onClick={() => { setActiveWizard(null); setWizardStep(0); }} className="p-2 hover:bg-black/5 rounded-lg transition-colors">
+                        <button onClick={() => { setActiveWizard(null); setWizardStep(0); }} className="p-2 hover:bg-black/5 transition-colors">
                           <X size={18} />
                         </button>
                       )}
@@ -288,9 +288,9 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                           transition={{ duration: 0.2 }}
                         >
                           <div className="flex items-center gap-3 mb-4">
-                            <div className={`w-8 h-8 rounded-full ${proto.bgColor} flex items-center justify-center text-sm font-bold ${proto.color}`}>
+                            <div className={`w-8 h-8 ${proto.bgColor} flex items-center justify-center text-sm font-bold ${proto.color}`}>
                               {activating && wizardStep < proto.steps.length - 1 ? (
-                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin" />
                               ) : wizardStep === proto.steps.length - 1 && activating ? (
                                 <CheckCircle size={16} />
                               ) : (
@@ -310,7 +310,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                         {proto.steps.map((_, i) => (
                           <div
                             key={i}
-                            className={`w-2 h-2 rounded-full transition-colors ${i <= wizardStep ? (proto.key === "agentWill" ? "bg-amber-500" : proto.key === "agentInsure" ? "bg-red-500" : proto.key === "agenticWallet" ? "bg-slate-500" : "bg-violet-500") : "bg-[var(--ink-10)]"}`}
+                            className={`w-2 h-2 transition-colors ${i <= wizardStep ? (proto.key === "agentWill" ? "bg-[var(--accent-amber)]" : proto.key === "agentInsure" ? "bg-[var(--accent-crimson)]" : proto.key === "agenticWallet" ? "bg-[var(--accent-slate)]" : "bg-violet-500") : "bg-[var(--ink-10)]"}`}
                           />
                         ))}
                       </div>
@@ -331,7 +331,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                         wizardStep < proto.steps.length - 1 ? (
                           <button
                             onClick={() => setWizardStep((s) => s + 1)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 ${proto.key === "agentWill" ? "bg-amber-600" : proto.key === "agentInsure" ? "bg-red-600" : proto.key === "agenticWallet" ? "bg-slate-600" : "bg-violet-600"}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 ${proto.key === "agentWill" ? "bg-[var(--accent-amber)] text-[var(--ink)]" : proto.key === "agentInsure" ? "bg-[var(--accent-crimson)]" : proto.key === "agenticWallet" ? "bg-[var(--accent-slate)]" : "bg-violet-600"}`}
                           >
                             Next
                             <ChevronRight size={16} />
@@ -339,7 +339,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                         ) : (
                           <button
                             onClick={() => handleActivate(proto.key)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition-opacity hover:opacity-90 ${proto.key === "agentWill" ? "bg-amber-600" : proto.key === "agentInsure" ? "bg-red-600" : proto.key === "agenticWallet" ? "bg-slate-600" : "bg-violet-600"}`}
+                            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90 ${proto.key === "agentWill" ? "bg-[var(--accent-amber)] text-[var(--ink)]" : proto.key === "agentInsure" ? "bg-[var(--accent-crimson)]" : proto.key === "agenticWallet" ? "bg-[var(--accent-slate)]" : "bg-violet-600"}`}
                           >
                             <Sparkles size={16} />
                             Activate Now
@@ -347,7 +347,7 @@ export default function ProtocolWizard({ agent }: ProtocolWizardProps) {
                         )
                       ) : (
                         <div className="flex items-center gap-2 text-sm text-[var(--ink-50)]">
-                          <div className="w-4 h-4 border-2 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-[var(--accent-red)] border-t-transparent animate-spin" />
                           Activating...
                         </div>
                       )}

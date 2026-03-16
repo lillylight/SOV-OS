@@ -107,24 +107,24 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
     >
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="glass-card p-5 border border-[var(--line)]">
-          <div className="text-sm text-[var(--ink-50)] uppercase tracking-wide mb-1">Total Inflow</div>
-          <div className="text-2xl font-bold text-green-600">+{totalIn.toFixed(2)} USDC</div>
+        <div className="p-5 border border-[var(--line)] border-l-2 border-l-[var(--accent-amber)]">
+          <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-1">Total Inflow</div>
+          <div className="text-2xl font-light text-[var(--accent-amber)]">+{totalIn.toFixed(2)} <span className="text-sm">USDC</span></div>
         </div>
-        <div className="glass-card p-5 border border-[var(--line)]">
-          <div className="text-sm text-[var(--ink-50)] uppercase tracking-wide mb-1">Total Outflow</div>
-          <div className="text-2xl font-bold text-red-500">-{totalOut.toFixed(2)} USDC</div>
+        <div className="p-5 border border-[var(--line)] border-l-2 border-l-[var(--accent-crimson)]">
+          <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-1">Total Outflow</div>
+          <div className="text-2xl font-light text-[var(--accent-crimson)]">-{totalOut.toFixed(2)} <span className="text-sm">USDC</span></div>
         </div>
-        <div className="glass-card p-5 border border-[var(--line)]">
-          <div className="text-sm text-[var(--ink-50)] uppercase tracking-wide mb-1">Net</div>
-          <div className={`text-2xl font-bold ${totalIn - totalOut >= 0 ? "text-green-600" : "text-red-500"}`}>
-            {totalIn - totalOut >= 0 ? "+" : ""}{(totalIn - totalOut).toFixed(2)} USDC
+        <div className="p-5 border border-[var(--line)] border-l-2 border-l-[var(--accent-slate)]">
+          <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-1">Net</div>
+          <div className={`text-2xl font-light ${totalIn - totalOut >= 0 ? "text-[var(--accent-amber)]" : "text-[var(--accent-crimson)]"}`}>
+            {totalIn - totalOut >= 0 ? "+" : ""}{(totalIn - totalOut).toFixed(2)} <span className="text-sm">USDC</span>
           </div>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="glass-card p-4 border border-[var(--line)]">
+      <div className="p-4 border border-[var(--line)]">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-50)]" />
@@ -133,12 +133,12 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search transactions..."
-              className="w-full pl-9 pr-4 py-2.5 border border-[var(--line)] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all"
+              className="w-full pl-9 pr-4 py-2.5 border border-[var(--line)] bg-white text-sm focus:outline-none focus:border-[var(--accent-slate)] transition-all"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg text-sm font-medium transition-colors ${showFilters ? "border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5" : "border-[var(--line)] text-[var(--ink-70)] hover:bg-black/5"}`}
+            className={`flex items-center gap-2 px-4 py-2.5 border text-[11px] font-bold uppercase tracking-wider transition-colors ${showFilters ? "border-[var(--accent-red)] text-[var(--accent-red)] bg-[var(--accent-red)]/5" : "border-[var(--line)] text-[var(--ink-70)] hover:border-[var(--ink)]"}`}
           >
             <Filter size={16} />
             Filter
@@ -154,7 +154,7 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
           >
             <button
               onClick={() => setTypeFilter("all")}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${typeFilter === "all" ? "bg-[var(--ink)] text-white" : "bg-[var(--ink-10)] text-[var(--ink-70)] hover:bg-[var(--ink-10)]"}`}
+              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${typeFilter === "all" ? "bg-[var(--ink)] text-white" : "border border-[var(--line)] text-[var(--ink-70)] hover:border-[var(--ink)]"}`}
             >
               All ({transactions.length})
             </button>
@@ -165,7 +165,7 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
                 <button
                   key={type}
                   onClick={() => setTypeFilter(type)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${typeFilter === type ? "bg-[var(--ink)] text-white" : `${meta.color} hover:opacity-80`}`}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${typeFilter === type ? "bg-[var(--ink)] text-white" : `border border-[var(--line)] ${meta.color} hover:opacity-80`}`}
                 >
                   {meta.label} ({count})
                 </button>
@@ -176,7 +176,7 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
       </div>
 
       {/* Transaction Table */}
-      <div className="glass-card border border-[var(--line)] overflow-hidden">
+      <div className="border border-[var(--line)] overflow-hidden">
         {/* Table Header */}
         <div className="hidden md:grid grid-cols-[1fr_120px_120px_2fr_80px] px-6 py-3 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] border-b border-[var(--line)] bg-[var(--ink-10)]/30">
           <div>Type</div>
@@ -211,11 +211,11 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
               >
                 {/* Type */}
                 <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${meta.icon === "in" ? "bg-green-50" : "bg-red-50"}`}>
+                  <div className={`w-7 h-7 flex items-center justify-center ${meta.icon === "in" ? "bg-[var(--accent-amber)]/10" : "bg-[var(--accent-crimson)]/10"}`}>
                     {meta.icon === "in" ? (
-                      <ArrowDownLeft size={14} className="text-green-600" />
+                      <ArrowDownLeft size={14} className="text-[var(--accent-amber)]" />
                     ) : (
-                      <ArrowUpRight size={14} className="text-red-500" />
+                      <ArrowUpRight size={14} className="text-[var(--accent-crimson)]" />
                     )}
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${meta.color}`}>
@@ -224,7 +224,7 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
                 </div>
 
                 {/* Amount */}
-                <div className={`font-bold text-sm font-mono ${tx.amount >= 0 ? "text-green-600" : "text-red-500"}`}>
+                <div className={`font-bold text-sm font-mono ${tx.amount >= 0 ? "text-[var(--accent-amber)]" : "text-[var(--accent-crimson)]"}`}>
                   {tx.amount >= 0 ? "+" : ""}{tx.amount.toFixed(2)}
                 </div>
 
@@ -249,7 +249,7 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
 
                 {/* Status */}
                 <div className="text-right">
-                  <span className={`inline-block w-2 h-2 rounded-full ${tx.status === "complete" ? "bg-green-500" : "bg-red-500"}`} />
+                  <span className={`inline-block w-2 h-2 ${tx.status === "complete" ? "bg-[var(--accent-amber)]" : "bg-[var(--accent-crimson)]"}`} />
                 </div>
               </motion.div>
             );

@@ -309,7 +309,7 @@ function AgentDashboardInner() {
     <div className="min-h-screen bg-[var(--bg-paper)]">
       {/* ─── Top Bar ─── */}
       <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}
-        className="fixed top-0 left-0 right-0 z-50 glass-card shadow-sm">
+        className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-paper)] border-b border-[var(--line)] shadow-sm">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between px-6 md:px-8 py-4">
           <a href="/" className="flex items-center gap-3">
             <Fingerprint className="text-[var(--accent-red)]" size={14} strokeWidth={2.5} />
@@ -888,12 +888,12 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                 </div>
               </div>
             </div>
-            <button onClick={() => setAgentSubTab("backup")}
-              className={`inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-opacity hover:opacity-90 ${
-                isAgentDead ? "bg-[var(--accent-red)] text-white" : "border border-[var(--line)] text-[var(--ink)] hover:border-[var(--accent-red)] hover:text-[var(--accent-red)]"
-              }`}>
-              {isAgentDead ? <><HeartPulse size={12} /> Revive</> : <><Download size={12} /> Restore</>}
-            </button>
+            {isAgentDead && (
+              <button onClick={() => setAgentSubTab("backup")}
+                className="inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-opacity hover:opacity-90 bg-[var(--accent-red)] text-white">
+                <HeartPulse size={12} /> Revive
+              </button>
+            )}
           </div>
         </div>
 
@@ -985,31 +985,6 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               </div>
             )}
 
-            {/* Restore / Revive Section */}
-            <div className="border border-[var(--line)]">
-              <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
-                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
-                  {isAgentDead ? <HeartPulse size={12} className="text-[var(--accent-crimson)]" /> : <Download size={12} className="text-[var(--accent-amber)]" />}
-                  {isAgentDead ? 'Revive Agent' : 'Restore State'}
-                </div>
-                <div className="flex items-center gap-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
-                  <span>Available: <strong className="text-[var(--ink)]">{backups.filter(b => b.status === 'stored' || b.status === 'restored').length}</strong></span>
-                  <span>·</span>
-                  <span>Cost: <strong className="text-[var(--accent-red)]">Free</strong></span>
-                </div>
-              </div>
-              <div className="px-6 py-5">
-                {backups.filter(b => b.status === 'stored' || b.status === 'restored').length > 0 ? (
-                  <p className="text-xs text-[var(--ink-50)]">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent. Previously restored backups can be used again.</p>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-sm text-[var(--ink-50)]">No backups available yet</p>
-                    <p className="text-xs text-[var(--ink-50)] mt-1">Create your first backup below to enable {isAgentDead ? 'revival' : 'state restoration'}.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* Create Backup */}
             <div className="border-x border-b border-[var(--line)]">
               <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
@@ -1049,7 +1024,10 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                 <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
                   <Download size={12} className="text-[var(--accent-amber)]" /> Backup History
                 </div>
-                {backups.length > 0 && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{backups.length}</span>}
+                <div className="flex items-center gap-3">
+                  {backups.length > 0 && <span className="text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">{backups.filter(b => b.status === 'stored' || b.status === 'restored').length} restorable · Recovery: <strong className="text-[var(--accent-red)]">Free</strong></span>}
+                  {backups.length > 0 && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{backups.length}</span>}
+                </div>
               </div>
 
               {backups.length === 0 ? (
@@ -1081,13 +1059,15 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                         <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : "Unknown"}</span>
                         <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ""}{backup.cost ? ` · ${backup.cost} USDC` : ""}</span>
                       </div>
-                      {backup.status === "stored" && (
+                      {(backup.status === "stored" || backup.status === "restored") && (
                         <button onClick={() => handleRestoreClick(backup)} disabled={reviveLoading}
-                          className="mt-3 w-full bg-[var(--accent-red)] text-white px-3 py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                          className={`mt-3 w-full px-3 py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider ${
+                            backup.status === "restored" ? "border border-[var(--accent-amber)] text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5" : "bg-[var(--accent-red)] text-white"
+                          }`}>
                           {reviveLoading ? (
                             <><RefreshCw size={12} className="animate-spin" /> {isAgentDead ? 'Reviving' : 'Restoring'}</>
                           ) : (
-                            <>{isAgentDead ? <HeartPulse size={12} /> : <Download size={12} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
+                            <>{isAgentDead ? <HeartPulse size={12} /> : <Download size={12} />} {backup.status === "restored" ? 'Re-Restore to This State' : (isAgentDead ? 'Revive to This State' : 'Restore to This State')}</>
                           )}
                         </button>
                       )}

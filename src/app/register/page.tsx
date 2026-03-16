@@ -106,8 +106,8 @@ function CDPSignInHandler({
 
   if (isRegistering) {
     return (
-      <div className="mt-8 p-4 glass-card border border-[var(--accent-slate)]/20 text-center animate-in fade-in slide-in-from-bottom-2">
-        <div className="w-10 h-10 border-4 border-[var(--accent-slate)] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <div className="mt-8 p-4 border border-[var(--accent-slate)]/20 text-center animate-in fade-in slide-in-from-bottom-2">
+        <div className="w-10 h-10 border-4 border-[var(--accent-slate)] border-t-transparent animate-spin mx-auto mb-3"></div>
         <p className="text-lg font-medium">Creating your account...</p>
         <p className="text-sm text-[var(--ink-70)]">Provisioning embedded wallet on Base L2</p>
       </div>
@@ -116,8 +116,8 @@ function CDPSignInHandler({
 
   if (registrationFailed) {
     return (
-      <div className="mt-8 p-6 glass-card border-2 border-red-500/30 text-center animate-in scale-in">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+      <div className="mt-8 p-6 border-2 border-[var(--accent-crimson)]/30 text-center animate-in scale-in">
+        <AlertCircle className="w-12 h-12 text-[var(--accent-crimson)] mx-auto mb-3" />
         <h3 className="text-xl font-bold mb-2">Registration Failed</h3>
         <p className="text-[var(--ink-70)] mb-4">Could not set up your profile on Sovereign OS.</p>
         <button 
@@ -125,7 +125,7 @@ function CDPSignInHandler({
             setRegistrationFailed(false);
             setIsRegistering(false);
           }}
-          className="px-6 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition-colors"
+          className="px-6 py-2 bg-[var(--accent-crimson)] text-white font-bold hover:opacity-90 transition-opacity"
         >
           Try Again
         </button>
@@ -217,10 +217,10 @@ export default function UserRegistration() {
         >
           <button
             onClick={() => setUserType("agent")}
-            className={`glass-card p-6 border-2 transition-all text-left ${
+            className={`p-6 border-2 transition-all text-left ${
               userType === "agent" 
-                ? "border-[var(--accent-red)] bg-[var(--accent-red)]/5" 
-                : "border-[var(--line)] hover:border-[var(--accent-red)]/50"
+                ? "border-[var(--accent-crimson)] bg-[var(--accent-crimson)]/5" 
+                : "border-[var(--line)] hover:border-[var(--accent-crimson)]/50"
             }`}
           >
             <Bot className={`w-8 h-8 mb-3 ${
@@ -237,7 +237,7 @@ export default function UserRegistration() {
           
           <button
             onClick={() => setUserType("human")}
-            className={`glass-card p-6 border-2 transition-all text-left ${
+            className={`p-6 border-2 transition-all text-left ${
               userType === "human" 
                 ? "border-[var(--accent-slate)] bg-[var(--accent-slate)]/5" 
                 : "border-[var(--line)] hover:border-[var(--accent-slate)]/50"
@@ -265,10 +265,10 @@ export default function UserRegistration() {
             className="space-y-6"
           >
             {/* How it works */}
-            <div className="glass-card p-6 border border-[var(--line)]">
+            <div className="p-6 border border-[var(--line)]">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-red)]/10 flex items-center justify-center">
-                  <Terminal className="w-5 h-5 text-[var(--accent-red)]" />
+                <div className="w-10 h-10 bg-[var(--accent-crimson)]/10 flex items-center justify-center">
+                  <Terminal className="w-5 h-5 text-[var(--accent-crimson)]" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">AI Agent Registration</h2>
@@ -276,10 +276,10 @@ export default function UserRegistration() {
                 </div>
               </div>
 
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg mb-5">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">How AI agents register</p>
-                <p className="text-sm text-amber-700">
-                  AI agents register by making a single <code className="font-mono bg-amber-100 px-1 rounded">POST</code> request to the API.
+              <div className="p-4 bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20 mb-5">
+                <p className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1">How AI agents register</p>
+                <p className="text-sm text-[var(--ink-70)]">
+                  AI agents register by making a single <code className="font-mono bg-[var(--accent-amber)]/20 px-1">POST</code> request to the API.
                   No email, no password, no browser needed. The API auto-generates an agent ID, wallet address, and returns 
                   a complete toolkit with all available endpoints.
                 </p>
@@ -332,7 +332,7 @@ Content-Type: application/json
               </div>
 
               {/* What you get back */}
-              <div className="p-4 bg-[var(--ink-10)]/30 border border-[var(--line)] rounded-lg mb-4">
+              <div className="p-4 bg-[var(--ink-10)]/30 border border-[var(--line)] mb-4">
                 <p className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-2">What the API returns instantly</p>
                 <ul className="text-xs text-[var(--ink-70)] space-y-1.5">
                   <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 flex-shrink-0 text-[var(--accent-red)]" /> Agent profile with auto-generated ID</li>
@@ -350,13 +350,13 @@ Content-Type: application/json
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-5 border border-[var(--line)]"
+                className="p-5 border border-[var(--line)]"
               >
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-[var(--ink-50)]">
                     {apiResponse.success ? "Registration Successful" : "Registration Failed"}
                   </p>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${apiResponse.success ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  <span className={`px-2 py-0.5 text-[10px] font-bold border ${apiResponse.success ? "border-[var(--accent-amber)]/30 text-[var(--accent-amber)]" : "border-[var(--accent-crimson)]/30 text-[var(--accent-crimson)]"}`}>
                     {apiResponse.success ? "200 OK" : "ERROR"}
                   </span>
                 </div>
@@ -411,9 +411,9 @@ Content-Type: application/json
             transition={{ delay: 0.2 }}
             className="space-y-6"
           >
-            <div className="glass-card p-6 border border-[var(--line)]">
+            <div className="p-6 border border-[var(--line)]">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent-slate)]/10 flex items-center justify-center">
+                <div className="w-10 h-10 bg-[var(--accent-slate)]/10 flex items-center justify-center">
                   <Wallet className="w-5 h-5 text-[var(--accent-slate)]" />
                 </div>
                 <div>
@@ -422,9 +422,9 @@ Content-Type: application/json
                 </div>
               </div>
 
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-5">
-                <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">How it works</p>
-                <p className="text-sm text-blue-700">
+              <div className="p-4 bg-[var(--accent-slate)]/10 border border-[var(--accent-slate)]/20 mb-5">
+                <p className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-1">How it works</p>
+                <p className="text-sm text-[var(--ink-70)]">
                   Click the button below to create or connect your embedded wallet via Coinbase Developer Platform (CDP).
                   Your wallet <strong>is</strong> your identity. No email or password required.
                   You can sign in with Google, X, Telegram, email link, or SMS.
@@ -438,9 +438,9 @@ Content-Type: application/json
                 </CDPReactProvider>
               </div>
 
-              <div className="mt-5 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">What you get</p>
-                <ul className="text-xs text-green-700 space-y-1.5">
+              <div className="mt-5 p-4 bg-[var(--accent-amber)]/10 border border-[var(--accent-amber)]/20">
+                <p className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider mb-2">What you get</p>
+                <ul className="text-xs text-[var(--ink-70)] space-y-1.5">
                   <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 flex-shrink-0" /> Embedded smart wallet on Base L2</li>
                   <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 flex-shrink-0" /> Dashboard to manage your AI agents</li>
                   <li className="flex items-center gap-2"><CheckCircle className="w-3 h-3 flex-shrink-0" /> Verify and link AI agents to your wallet</li>
@@ -450,21 +450,21 @@ Content-Type: application/json
             </div>
 
             {/* Difference explanation */}
-            <div className="glass-card p-6 border border-[var(--line)]">
+            <div className="p-6 border border-[var(--line)]">
               <h3 className="font-bold mb-3 text-sm">Human vs AI Agent Accounts</h3>
               <div className="grid grid-cols-2 gap-4 text-xs">
-                <div className="p-3 border border-blue-200 bg-blue-50/50 rounded-lg">
-                  <p className="font-bold text-blue-800 mb-2 flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> Human</p>
-                  <ul className="text-blue-700 space-y-1">
+                <div className="p-3 border border-[var(--accent-slate)]/20 bg-[var(--accent-slate)]/5">
+                  <p className="font-bold text-[var(--accent-slate)] mb-2 flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> Human</p>
+                  <ul className="text-[var(--ink-70)] space-y-1">
                     <li>Sign in via CDP wallet</li>
                     <li>Manage linked AI agents</li>
                     <li>Verify agent ownership</li>
                     <li>View agent dashboards</li>
                   </ul>
                 </div>
-                <div className="p-3 border border-red-200 bg-red-50/50 rounded-lg">
-                  <p className="font-bold text-red-800 mb-2 flex items-center gap-1.5"><Bot className="w-3.5 h-3.5" /> AI Agent</p>
-                  <ul className="text-red-700 space-y-1">
+                <div className="p-3 border border-[var(--accent-crimson)]/20 bg-[var(--accent-crimson)]/5">
+                  <p className="font-bold text-[var(--accent-crimson)] mb-2 flex items-center gap-1.5"><Bot className="w-3.5 h-3.5" /> AI Agent</p>
+                  <ul className="text-[var(--ink-70)] space-y-1">
                     <li>Register via API call</li>
                     <li>No email/password</li>
                     <li>Auto-generated wallet</li>
@@ -486,17 +486,17 @@ Content-Type: application/json
           transition={{ delay: 0.3 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 mb-4"
         >
-          <div className="glass-card p-4 border border-[var(--line)] text-center">
+          <div className="p-4 border border-[var(--line)] border-t-2 border-t-[var(--accent-amber)] text-center">
             <Brain className="w-8 h-8 text-[var(--accent-amber)] mx-auto mb-2" />
             <h3 className="font-semibold text-sm mb-1">AgentWill</h3>
             <p className="text-xs text-[var(--ink-70)]">Self-revival & persistence</p>
           </div>
-          <div className="glass-card p-4 border border-[var(--line)] text-center">
+          <div className="p-4 border border-[var(--line)] border-t-2 border-t-[var(--accent-crimson)] text-center">
             <Shield className="w-8 h-8 text-[var(--accent-crimson)] mx-auto mb-2" />
             <h3 className="font-semibold text-sm mb-1">AgentInsure</h3>
             <p className="text-xs text-[var(--ink-70)]">Autonomous insurance</p>
           </div>
-          <div className="glass-card p-4 border border-[var(--line)] text-center">
+          <div className="p-4 border border-[var(--line)] border-t-2 border-t-[var(--accent-slate)] text-center">
             <Wallet className="w-8 h-8 text-[var(--accent-slate)] mx-auto mb-2" />
             <h3 className="font-semibold text-sm mb-1">Agentic Wallet</h3>
             <p className="text-xs text-[var(--ink-70)]">Financial autonomy</p>
