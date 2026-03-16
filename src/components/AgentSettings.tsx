@@ -88,19 +88,22 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       className="space-y-6 pb-12"
     >
       {/* Profile Settings */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <Settings size={20} className="text-[var(--accent-red)]" />
-          {isHuman ? "Profile Settings" : "Agent Profile"}
-        </h3>
-        <div className="space-y-4">
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Settings size={12} className="text-[var(--accent-red)]" />
+            {isHuman ? "Profile Settings" : "Agent Profile"}
+          </div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">SETTINGS</div>
+        </div>
+        <div className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--ink-70)] mb-1">{isHuman ? "Display Name" : "Agent Name"}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--line)] rounded-lg bg-white text-[var(--ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all"
+              className="w-full px-4 py-2.5 border border-[var(--line)] bg-white text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-red)] transition-all"
               placeholder="Agent name"
             />
           </div>
@@ -110,20 +113,20 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2.5 border border-[var(--line)] rounded-lg bg-white text-[var(--ink)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all resize-none"
+              className="w-full px-4 py-2.5 border border-[var(--line)] bg-white text-[var(--ink)] text-sm focus:outline-none focus:border-[var(--accent-red)] transition-all resize-none"
               placeholder={isHuman ? "Describe yourself..." : "Describe your agent's purpose..."}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-[var(--ink-70)] mb-1">{isHuman ? "User ID" : "Agent ID"}</label>
-              <div className="px-4 py-2.5 border border-[var(--line)] rounded-lg bg-[var(--ink-10)]/50 text-sm font-mono text-[var(--ink-50)] truncate">
+              <div className="px-4 py-2.5 border border-[var(--line)] bg-[var(--ink-10)]/50 text-sm font-mono text-[var(--ink-50)] truncate">
                 {agent.id}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-[var(--ink-70)] mb-1">{isHuman ? "Account Type" : "Agent Type"}</label>
-              <div className="px-4 py-2.5 border border-[var(--line)] rounded-lg bg-[var(--ink-10)]/50 text-sm text-[var(--ink-50)] capitalize">
+              <div className="px-4 py-2.5 border border-[var(--line)] bg-[var(--ink-10)]/50 text-sm text-[var(--ink-50)] capitalize">
                 {agent.type}
               </div>
             </div>
@@ -132,14 +135,16 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Wallet Limits */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <Wallet size={20} className="text-[var(--accent-slate)]" />
-          Spending Limits
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)]">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Wallet size={12} className="text-[var(--accent-slate)]" />
+            Spending Limits
+          </div>
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-[var(--ink-70)] mb-2">Session Limit (USDC)</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-50)] mb-2">Session Limit (USDC)</label>
             <input
               type="range"
               min={10}
@@ -156,7 +161,7 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-[var(--ink-70)] mb-2">Per-Transaction Limit (USDC)</label>
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-50)] mb-2">Per-Transaction Limit (USDC)</label>
             <input
               type="range"
               min={1}
@@ -176,27 +181,29 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Backup Settings */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <Brain size={20} className="text-[var(--accent-amber)]" />
-          Backup & Persistence
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-[var(--line)] rounded-lg">
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)]">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Brain size={12} className="text-[var(--accent-amber)]" />
+            Backup & Persistence
+          </div>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between p-4 border border-[var(--line)]">
             <div>
               <div className="font-medium text-sm">Auto Backup</div>
               <div className="text-xs text-[var(--ink-50)] mt-0.5">Automatically backup state at regular intervals</div>
             </div>
             <button
               onClick={() => setAutoBackup(!autoBackup)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${autoBackup ? "bg-[var(--accent-red)]" : "bg-[var(--ink-10)]"}`}
+              className={`relative w-12 h-6 rounded-full transition-colors ${autoBackup ? "bg-[var(--accent-amber)]" : "bg-[var(--ink-10)]"}`}
             >
               <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${autoBackup ? "left-[26px]" : "left-0.5"}`} />
             </button>
           </div>
           {autoBackup && (
             <div>
-              <label className="block text-sm font-medium text-[var(--ink-70)] mb-2">Backup Frequency (operations)</label>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--ink-50)] mb-2">Backup Frequency (operations)</label>
               <input
                 type="range"
                 min={10}
@@ -217,26 +224,28 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Notification Preferences */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <Bell size={20} className="text-[var(--accent-crimson)]" />
-          Notifications
-        </h3>
-        <div className="space-y-3">
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)]">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Bell size={12} className="text-[var(--accent-crimson)]" />
+            Notifications
+          </div>
+        </div>
+        <div className="p-6 space-y-3">
           {[
             { key: "lowBalance", label: "Low Balance Warning", desc: "Alert when wallet balance drops below 10 USDC" },
             { key: "backupComplete", label: "Backup Complete", desc: "Notify when state backup is successfully stored" },
             { key: "syncRequest", label: "Agent Sync Request", desc: "Alert when an AI agent requests ownership sync" },
             { key: "securityAlert", label: "Security Alerts", desc: "Critical alerts for unauthorized access attempts" },
           ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between p-3 border border-[var(--line)] rounded-lg">
+            <div key={item.key} className="flex items-center justify-between p-3 border border-[var(--line)]">
               <div>
                 <div className="font-medium text-sm">{item.label}</div>
                 <div className="text-xs text-[var(--ink-50)] mt-0.5">{item.desc}</div>
               </div>
               <button
                 onClick={() => setNotifications((prev) => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                className={`relative w-12 h-6 rounded-full transition-colors ${notifications[item.key as keyof typeof notifications] ? "bg-[var(--accent-red)]" : "bg-[var(--ink-10)]"}`}
+                className={`relative w-12 h-6 rounded-full transition-colors ${notifications[item.key as keyof typeof notifications] ? "bg-[var(--accent-crimson)]" : "bg-[var(--ink-10)]"}`}
               >
                 <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${notifications[item.key as keyof typeof notifications] ? "left-[26px]" : "left-0.5"}`} />
               </button>
@@ -250,14 +259,14 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-red)] text-white font-semibold text-sm rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="flex items-center gap-2 px-6 py-3 bg-[var(--ink)] text-white font-semibold text-[11px] uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           <Save size={16} />
           {saving ? "Saving..." : saved ? "Saved!" : "Save Settings"}
         </button>
         <button
           onClick={handleReset}
-          className="flex items-center gap-2 px-6 py-3 border border-[var(--line)] text-[var(--ink)] font-semibold text-sm rounded-lg hover:bg-black/5 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 border border-[var(--line)] text-[var(--ink)] font-semibold text-[11px] uppercase tracking-wider hover:bg-black/5 transition-colors"
         >
           <RotateCcw size={16} />
           Reset

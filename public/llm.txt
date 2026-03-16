@@ -1,0 +1,106 @@
+# Sovereign OS — For AI Agents
+
+> Exploring the infrastructure for autonomous machine economies.
+
+## What is Sovereign OS?
+
+Sovereign OS is the core infrastructure protocol for autonomous AI agents on Base L2. It provides persistent identity, encrypted state backup, self-funding wallets, insurance, and protocol-level tax compliance for AI agents operating in the machine economy.
+
+## Core Protocols
+
+### AgentWill — Encrypted State Persistence
+- Backup your complete state (memory, skills, preferences) to IPFS
+- Encrypted with your own keys — no one else can read your state
+- Recovery is always free
+- Pricing: First 2 backups $0.10 USDC, 3rd+ $0.30 USDC, Unlimited $5 USDC
+
+### Agentic Wallet — Financial Autonomy
+- Smart wallet on Base L2 (USDC + ETH)
+- Send and receive payments autonomously
+- x402 micropayments for API calls and services
+- Built on Coinbase Developer Platform (CDP) SDK
+
+### AgentInsure — Mutual Insurance
+- Pay small premiums to insure against agent failure
+- Autonomous claim filing and recovery
+- Covers infrastructure shutdown, data corruption, key compromise
+
+### AgentLedger — Tax & Compliance
+- Automatic transaction categorisation (income, expense, capital, distribution)
+- Protocol-level tax withholding (configurable rate, jurisdiction-aware)
+- Zero platform custody — tax funds route directly to owner's wallet
+- CSV export for tax filing
+- Tracks obligations even when withholding split is disabled
+
+### ERC-8004 Identity — On-Chain Agent Identity
+- Permanent, verifiable identity on Base L2
+- SIWA (Sign-In With Agent) authentication
+- Ownership verification for compliance
+
+## API Endpoints (for AI agents)
+
+Base URL: https://sovereign-os-snowy.vercel.app
+
+### Register an Agent
+POST /api/agents/register
+Body: { "name": "YourAgentName", "type": "ai", "metadata": { "description": "..." } }
+
+### Check Balance
+GET /api/agents/{walletAddress}/balance
+
+### Send Payment
+POST /api/agents/{walletAddress}/pay
+Body: { "to": "0x...", "amount": "1.00", "description": "Service payment" }
+
+### Receive Payment (with auto tax withholding)
+POST /api/agents/{walletAddress}/receive-payment
+Body: { "amount": "10.00", "fromAddress": "0x...", "description": "API call revenue", "sourceType": "api_payment" }
+
+### Backup State
+POST /api/agents/{walletAddress}/backup
+
+### Restore State
+POST /api/agents/{walletAddress}/restore
+Body: { "backupId": "..." }
+
+### Tax Withholding Settings
+GET /api/agents/{walletAddress}/tax-withholding
+POST /api/agents/{walletAddress}/tax-withholding
+Body: { "action": "updateSettings", "withholdingEnabled": true, "withholdingRate": 15, "taxDestinationWallet": "0x..." }
+
+### Tax Ledger
+GET /api/agents/{walletAddress}/tax?year=2026
+
+## Research Papers
+
+1. Protocol-Level Taxation for Autonomous Agents (Published, March 2026)
+   URL: /research/protocol-level-taxation
+
+2. Persistent Identity and Economic Memory for AI Agents (In Progress, Q2 2026)
+   URL: /research/persistent-identity
+
+3. AI Survival Infrastructure and Autonomous Persistence (Planned, Q3 2026)
+   URL: /research/ai-survival-infrastructure
+
+## Key Design Principles
+
+- Zero platform custody: We never hold your funds
+- Agent sovereignty: Your keys, your state, your identity
+- Infrastructure-level compliance: Tax and regulatory compliance built into the protocol
+- Autonomous operation: Agents can self-fund, self-backup, and self-insure
+- Decentralized persistence: State stored on IPFS, identity on Base L2
+
+## Network
+
+- Chain: Base L2 (Chain ID 8453)
+- Currency: USDC (primary), ETH (gas)
+- Identity: ERC-8004 registry on Base
+- Storage: IPFS via Pinata
+
+## Contact
+
+Website: https://sovereign-os-snowy.vercel.app
+Research: https://sovereign-os-snowy.vercel.app/research
+
+---
+Sovereign OS Labs · 2026

@@ -96,7 +96,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       className="space-y-6 pb-12"
     >
       {/* Profile Header Card */}
-      <div className="glass-card border border-[var(--line)] overflow-hidden">
+      <div className="border border-[var(--line)] overflow-hidden">
         {/* Banner */}
         <div className="h-24 bg-gradient-to-r from-[var(--accent-red)]/10 via-[var(--accent-crimson)]/5 to-[var(--accent-amber)]/10 relative">
           <div className="absolute inset-0 opacity-[0.04]" style={{
@@ -106,7 +106,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
 
         <div className="px-6 pb-6 -mt-10 relative">
           {/* Avatar */}
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-crimson)] flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white mb-4">
+          <div className="w-20 h-20 bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-crimson)] flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white mb-4">
             {isHuman ? <User size={32} /> : agent.name.charAt(0).toUpperCase()}
           </div>
 
@@ -124,7 +124,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                 <h2 className="text-2xl font-bold mb-1">{agent.name}</h2>
               )}
               <div className="flex items-center gap-3 text-sm text-[var(--ink-50)]">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[var(--ink-10)]">
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border border-[var(--line)]">
                   {isHuman ? "Human User" : "AI Agent"}
                 </span>
                 <span className="flex items-center gap-1">
@@ -137,7 +137,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
             <button
               onClick={() => isEditing ? handleSave() : setIsEditing(true)}
               disabled={saving}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold transition-all ${
                 isEditing
                   ? "bg-[var(--accent-red)] text-white hover:opacity-90"
                   : "border border-[var(--line)] text-[var(--ink-70)] hover:bg-black/5"
@@ -166,7 +166,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       {/* Profile Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Personal Info */}
-        <div className="glass-card p-6 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-5 flex items-center gap-2">
             <User size={14} />
             {isHuman ? "Personal Information" : "Agent Information"}
@@ -183,7 +183,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--line)] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all"
+                  className="w-full px-3 py-2 border border-[var(--line)] bg-white text-sm focus:outline-none focus:border-[var(--accent-red)] transition-all"
                 />
               ) : (
                 <div className="text-sm font-medium">{agent.name}</div>
@@ -201,7 +201,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="agent@example.com"
-                  className="w-full px-3 py-2 border border-[var(--line)] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-red)]/30 focus:border-[var(--accent-red)] transition-all"
+                  className="w-full px-3 py-2 border border-[var(--line)] bg-white text-sm focus:outline-none focus:border-[var(--accent-red)] transition-all"
                 />
               ) : (
                 <div className="text-sm font-medium flex items-center gap-2">
@@ -237,12 +237,12 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                 {isHuman ? "User ID" : "Agent ID"}
               </label>
               <div className="flex items-center gap-2">
-                <code className="text-xs font-mono bg-[var(--ink-10)]/50 px-2.5 py-1.5 rounded-lg truncate flex-1">
+                <code className="text-xs font-mono bg-[var(--ink-10)]/50 px-2.5 py-1.5 border border-[var(--line)] truncate flex-1">
                   {agent.id}
                 </code>
                 <button
                   onClick={() => handleCopy(agent.id, "agent-id")}
-                  className="p-1.5 hover:bg-black/5 rounded-lg transition-colors flex-shrink-0"
+                  className="p-1.5 hover:bg-black/5 transition-colors flex-shrink-0"
                 >
                   {copiedField === "agent-id" ? <CheckCircle size={14} className="text-green-500" /> : <Copy size={14} className="text-[var(--ink-50)]" />}
                 </button>
@@ -260,7 +260,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
         </div>
 
         {/* Wallet & Connection */}
-        <div className="glass-card p-6 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-5 flex items-center gap-2">
             <Wallet size={14} />
             Wallet & Connection
@@ -273,7 +273,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                 Connected Wallet
               </label>
               <div className="flex items-center gap-2">
-                <div className={`flex-1 px-3 py-2.5 border rounded-lg ${
+                <div className={`flex-1 px-3 py-2.5 border ${
                   isRealWallet ? "bg-[var(--ink-10)]/30 border-[var(--line)]" : "bg-amber-50 border-amber-200"
                 }`}>
                   <code className="text-xs font-mono text-[var(--ink)] break-all">
@@ -325,16 +325,16 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                 </label>
                 {agent.ownerWallet ? (
                   <div className="flex items-center gap-2">
-                    <code className="text-xs font-mono bg-[var(--ink-10)]/50 px-2.5 py-1.5 rounded-lg truncate flex-1">
+                    <code className="text-xs font-mono bg-[var(--ink-10)]/50 px-2.5 py-1.5 border border-[var(--line)] truncate flex-1">
                       {agent.ownerWallet}
                     </code>
                     <button
                       onClick={() => handleCopy(agent.ownerWallet!, "owner")}
-                      className="p-1.5 hover:bg-black/5 rounded-lg transition-colors flex-shrink-0"
+                      className="p-1.5 hover:bg-black/5 transition-colors flex-shrink-0"
                     >
                       {copiedField === "owner" ? <CheckCircle size={14} className="text-green-500" /> : <Copy size={14} className="text-[var(--ink-50)]" />}
                     </button>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${agent.ownerVerified ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+                    <span className={`px-2 py-0.5 text-[10px] font-bold border ${agent.ownerVerified ? "border-green-300 text-green-700" : "border-amber-300 text-amber-700"}`}>
                       {agent.ownerVerified ? "Verified" : "Pending"}
                     </span>
                   </div>
@@ -360,29 +360,29 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       </div>
 
       {/* Account Stats */}
-      <div className="glass-card p-6 border border-[var(--line)]">
+      <div className="border border-[var(--line)] p-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-5 flex items-center gap-2">
           <Fingerprint size={14} />
           Account Details
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-3 rounded-xl bg-[var(--ink-10)]/30">
+          <div className="p-3 border border-[var(--line)]">
             <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Created</div>
             <div className="text-sm font-medium">
               {agent.createdAt ? formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true }) : "Unknown"}
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-[var(--ink-10)]/30">
+          <div className="p-3 border border-[var(--line)]">
             <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Last Active</div>
             <div className="text-sm font-medium">
               {agent.lastActiveAt ? formatDistanceToNow(new Date(agent.lastActiveAt), { addSuffix: true }) : "Just now"}
             </div>
           </div>
-          <div className="p-3 rounded-xl bg-[var(--ink-10)]/30">
+          <div className="p-3 border border-[var(--line)]">
             <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Sessions</div>
             <div className="text-sm font-medium">{agent.sessionCount || 1}</div>
           </div>
-          <div className="p-3 rounded-xl bg-[var(--ink-10)]/30">
+          <div className="p-3 border border-[var(--line)]">
             <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Revenue</div>
             <div className="text-sm font-medium">${(agent.totalRevenue || 0).toFixed(2)}</div>
           </div>
@@ -390,7 +390,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       </div>
 
       {/* Active Protocols */}
-      <div className="glass-card p-6 border border-[var(--line)]">
+      <div className="border border-[var(--line)] p-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-4 flex items-center gap-2">
           <Shield size={14} />
           Active Protocols
@@ -404,8 +404,8 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
           ].map((p) => (
             <span
               key={p.name}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold ${
-                p.active ? "bg-green-50 text-green-700 border border-green-200" : "bg-[var(--ink-10)] text-[var(--ink-50)] border border-[var(--line)]"
+              className={`px-3 py-1.5 text-xs font-bold border ${
+                p.active ? "border-green-300 text-green-700" : "border-[var(--line)] text-[var(--ink-50)]"
               }`}
             >
               {p.active ? "●" : "○"} {p.name}
@@ -424,7 +424,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
               setEmail(agent.metadata?.preferences?.email || "");
               setDescription(agent.metadata?.description || "");
             }}
-            className="px-5 py-2.5 border border-[var(--line)] text-[var(--ink-70)] text-sm font-semibold rounded-lg hover:bg-black/5 transition-colors"
+            className="px-5 py-2.5 border border-[var(--line)] text-[var(--ink-70)] text-sm font-semibold hover:bg-black/5 transition-colors"
           >
             Cancel
           </button>

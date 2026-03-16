@@ -440,7 +440,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
 
       {/* Summary Cards */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-card p-5 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-5">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-green-600" />
             <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Gross Income</span>
@@ -449,7 +449,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
           <div className="text-xs text-[var(--ink-50)] mt-1">Taxable revenue</div>
         </div>
 
-        <div className="glass-card p-5 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-5">
           <div className="flex items-center gap-2 mb-2">
             <TrendingDown size={16} className="text-red-500" />
             <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Total Expenses</span>
@@ -458,7 +458,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
           <div className="text-xs text-[var(--ink-50)] mt-1">Deductible costs</div>
         </div>
 
-        <div className="glass-card p-5 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-5">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign size={16} className="text-[var(--ink)]" />
             <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Net Profit</span>
@@ -469,7 +469,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
           <div className="text-xs text-[var(--ink-50)] mt-1">Taxable income</div>
         </div>
 
-        <div className="glass-card p-5 border border-[var(--line)]">
+        <div className="border border-[var(--line)] p-5">
           <div className="flex items-center gap-2 mb-2">
             <Calendar size={16} className="text-[var(--accent-amber)]" />
             <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Filing Deadline</span>
@@ -486,7 +486,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Income Breakdown */}
           {Object.keys(summary.incomeBreakdown).length > 0 && (
-            <div className="glass-card p-5 border border-[var(--line)]">
+            <div className="border border-[var(--line)] p-5">
               <h4 className="text-sm font-bold text-[var(--ink)] mb-3 flex items-center gap-2">
                 <ArrowDownLeft size={14} className="text-green-600" />
                 Income Breakdown
@@ -504,7 +504,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
 
           {/* Expense Breakdown */}
           {Object.keys(summary.expenseBreakdown).length > 0 && (
-            <div className="glass-card p-5 border border-[var(--line)]">
+            <div className="border border-[var(--line)] p-5">
               <h4 className="text-sm font-bold text-[var(--ink)] mb-3 flex items-center gap-2">
                 <ArrowUpRight size={14} className="text-red-500" />
                 Expense Breakdown
@@ -524,7 +524,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
 
       {/* Pro Tier Upsell */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.25 }}
-        className="glass-card p-5 border border-[var(--line)] bg-gradient-to-r from-[var(--ink)]/[0.02] to-transparent"
+        className="border border-[var(--line)] p-5 bg-gradient-to-r from-[var(--ink)]/[0.02] to-transparent"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -580,7 +580,7 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
 
       {/* Transaction List */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
-        className="glass-card border border-[var(--line)] overflow-hidden"
+        className="border border-[var(--line)] overflow-hidden"
       >
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-14 text-[var(--ink-50)]">

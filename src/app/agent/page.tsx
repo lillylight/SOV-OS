@@ -993,14 +993,14 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                   {isAgentDead ? 'Revive Agent' : 'Restore State'}
                 </div>
                 <div className="flex items-center gap-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
-                  <span>Available: <strong className="text-[var(--ink)]">{backups.filter(b => b.status === 'stored').length}</strong></span>
+                  <span>Available: <strong className="text-[var(--ink)]">{backups.filter(b => b.status === 'stored' || b.status === 'restored').length}</strong></span>
                   <span>·</span>
                   <span>Cost: <strong className="text-[var(--accent-red)]">Free</strong></span>
                 </div>
               </div>
               <div className="px-6 py-5">
-                {backups.filter(b => b.status === 'stored').length > 0 ? (
-                  <p className="text-xs text-[var(--ink-50)]">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent.</p>
+                {backups.filter(b => b.status === 'stored' || b.status === 'restored').length > 0 ? (
+                  <p className="text-xs text-[var(--ink-50)]">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent. Previously restored backups can be used again.</p>
                 ) : (
                   <div className="text-center py-6">
                     <p className="text-sm text-[var(--ink-50)]">No backups available yet</p>
@@ -1809,8 +1809,8 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
     try {
       const res = await fetch(`/api/agents/${agentWallet}/backup`);
       const data = await res.json();
-      const stored = (data.backups || []).filter((b: any) => b.status === 'stored');
-      setRestoreModal({ agentWallet, agentName, backups: stored, loading: false });
+      const restorable = (data.backups || []).filter((b: any) => b.status === 'stored' || b.status === 'restored');
+      setRestoreModal({ agentWallet, agentName, backups: restorable, loading: false });
     } catch {
       setRestoreModal(prev => prev ? { ...prev, loading: false } : null);
     }
