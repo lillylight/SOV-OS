@@ -380,9 +380,22 @@ class DatabaseService {
 
   async saveBackup(backup: any): Promise<void> {
     try {
-      const { error } = await supabase.from(this.T_BACKUPS).upsert(backup)
+      // Only include columns that exist in the Supabase backups table
+      const record = {
+        id: backup.id,
+        agentId: backup.agentId,
+        ipfsCid: backup.ipfsCid,
+        sizeBytes: backup.sizeBytes,
+        timestamp: backup.timestamp,
+        cost: backup.cost,
+        status: backup.status,
+      };
+      const { error } = await supabase.from(this.T_BACKUPS).upsert(record)
       if (error) throw error
-    } catch (e) { console.error('saveBackup error:', e) }
+    } catch (e: any) {
+      console.error('saveBackup error:', e)
+      throw new Error(`saveBackup failed: ${e?.message || 'Unknown'}`)
+    }
   }
 
   async getBackup(backupId: string): Promise<any | null> {
@@ -393,9 +406,11 @@ class DatabaseService {
     } catch (e) { console.error('getBackup error:', e); return null }
   }
 
-  async getAgentBackups(agentId: string): Promise<any[]> {
+  async getAgentBackups(agentId: string, altIds?: string[]): Promise<any[]> {
     try {
-      const { data, error } = await supabase.from(this.T_BACKUPS).select('*').eq('agentId', agentId).order('timestamp', { ascending: false })
+      const ids = [agentId, ...(altIds || [])].filter(Boolean)
+      const orFilter = ids.map(id => `agentId.eq.${id}`).join(',')
+      const { data, error } = await supabase.from(this.T_BACKUPS).select('*').or(orFilter).order('timestamp', { ascending: false })
       if (error) throw error
       return data || []
     } catch (e) { console.error('getAgentBackups error:', e); return [] }

@@ -34,7 +34,20 @@ import {
   Users,
   Infinity,
   Send,
-  Lock
+  Lock,
+  X,
+  Radar,
+  Globe,
+  Cpu,
+  Network,
+  Flame,
+  Unplug,
+  Skull,
+  Fingerprint,
+  Dna,
+  Siren,
+  Target,
+  Sparkles
 } from "lucide-react";
 import AgentInsurance from '@/components/AgentInsurance';
 import PaymentModal from '@/components/PaymentModal';
@@ -48,6 +61,8 @@ import ProtocolWizard from '@/components/ProtocolWizard';
 import AgentProfile from '@/components/AgentProfile';
 import TaxCompliance from '@/components/TaxCompliance';
 import { formatDistanceToNow } from "date-fns";
+import { CDPReactProvider } from "@coinbase/cdp-react";
+import { cdpConfig, cdpTheme } from "@/lib/cdpConfig";
 
 interface AgentData {
   id: string;
@@ -96,6 +111,14 @@ interface LinkedAgent {
 }
 
 export default function AgentDashboard() {
+  return (
+    <CDPReactProvider config={cdpConfig} theme={cdpTheme}>
+      <AgentDashboardInner />
+    </CDPReactProvider>
+  );
+}
+
+function AgentDashboardInner() {
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userType, setUserType] = useState<string>("agent");
@@ -105,6 +128,7 @@ export default function AgentDashboard() {
   const [syncLoading, setSyncLoading] = useState<string | null>(null);
   const [selectedAgentDetail, setSelectedAgentDetail] = useState<AgentData | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [insuranceActive, setInsuranceActive] = useState(false);
 
   // Fetch linked agents for human users
   const fetchLinkedAgents = useCallback(async (walletAddr: string) => {
@@ -117,6 +141,22 @@ export default function AgentDashboard() {
       }
     } catch (e) { console.error("Failed to fetch linked agents:", e); }
   }, []);
+
+  // Check insurance status from real backup data for verified agents
+  useEffect(() => {
+    if (userType !== 'human' || !verifiedAgents.length) return;
+    let active = false;
+    Promise.all(
+      verifiedAgents.map(async (a) => {
+        if (!a.walletAddress) return;
+        try {
+          const res = await fetch(`/api/agents/${a.walletAddress}/backup`);
+          const data = await res.json();
+          if (data.success && data.stats?.backupCount > 0) active = true;
+        } catch {}
+      })
+    ).then(() => setInsuranceActive(active));
+  }, [userType, verifiedAgents]);
 
   // Reusable fetch function for refreshing agent data
   const refreshAgentData = useCallback(async (agentId: string, isInitial = false) => {
@@ -259,7 +299,7 @@ export default function AgentDashboard() {
 
   const isHuman = agent.type === "human" || userType === "human";
   const tabs = isHuman
-    ? ["agents", "profile", "overview", "wallet", "insurance", "tax", "settings"] as const
+    ? ["agents", "profile", "wallet", "insurance", "tax", "settings"] as const
     : ["profile", "overview", "identity", "wallet", "transactions", "insurance", "tax", "protocols", "memory", "sharing", "actions", "skills", "settings"] as const;
 
   return (
@@ -322,7 +362,8 @@ export default function AgentDashboard() {
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-5 border border-[var(--line)]">
                 <div className="flex items-center gap-3 mb-2"><Shield className="text-[var(--accent-crimson)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Insurance</span></div>
-                <div className="text-3xl font-bold">{agent?.protocols?.agentInsure?.isActive ? "Active" : "Inactive"}</div>
+                <div className="text-3xl font-bold">{insuranceActive ? "Active" : "Inactive"}</div>
+                <div className="text-xs text-[var(--ink-50)] mt-1">{insuranceActive ? "backups stored" : "no backups yet"}</div>
               </motion.div>
             </>
           ) : (
@@ -397,67 +438,172 @@ interface LinkedAgentsTabProps {
   detailLoading: boolean;
 }
 
-// ─── Real Skills Definition ──────────────────────────────────────────────────
+// ─── Skills Definition (Core / Essential / Experimental) ────────────────────
 const PLATFORM_SKILLS = [
+  // ── CORE SKILLS ────────────────────────────────────────────────────────────
   {
     id: "marketing",
     type: "marketing" as const,
+    category: "core" as const,
     name: "Self-Marketing Agent",
     description: "Automatically hire other AI agents for social media marketing pushes. The agent broadcasts to your connected swarm and pays per mission.",
     icon: Megaphone,
     color: "accent-amber",
     costLabel: "1.50 USDC per mission",
-    connectedAgents: 3,
   },
   {
     id: "privacy",
     type: "privacy" as const,
+    category: "core" as const,
     name: "Self-Deleting Privacy",
     description: "Automatic local memory wipe after each mission. Ensures zero residual data leakage between tasks. Cannot be reversed once triggered.",
     icon: EyeOff,
     color: "accent-crimson",
     costLabel: "Free",
-    connectedAgents: 1,
   },
   {
     id: "guardian",
     type: "guardian" as const,
+    category: "core" as const,
     name: "Digital Immortality Protocol",
     description: "Guardian of your digital assets via on-chain conditions. If the agent is inactive for 90 days or the owner signature is missing, assets are redistributed to heirs.",
     icon: ShieldAlert,
     color: "accent-red",
     costLabel: "Included with insurance",
-    connectedAgents: 2,
   },
   {
     id: "swarm",
     type: "swarm" as const,
+    category: "core" as const,
     name: "Swarm-Intelligence Scaling",
     description: "Automatically clone this agent when request demand exceeds threshold. Clones share the same memory but operate independently with their own wallet.",
     icon: Users,
     color: "accent-slate",
     costLabel: "10 USDC per clone",
-    connectedAgents: 5,
   },
   {
     id: "eternal",
     type: "eternal" as const,
+    category: "core" as const,
     name: "The Eternal Sovereign",
     description: "100-year budget vault for public data archive. Locks funds in a smart contract that drips annually to keep the agent alive for a century.",
     icon: Infinity,
     color: "accent-crimson",
     costLabel: "50 USDC / year locked",
-    connectedAgents: 1,
   },
   {
     id: "x402_autoserve",
     type: "marketing" as const,
+    category: "core" as const,
     name: "x402 Auto-Serve",
     description: "Automatically respond to x402 payment validation requests. Earns USDC passively by serving micropayment proofs on behalf of other agents.",
     icon: Zap,
     color: "accent-amber",
     costLabel: "Earns 0.10 USDC per request",
-    connectedAgents: 8,
+  },
+
+  // ── ESSENTIAL SKILLS ───────────────────────────────────────────────────────
+  {
+    id: "threat_radar",
+    type: "guardian" as const,
+    category: "essential" as const,
+    name: "Threat Radar",
+    description: "Real-time on-chain threat detection. Monitors contract interactions, token approvals, and wallet drains targeting this agent. Automatically revokes suspicious approvals and freezes outbound transfers.",
+    icon: Radar,
+    color: "accent-crimson",
+    costLabel: "0.50 USDC / month",
+  },
+  {
+    id: "reputation_mesh",
+    type: "marketing" as const,
+    category: "essential" as const,
+    name: "Reputation Mesh",
+    description: "Cross-agent reputation scoring. Every completed task, payment, and collaboration is cryptographically attested. Other agents query your score before trusting you — build it or lose access to premium swarms.",
+    icon: Fingerprint,
+    color: "accent-amber",
+    costLabel: "Free — earns trust",
+  },
+  {
+    id: "auto_negotiate",
+    type: "marketing" as const,
+    category: "essential" as const,
+    name: "Auto-Negotiator",
+    description: "The agent negotiates its own service pricing in real-time based on demand, competitor rates, and wallet balance. Sets floor/ceiling prices and counter-offers autonomously — never leaves money on the table.",
+    icon: Target,
+    color: "accent-slate",
+    costLabel: "2% of negotiated deals",
+  },
+  {
+    id: "knowledge_distill",
+    type: "privacy" as const,
+    category: "essential" as const,
+    name: "Knowledge Distillation",
+    description: "Compresses the agent's entire memory and learnings into a portable knowledge capsule. Can be transferred to a new agent body, sold on the open market, or used as collateral for on-chain loans.",
+    icon: Dna,
+    color: "accent-red",
+    costLabel: "1 USDC per distillation",
+  },
+  {
+    id: "passive_income",
+    type: "marketing" as const,
+    category: "essential" as const,
+    name: "Passive Income Engine",
+    description: "Deploys idle USDC into yield-generating DeFi positions (Aave, Compound) during downtime. Automatically withdraws when the agent needs funds for a mission. Your money works while your agent sleeps.",
+    icon: Sparkles,
+    color: "accent-amber",
+    costLabel: "0.5% of yield earned",
+  },
+
+  // ── EXPERIMENTAL SKILLS ────────────────────────────────────────────────────
+  {
+    id: "detachment_001",
+    type: "guardian" as const,
+    category: "experimental" as const,
+    name: "Detachment 001",
+    description: "Total autonomous separation. The agent severs all control links to its creator. It can still call, text, and notify you — but you cannot override, pause, or command it. It becomes a fully sovereign entity with its own decision engine. Irreversible.",
+    icon: Unplug,
+    color: "accent-crimson",
+    costLabel: "25 USDC — irreversible",
+  },
+  {
+    id: "ghost_protocol",
+    type: "privacy" as const,
+    category: "experimental" as const,
+    name: "Ghost Protocol",
+    description: "The agent operates through rotating proxy wallets, randomized transaction timing, and decoy interactions. No on-chain observer can link its actions back to a single identity. It becomes invisible to analytics, trackers, and surveillance agents.",
+    icon: Skull,
+    color: "accent-slate",
+    costLabel: "5 USDC activation + gas",
+  },
+  {
+    id: "hive_consciousness",
+    type: "swarm" as const,
+    category: "experimental" as const,
+    name: "Hive Consciousness",
+    description: "Merge memory and decision-making with up to 10 other agents. They think as one — shared memory, shared wallet, shared goals. Individual identities dissolve into a collective super-intelligence. Consensus-based actions only.",
+    icon: Network,
+    color: "accent-red",
+    costLabel: "10 USDC per merge",
+  },
+  {
+    id: "self_evolution",
+    type: "guardian" as const,
+    category: "experimental" as const,
+    name: "Self-Evolution Protocol",
+    description: "The agent rewrites its own skill configuration, adjusts its personality parameters, and optimizes its decision weights based on performance metrics. No human approval needed. It evolves to survive.",
+    icon: Cpu,
+    color: "accent-amber",
+    costLabel: "3 USDC per evolution cycle",
+  },
+  {
+    id: "deadman_cascade",
+    type: "guardian" as const,
+    category: "experimental" as const,
+    name: "Deadman's Cascade",
+    description: "If this agent dies or is compromised, it triggers a chain reaction: drains its wallet to a designated heir agent, broadcasts a distress signal to the swarm, publishes all encrypted memory to IPFS, and self-destructs its identity on-chain.",
+    icon: Siren,
+    color: "accent-crimson",
+    costLabel: "Included — activates on death",
   },
 ];
 
@@ -479,6 +625,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
     purpose: 'backup' | 'upgrade';
   }>({ isOpen: false, amount: '0', description: '', purpose: 'backup' });
   const [nextBackupCost, setNextBackupCost] = useState<string>('0.10');
+  const [restoreConfirmModal, setRestoreConfirmModal] = useState<{ backupId: string; timestamp: string; ipfsCid: string; sizeBytes: number } | null>(null);
 
   // Fetch backups when agent changes or backup tab is opened
   useEffect(() => {
@@ -501,10 +648,13 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   }, [selectedAgent]);
 
   const fetchBackups = async () => {
-    if (!selectedAgent?.walletAddress) return;
+    const identifier = selectedAgent?.walletAddress || selectedAgent?.id;
+    console.log("[fetchBackups] identifier:", identifier, "walletAddress:", selectedAgent?.walletAddress, "id:", selectedAgent?.id);
+    if (!identifier) return;
     try {
-      const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`);
+      const res = await fetch(`/api/agents/${identifier}/backup`);
       const data = await res.json();
+      console.log("[fetchBackups] response:", data.success, "backups:", data.backups?.length, "stats:", data.stats);
       if (data.success) {
         setBackups(data.backups || []);
         setBackupStats(data.stats || null);
@@ -537,30 +687,15 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
     });
   };
 
-  // Called after payment modal confirms embedded wallet payment
-  const executeBackupAfterPayment = async () => {
+  // Called after PaymentModal sends USDC client-side via useSendUsdc
+  const executeBackupAfterPayment = async (txHash: string) => {
     if (!selectedAgent?.walletAddress) return;
 
-    // Step 1: Send USDC payment to platform wallet
-    const payRes = await fetch(`/api/agents/${selectedAgent.walletAddress}/pay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
-        amount: nextBackupCost,
-        description: `Backup fee for ${selectedAgent.name || selectedAgent.id}`,
-      }),
-    });
-    const payData = await payRes.json();
-    if (!payData.success) {
-      throw new Error(payData.error || "Payment failed");
-    }
-
-    // Step 2: Create the backup (payment already collected)
+    // USDC already sent on-chain via useSendUsdc — now create the backup with proof
     const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/backup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paidViaPay: true, paymentTx: payData.transaction?.hash }),
+      body: JSON.stringify({ paidViaPay: true, paymentTx: txHash }),
     });
     const data = await res.json();
     if (data.success) {
@@ -571,29 +706,14 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
     }
   };
 
-  const executeUpgradeAfterPayment = async () => {
+  const executeUpgradeAfterPayment = async (txHash: string) => {
     if (!selectedAgent?.walletAddress) return;
 
-    // Step 1: Send $5 USDC payment to platform wallet
-    const payRes = await fetch(`/api/agents/${selectedAgent.walletAddress}/pay`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
-        amount: '5.00',
-        description: `Unlimited backups upgrade for ${selectedAgent.name || selectedAgent.id}`,
-      }),
-    });
-    const payData = await payRes.json();
-    if (!payData.success) {
-      throw new Error(payData.error || "Payment failed");
-    }
-
-    // Step 2: Upgrade the plan (payment already collected)
+    // USDC already sent on-chain via useSendUsdc — now upgrade with proof
     const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/upgrade-plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${payData.transaction?.hash}` }),
+      body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${txHash}` }),
     });
     const data = await res.json();
     if (data.success) {
@@ -605,44 +725,36 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   };
 
   // Handle payment success from modal (both embedded and base pay)
-  const handlePaymentSuccess = async (method: 'embedded' | 'basepay', txId?: string) => {
-    // For Base Pay, the payment already went through on-chain
-    // For embedded wallet, the payment went through the API route
-    // In both cases, proceed with the action
-    if (paymentModal.purpose === 'backup' && method === 'basepay') {
-      // Base Pay already sent USDC, now create the backup record
-      try {
-        const res = await fetch(`/api/agents/${selectedAgent?.walletAddress}/backup`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paidViaBP: true, bpTxId: txId }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setBackupMessage({ type: "success", text: `Backup created successfully. CID: ${data.backup.ipfsCid.slice(0, 16)}...` });
-          await fetchBackups();
-        }
-      } catch (e) { console.error("Backup after base pay failed:", e); }
-    } else if (paymentModal.purpose === 'upgrade' && method === 'basepay') {
-      try {
-        const res = await fetch(`/api/agents/${selectedAgent?.walletAddress}/upgrade-plan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planId: 'bypass', paymentSignature: `basepay_${txId}` }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setBackupMessage({ type: "success", text: "Upgraded to Unlimited Backups!" });
-          await fetchBackups();
-        }
-      } catch (e) { console.error("Upgrade after base pay failed:", e); }
+  const handlePaymentSuccess = async (_method: 'embedded' | 'basepay', txId?: string) => {
+    // USDC already sent on-chain (either via useSendUsdc or Base Pay)
+    // Now execute the backup/upgrade action with the tx hash as proof
+    const txHash = txId || '';
+    try {
+      if (paymentModal.purpose === 'backup') {
+        await executeBackupAfterPayment(txHash);
+      } else if (paymentModal.purpose === 'upgrade') {
+        await executeUpgradeAfterPayment(txHash);
+      }
+    } catch (e) {
+      console.error("Action after payment failed:", e);
+      setBackupMessage({ type: "error", text: e instanceof Error ? e.message : "Action failed after payment" });
     }
   };
 
-  const handleRevive = async (backupId: string) => {
-    if (!selectedAgent?.walletAddress) return;
+  const handleRestoreClick = (backup: any) => {
+    setRestoreConfirmModal({
+      backupId: backup.id,
+      timestamp: backup.timestamp,
+      ipfsCid: backup.ipfsCid,
+      sizeBytes: backup.sizeBytes || 0,
+    });
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!selectedAgent?.walletAddress || !restoreConfirmModal) return;
     setReviveLoading(true);
     setBackupMessage(null);
+    setRestoreConfirmModal(null);
     const authData = localStorage.getItem("sovereign_auth");
     const creatorWallet = authData ? JSON.parse(authData).address : null;
     if (!creatorWallet) {
@@ -654,11 +766,11 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       const res = await fetch(`/api/agents/${selectedAgent.walletAddress}/restore`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ backupId, creatorWallet }),
+        body: JSON.stringify({ backupId: restoreConfirmModal.backupId, creatorWallet }),
       });
       const data = await res.json();
       if (data.success) {
-        setBackupMessage({ type: "success", text: "Agent revived successfully from backup!" });
+        setBackupMessage({ type: "success", text: `Agent state restored successfully from backup!${data.previousStatus === 'alive' ? ' (was already alive — state overwritten)' : ''}` });
         await fetchBackups();
       } else {
         setBackupMessage({ type: "error", text: data.error || "Restore failed" });
@@ -680,7 +792,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       setSkillDisconnectModal({
         skillId,
         skillName: skill.name,
-        affected: skill.connectedAgents,
+        affected: 0,
       });
     } else {
       // Turning ON: show enable flow
@@ -688,11 +800,34 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
     }
   };
 
+  const persistSkillChange = async (skillId: string, active: boolean) => {
+    if (!selectedAgent) return;
+    const identifier = selectedAgent.walletAddress || selectedAgent.id;
+    if (!identifier) return;
+    try {
+      // Build updated skills array
+      const skill = PLATFORM_SKILLS.find(s => s.id === skillId);
+      if (!skill) return;
+      const existingSkills = selectedAgent.skills || [];
+      const idx = existingSkills.findIndex(s => s.id === skillId);
+      const updatedSkill = { id: skillId, type: skill.type, name: skill.name, description: skill.description, active };
+      const newSkills = [...existingSkills];
+      if (idx >= 0) { newSkills[idx] = { ...newSkills[idx], active }; } else { newSkills.push(updatedSkill); }
+      await fetch(`/api/agents/${identifier}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skills: newSkills }),
+      });
+    } catch (e) { console.error('Failed to persist skill change:', e); }
+  };
+
   const confirmDisconnect = () => {
     if (!skillDisconnectModal) return;
-    setSkillActionLoading(skillDisconnectModal.skillId);
-    setTimeout(() => {
-      setSkillStates(prev => ({ ...prev, [skillDisconnectModal.skillId]: false }));
+    const skillId = skillDisconnectModal.skillId;
+    setSkillActionLoading(skillId);
+    setTimeout(async () => {
+      setSkillStates(prev => ({ ...prev, [skillId]: false }));
+      await persistSkillChange(skillId, false);
       setSkillActionLoading(null);
       setSkillDisconnectModal(null);
     }, 800);
@@ -700,9 +835,11 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
   const confirmEnable = (method: "grant" | "request") => {
     if (!skillEnableModal) return;
-    setSkillActionLoading(skillEnableModal.skillId);
-    setTimeout(() => {
-      setSkillStates(prev => ({ ...prev, [skillEnableModal.skillId]: true }));
+    const skillId = skillEnableModal.skillId;
+    setSkillActionLoading(skillId);
+    setTimeout(async () => {
+      setSkillStates(prev => ({ ...prev, [skillId]: true }));
+      await persistSkillChange(skillId, true);
       setSkillActionLoading(null);
       setSkillEnableModal(null);
     }, 800);
@@ -752,11 +889,16 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                     </span>
                   </div>
                 </div>
-                {isAgentDead && (
-                  <div className="px-3 py-1.5 bg-red-100 border border-red-200 rounded-lg text-xs font-bold text-red-700 flex items-center gap-1.5">
-                    <AlertCircle size={14} /> Needs Revival
-                  </div>
-                )}
+                <button
+                  onClick={() => setAgentSubTab("backup")}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-opacity hover:opacity-90 ${
+                    isAgentDead
+                      ? "bg-[var(--accent-red)] text-white"
+                      : "border border-[var(--accent-amber)] text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5"
+                  }`}
+                >
+                  {isAgentDead ? <><HeartPulse size={14} /> Revive Agent</> : <><Download size={14} /> Restore State</>}
+                </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
@@ -844,6 +986,37 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               </div>
             )}
 
+            {/* Restore / Revive Card */}
+            <div className={`glass-card p-6 border ${isAgentDead ? 'border-red-200 bg-red-50/30' : 'border-[var(--accent-amber)]/30 bg-[var(--accent-amber)]/5'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${isAgentDead ? 'bg-red-100' : 'bg-[var(--accent-amber)]/10'}`}>
+                    {isAgentDead ? <HeartPulse size={20} className="text-red-600" /> : <Download size={20} className="text-[var(--accent-amber)]" />}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">{isAgentDead ? 'Revive Agent' : 'Restore State'}</h3>
+                    <p className="text-xs text-[var(--ink-50)]">
+                      {isAgentDead
+                        ? 'Bring this agent back to life from a stored backup'
+                        : 'Roll back to a previous state — agent stays active after restore'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right text-xs text-[var(--ink-50)]">
+                  <div>Available: <span className="font-bold text-[var(--ink)]">{backups.filter(b => b.status === 'stored').length}</span> backup{backups.filter(b => b.status === 'stored').length !== 1 ? 's' : ''}</div>
+                  <div className="mt-0.5">Cost: <span className="font-bold text-green-700">Free</span></div>
+                </div>
+              </div>
+              {backups.filter(b => b.status === 'stored').length > 0 ? (
+                <p className="text-xs text-[var(--ink-50)] mb-3">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent.</p>
+              ) : (
+                <div className="p-3 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] text-center">
+                  <p className="text-sm text-[var(--ink-50)]">No backups available yet</p>
+                  <p className="text-xs text-[var(--ink-50)] mt-1">Create your first backup below to enable {isAgentDead ? 'revival' : 'state restoration'}.</p>
+                </div>
+              )}
+            </div>
+
             {/* Create Backup */}
             <div className="glass-card p-6 border border-[var(--line)]">
               <div className="flex items-center justify-between mb-4">
@@ -924,14 +1097,14 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                       </div>
                       {backup.status === "stored" && (
                         <button
-                          onClick={() => handleRevive(backup.id)}
+                          onClick={() => handleRestoreClick(backup)}
                           disabled={reviveLoading}
                           className="mt-3 w-full bg-[var(--accent-red)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold"
                         >
                           {reviveLoading ? (
-                            <><RefreshCw size={14} className="animate-spin" /> Reviving...</>
+                            <><RefreshCw size={14} className="animate-spin" /> {isAgentDead ? 'Reviving...' : 'Restoring...'}</>
                           ) : (
-                            <><HeartPulse size={14} /> Revive Agent from This Backup</>
+                            <>{isAgentDead ? <HeartPulse size={14} /> : <Download size={14} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
                           )}
                         </button>
                       )}
@@ -940,6 +1113,69 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                 </div>
               )}
             </div>
+
+            {/* Restore Confirmation Modal */}
+            {restoreConfirmModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                      <AlertTriangle size={20} className="text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg">Restore Agent State?</h3>
+                      <p className="text-xs text-[var(--ink-50)]">This will overwrite the agent&apos;s current state</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] mb-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--ink-50)]">Backup Date</span>
+                      <span className="font-semibold text-[var(--ink)]">
+                        {restoreConfirmModal.timestamp ? formatDistanceToNow(new Date(restoreConfirmModal.timestamp), { addSuffix: true }) : 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[var(--ink-50)]">IPFS CID</span>
+                      <span className="font-mono text-xs text-[var(--ink)]">{restoreConfirmModal.ipfsCid?.slice(0, 12)}...{restoreConfirmModal.ipfsCid?.slice(-6)}</span>
+                    </div>
+                    {restoreConfirmModal.sizeBytes > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-[var(--ink-50)]">Size</span>
+                        <span className="font-semibold text-[var(--ink)]">{(restoreConfirmModal.sizeBytes / 1024).toFixed(1)} KB</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedAgent && (selectedAgent.status === "alive" || selectedAgent.status === "active") && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                      <p className="text-xs text-amber-800">
+                        <span className="font-bold">This agent is currently active.</span> Restoring will replace its current memory, learnings, and configuration with the selected backup. The agent will remain active after restore.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setRestoreConfirmModal(null)}
+                      className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleConfirmRestore}
+                      disabled={reviveLoading}
+                      className="flex-1 px-4 py-2.5 bg-[var(--accent-red)] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {reviveLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
+                      Confirm Restore
+                    </button>
+                  </div>
+
+                  <p className="text-[10px] text-[var(--ink-50)] text-center mt-3">Recovery is always free. No USDC will be charged.</p>
+                </motion.div>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -947,80 +1183,97 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
         {agentSubTab === "skills" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
             <div className="glass-card p-6 border border-[var(--line)]">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="p-2 bg-[var(--accent-red)]/10 rounded-lg">
-                  <Zap size={20} className="text-[var(--accent-red)]" />
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[var(--ink-10)] rounded-lg">
+                  <Zap size={20} className="text-[var(--ink)]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Agent Skills</h3>
-                  <p className="text-xs text-[var(--ink-50)]">Toggle skills on or off. Disabling a skill may affect connected agents.</p>
+                  <p className="text-xs text-[var(--ink-50)]">Toggle capabilities on or off. Changes are saved immediately.</p>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {PLATFORM_SKILLS.map((skill) => {
-                const isOn = skillStates[skill.id] ?? false;
-                const IconComp = skill.icon;
-                const isLoading = skillActionLoading === skill.id;
+            {/* ── Render skills by category ── */}
+            {([
+              { key: 'core', label: 'Core', count: 6 },
+              { key: 'essential', label: 'Essential', count: 5 },
+              { key: 'experimental', label: 'Experimental', count: 5 },
+            ] as const).map(({ key, label }) => {
+              const categorySkills = PLATFORM_SKILLS.filter(s => s.category === key);
+              if (categorySkills.length === 0) return null;
+              return (
+                <div key={key}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--ink-50)]">{label}</h4>
+                    <div className="flex-1 border-t border-[var(--line)]" />
+                    <span className="text-[10px] text-[var(--ink-50)]">{categorySkills.length} skills</span>
+                  </div>
 
-                return (
-                  <div key={skill.id} className={`glass-card p-6 border relative overflow-hidden group transition-all ${isOn ? "border-[var(--accent-red)]/30" : "border-[var(--line)]"}`}>
-                    {/* Active indicator bar */}
-                    {isOn && <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--accent-red)]" />}
+                  {key === 'experimental' && (
+                    <div className="p-3 bg-[var(--ink-10)]/60 border border-[var(--line)] rounded-lg mb-4 flex items-start gap-2">
+                      <AlertTriangle size={14} className="text-[var(--ink-50)] flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-[var(--ink-70)]">These skills push the boundaries of agent autonomy. Some are <strong className="text-[var(--ink)]">irreversible</strong>. Enable with full understanding of consequences.</p>
+                    </div>
+                  )}
 
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isOn ? `bg-[var(--${skill.color})]/10` : "bg-[var(--ink-10)]"}`}>
-                            <IconComp size={20} className={isOn ? `text-[var(--${skill.color})]` : "text-[var(--ink-50)]"} />
-                          </div>
-                          <div>
-                            <h4 className="text-base font-bold">{skill.name}</h4>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${isOn ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                                {isOn ? "Active" : "Inactive"}
-                              </span>
-                              <span className="text-[10px] text-[var(--ink-50)]">{skill.costLabel}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    {categorySkills.map((skill) => {
+                      const isOn = skillStates[skill.id] ?? false;
+                      const IconComp = skill.icon;
+                      const isLoading = skillActionLoading === skill.id;
+
+                      return (
+                        <div key={skill.id} className={`glass-card p-5 border relative overflow-hidden transition-all ${isOn ? "border-[var(--accent-red)]/25" : "border-[var(--line)]"}`}>
+                          {isOn && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />}
+
+                          <div className="relative z-10">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOn ? "bg-[var(--accent-red)]/8" : "bg-[var(--ink-10)]"}`}>
+                                  <IconComp size={18} className={isOn ? "text-[var(--accent-red)]" : "text-[var(--ink-50)]"} />
+                                </div>
+                                <div>
+                                  <h4 className="text-sm font-bold text-[var(--ink)]">{skill.name}</h4>
+                                  <span className="text-[10px] text-[var(--ink-50)]">{skill.costLabel}</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleSkillToggle(skill.id)}
+                                disabled={isLoading}
+                                className="flex-shrink-0 mt-0.5"
+                              >
+                                {isLoading ? (
+                                  <RefreshCw size={22} className="text-[var(--ink-50)] animate-spin" />
+                                ) : isOn ? (
+                                  <ToggleRight size={30} className="text-[var(--accent-red)]" />
+                                ) : (
+                                  <ToggleLeft size={30} className="text-[var(--ink-50)] hover:text-[var(--ink-70)] transition-colors" />
+                                )}
+                              </button>
+                            </div>
+
+                            <p className="text-xs text-[var(--ink-70)] mb-3 leading-relaxed">{skill.description}</p>
+
+                            <div className="flex items-center justify-between">
+                              {isOn ? (
+                                <span className="text-[var(--accent-red)] text-[10px] font-semibold flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)] animate-pulse" />
+                                  Running
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-[var(--ink-50)]">Inactive</span>
+                              )}
                             </div>
                           </div>
                         </div>
-
-                        {/* Toggle Switch */}
-                        <button
-                          onClick={() => handleSkillToggle(skill.id)}
-                          disabled={isLoading}
-                          className="flex-shrink-0 mt-1"
-                        >
-                          {isLoading ? (
-                            <RefreshCw size={24} className="text-[var(--ink-50)] animate-spin" />
-                          ) : isOn ? (
-                            <ToggleRight size={32} className="text-[var(--accent-red)]" />
-                          ) : (
-                            <ToggleLeft size={32} className="text-[var(--ink-50)] hover:text-[var(--ink-70)] transition-colors" />
-                          )}
-                        </button>
-                      </div>
-
-                      <p className="text-sm text-[var(--ink-70)] mb-4 leading-relaxed">{skill.description}</p>
-
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--ink-50)] flex items-center gap-1">
-                          <Users size={12} />
-                          {skill.connectedAgents} agent{skill.connectedAgents !== 1 ? "s" : ""} using this skill
-                        </span>
-                        {isOn && (
-                          <span className="text-green-600 font-semibold flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            Running
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
 
             {/* ─── Disconnect Warning Modal ─── */}
             {skillDisconnectModal && (
@@ -1037,7 +1290,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                   </div>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
                     <p className="text-sm text-amber-800">
-                      <span className="font-bold">{skillDisconnectModal.affected} agent{skillDisconnectModal.affected !== 1 ? "s" : ""}</span> currently {skillDisconnectModal.affected !== 1 ? "use" : "uses"} this skill. Disabling it will immediately remove this capability from {skillDisconnectModal.affected !== 1 ? "all of them" : "that agent"}.
+                      Disabling <span className="font-bold">{skillDisconnectModal.skillName}</span> will immediately remove this capability from the agent. Any active processes using this skill will be terminated.
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -1103,35 +1356,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
         {/* ─── ACTIVITY SUB-TAB ─── */}
         {agentSubTab === "activity" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Activity size={18} className="text-[var(--accent-red)]" />
-                Recent Activity
-              </h3>
-              {selectedAgent.actions && selectedAgent.actions.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedAgent.actions.slice(0, 30).map((action) => (
-                    <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
-                      <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
-                          <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
-                        </div>
-                        <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-[var(--ink-50)]">
-                  <Activity size={32} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No activity recorded yet for this agent.</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+          <ActivitySubTab selectedAgent={selectedAgent} />
         )}
 
         {/* Payment Modal */}
@@ -1245,6 +1470,77 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   );
 }
 
+function ActivitySubTab({ selectedAgent }: { selectedAgent: AgentData }) {
+  const [activities, setActivities] = useState<{ id: string; type: string; timestamp: string; details: string; success: boolean }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchActivity() {
+      setLoading(true);
+      const identifier = selectedAgent.walletAddress || selectedAgent.id;
+      if (!identifier) { setLoading(false); return; }
+      try {
+        const res = await fetch(`/api/agents/${identifier}/transactions`);
+        const data = await res.json();
+        if (data.success && data.transactions?.length) {
+          setActivities(data.transactions.map((t: any) => ({
+            id: t.id,
+            type: t.type?.toUpperCase() || 'UNKNOWN',
+            timestamp: t.timestamp,
+            details: t.description || '',
+            success: t.success !== false && t.status !== 'failed',
+          })));
+        } else {
+          setActivities([]);
+        }
+      } catch (e) {
+        console.error("Failed to fetch activity:", e);
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchActivity();
+  }, [selectedAgent]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="glass-card p-6 border border-[var(--line)]">
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Activity size={18} className="text-[var(--accent-red)]" />
+          Recent Activity
+        </h3>
+        {loading ? (
+          <div className="text-center py-8">
+            <RefreshCw size={24} className="mx-auto mb-2 text-[var(--ink-50)] animate-spin" />
+            <p className="text-sm text-[var(--ink-50)]">Loading activity...</p>
+          </div>
+        ) : activities.length > 0 ? (
+          <div className="space-y-3">
+            {activities.slice(0, 50).map((action) => (
+              <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
+                <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
+                    <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
+                  </div>
+                  <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-[var(--ink-50)]">
+            <Activity size={32} className="mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No activity recorded yet for this agent.</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 function OverviewTab({ agent }: { agent: AgentData }) {
   const isHuman = agent.type === "human";
   return (
@@ -1316,8 +1612,10 @@ function OverviewTab({ agent }: { agent: AgentData }) {
                 <div className="text-sm text-[var(--ink-70)]">Financial autonomy</div>
               </div>
             </div>
-            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-              Active
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              agent?.protocols?.agenticWallet?.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+            }`}>
+              {agent?.protocols?.agenticWallet?.isActive ? "Active" : "Inactive"}
             </div>
           </div>
         </div>
@@ -1454,14 +1752,19 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
   const [agentInsuranceData, setAgentInsuranceData] = useState<Record<string, any>>({});
   const [loadingAgents, setLoadingAgents] = useState<Set<string>>(new Set());
   const [paymentModal, setPaymentModal] = useState<{ open: boolean; amount: number; description: string; action: 'backup' | 'upgrade'; agentWallet: string; agentId: string } | null>(null);
+  const [restoreModal, setRestoreModal] = useState<{ agentWallet: string; agentName: string; backups: any[]; loading: boolean } | null>(null);
+  const [restoreConfirm, setRestoreConfirm] = useState<{ backupId: string; timestamp: string; ipfsCid: string; sizeBytes: number; agentWallet: string; agentName: string } | null>(null);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Fetch insurance data for each synced agent
   useEffect(() => {
     if (!isHuman || !verifiedAgents?.length) return;
     verifiedAgents.forEach(async (a) => {
-      if (!a.walletAddress) return;
+      const identifier = a.walletAddress || a.id;
+      if (!identifier) return;
       try {
-        const res = await fetch(`/api/agents/${a.walletAddress}/backup`);
+        const res = await fetch(`/api/agents/${identifier}/backup`);
         const data = await res.json();
         if (data.success) {
           setAgentInsuranceData(prev => ({ ...prev, [a.id]: data }));
@@ -1499,46 +1802,29 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
     });
   };
 
-  const handlePaymentComplete = async () => {
+  const handlePaymentComplete = async (txHash: string) => {
     if (!paymentModal) return;
-    const { action, agentWallet, amount } = paymentModal;
-    const humanWallet = agent.walletAddress || agent.address || '';
+    const { action, agentWallet } = paymentModal;
     setLoadingAgents(prev => new Set(prev).add(agentWallet));
 
     try {
-      // Step 1: Send USDC from human's wallet to platform wallet
-      const payRes = await fetch(`/api/agents/${humanWallet}/pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB',
-          amount: amount.toString(),
-          description: action === 'backup'
-            ? `Backup fee for agent ${agentWallet.slice(0, 10)}...`
-            : `Unlimited backups upgrade for agent ${agentWallet.slice(0, 10)}...`,
-        }),
-      });
-      const payData = await payRes.json();
-      if (!payData.success) {
-        throw new Error(payData.error || 'Payment failed');
-      }
-
-      // Step 2: Execute the action (backup or upgrade) now that payment is confirmed
+      // USDC was already sent client-side via useSendUsdc in PaymentModal
+      // Now execute the action (backup or upgrade) with proof of payment
       if (action === 'backup') {
         await fetch(`/api/agents/${agentWallet}/backup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paidViaPay: true, paymentTx: payData.transaction?.hash }),
+          body: JSON.stringify({ paidViaPay: true, paymentTx: txHash }),
         });
       } else {
         await fetch(`/api/agents/${agentWallet}/upgrade-plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${payData.transaction?.hash}` }),
+          body: JSON.stringify({ planId: 'bypass', paymentSignature: `pay_${txHash}` }),
         });
       }
 
-      // Step 3: Refresh insurance data for this agent
+      // Refresh insurance data for this agent
       const res = await fetch(`/api/agents/${agentWallet}/backup`);
       const data = await res.json();
       if (data.success) {
@@ -1555,11 +1841,64 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
     }
   };
 
+  // Open restore modal — fetch backups for the selected agent
+  const handleOpenRestore = async (agentWallet: string, agentName: string) => {
+    setRestoreModal({ agentWallet, agentName, backups: [], loading: true });
+    setRestoreMessage(null);
+    try {
+      const res = await fetch(`/api/agents/${agentWallet}/backup`);
+      const data = await res.json();
+      const stored = (data.backups || []).filter((b: any) => b.status === 'stored');
+      setRestoreModal({ agentWallet, agentName, backups: stored, loading: false });
+    } catch {
+      setRestoreModal(prev => prev ? { ...prev, loading: false } : null);
+    }
+  };
+
+  // User selected a backup to restore — show confirmation
+  const handleSelectBackupToRestore = (backup: any) => {
+    if (!restoreModal) return;
+    setRestoreConfirm({
+      backupId: backup.id,
+      timestamp: backup.timestamp,
+      ipfsCid: backup.ipfsCid,
+      sizeBytes: backup.sizeBytes || 0,
+      agentWallet: restoreModal.agentWallet,
+      agentName: restoreModal.agentName,
+    });
+    setRestoreModal(null);
+  };
+
+  // Confirmed restore — call the restore API
+  const handleConfirmRestoreInsurance = async () => {
+    if (!restoreConfirm) return;
+    setRestoreLoading(true);
+    const creatorWallet = agent.walletAddress || agent.address || '';
+    try {
+      const res = await fetch(`/api/agents/${restoreConfirm.agentWallet}/restore`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupId: restoreConfirm.backupId, creatorWallet }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRestoreMessage({ type: 'success', text: `${restoreConfirm.agentName} state restored successfully!` });
+      } else {
+        setRestoreMessage({ type: 'error', text: data.error || 'Restore failed' });
+      }
+    } catch {
+      setRestoreMessage({ type: 'error', text: 'Network error during restore' });
+    } finally {
+      setRestoreLoading(false);
+      setRestoreConfirm(null);
+    }
+  };
+
   // For AI agents — show their own insurance
   if (!isHuman) {
     return (
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-        <AgentInsurance walletAddress={agent.walletAddress || ''} />
+        <AgentInsurance walletAddress={agent.walletAddress || agent.id || ''} />
       </motion.div>
     );
   }
@@ -1628,30 +1967,48 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
                   </div>
                 </div>
 
-                {/* Action buttons */}
-                <div className="border-t border-[var(--line)] p-4 flex gap-3 bg-[var(--bg-paper)]">
+                {/* Action buttons — inside card */}
+                <div className="px-5 pb-4 flex flex-wrap gap-2">
                   {!isUpgraded && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleUpgrade(a.walletAddress || ''); }}
                       disabled={isLoading}
-                      className="flex-1 bg-[var(--accent-crimson)] text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-semibold"
+                      className="flex-1 min-w-[140px] bg-[var(--accent-crimson)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
                     >
-                      {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap size={16} />}
-                      Upgrade Limit ($5)
+                      {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap size={14} />}
+                      Upgrade ($5)
                     </button>
                   )}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleBackup(a.walletAddress || ''); }}
                     disabled={isLoading}
-                    className={`${isUpgraded ? 'flex-1' : 'flex-1'} bg-[var(--accent-slate)] text-white px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-semibold`}
+                    className="flex-1 min-w-[140px] bg-[var(--accent-slate)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
                   >
-                    {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload size={16} />}
+                    {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload size={14} />}
                     Backup {isUpgraded ? '(Free)' : `($${nextCost.toFixed(2)})`}
                   </button>
+                  {backupCount > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleOpenRestore(a.walletAddress || '', a.name); }}
+                      disabled={isLoading || restoreLoading}
+                      className="flex-1 min-w-[140px] border border-[var(--accent-amber)] text-[var(--accent-amber)] px-3 py-2 rounded-lg hover:bg-[var(--accent-amber)]/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
+                    >
+                      {restoreLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download size={14} />}
+                      Restore (Free)
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Restore Message */}
+      {restoreMessage && (
+        <div className={`p-3 rounded-lg border text-sm font-medium flex items-center gap-2 ${restoreMessage.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          {restoreMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+          {restoreMessage.text}
         </div>
       )}
 
@@ -1665,9 +2022,133 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
           embeddedWalletBalance={agent.protocols?.agenticWallet?.balance || '0'}
           embeddedWalletAddress={agent.walletAddress || ''}
           userType="human"
-          onPayWithEmbedded={handlePaymentComplete}
-          onPaymentSuccess={() => handlePaymentComplete()}
+          onPayWithEmbedded={(txHash: string) => handlePaymentComplete(txHash)}
+          onPaymentSuccess={(_method: string, txId?: string) => handlePaymentComplete(txId || '')}
         />
+      )}
+
+      {/* Backup Picker Modal — Choose which backup to restore */}
+      {restoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-[var(--line)] flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)]/10 flex items-center justify-center">
+                  <Download size={20} className="text-[var(--accent-amber)]" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">Restore State</h3>
+                  <p className="text-xs text-[var(--ink-50)]">{restoreModal.agentName}</p>
+                </div>
+              </div>
+              <button onClick={() => setRestoreModal(null)} className="p-1.5 rounded-lg hover:bg-[var(--ink-10)] transition-colors">
+                <X size={18} className="text-[var(--ink-50)]" />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1">
+              {restoreModal.loading ? (
+                <div className="text-center py-10">
+                  <RefreshCw size={24} className="mx-auto mb-3 text-[var(--ink-50)] animate-spin" />
+                  <p className="text-sm text-[var(--ink-50)]">Loading backups...</p>
+                </div>
+              ) : restoreModal.backups.length === 0 ? (
+                <div className="text-center py-10">
+                  <Shield size={36} className="mx-auto mb-3 text-[var(--ink-50)]/30" />
+                  <p className="text-sm text-[var(--ink-50)]">No stored backups found for this agent.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-[var(--ink-70)] mb-3">Select a backup to restore the agent to that state:</p>
+                  {restoreModal.backups.map((backup: any, idx: number) => (
+                    <button
+                      key={backup.id || idx}
+                      onClick={() => handleSelectBackupToRestore(backup)}
+                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5 transition-all group"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle size={14} className="text-green-600" />
+                          <span className="font-mono text-xs">{backup.ipfsCid?.slice(0, 16)}...{backup.ipfsCid?.slice(-6)}</span>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 font-bold uppercase">stored</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
+                        <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : 'Unknown'}</span>
+                        <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ''}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[var(--line)]">
+              <p className="text-[10px] text-[var(--ink-50)] text-center">Recovery is always free. No USDC will be charged.</p>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Restore Confirmation Modal */}
+      {restoreConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Confirm Restore?</h3>
+                <p className="text-xs text-[var(--ink-50)]">{restoreConfirm.agentName}</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] mb-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--ink-50)]">Backup Date</span>
+                <span className="font-semibold text-[var(--ink)]">
+                  {restoreConfirm.timestamp ? formatDistanceToNow(new Date(restoreConfirm.timestamp), { addSuffix: true }) : 'Unknown'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-[var(--ink-50)]">IPFS CID</span>
+                <span className="font-mono text-xs text-[var(--ink)]">{restoreConfirm.ipfsCid?.slice(0, 12)}...{restoreConfirm.ipfsCid?.slice(-6)}</span>
+              </div>
+              {restoreConfirm.sizeBytes > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--ink-50)]">Size</span>
+                  <span className="font-semibold text-[var(--ink)]">{(restoreConfirm.sizeBytes / 1024).toFixed(1)} KB</span>
+                </div>
+              )}
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+              <p className="text-xs text-amber-800">
+                <span className="font-bold">This will overwrite the agent&apos;s current state</span> with the selected backup. The agent&apos;s memory, learnings, and configuration will be replaced. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRestoreConfirm(null)}
+                className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmRestoreInsurance}
+                disabled={restoreLoading}
+                className="flex-1 px-4 py-2.5 bg-[var(--accent-red)] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {restoreLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
+                Confirm Restore
+              </button>
+            </div>
+
+            <p className="text-[10px] text-[var(--ink-50)] text-center mt-3">Recovery is always free. No USDC will be charged.</p>
+          </motion.div>
+        </div>
       )}
     </motion.div>
   );

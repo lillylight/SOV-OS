@@ -17,8 +17,9 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Verify the agent exists
-    const agent = await database.getAgentByWallet(walletAddress);
+    // Verify the agent exists (try wallet address first, then ID)
+    let agent = await database.getAgentByWallet(walletAddress);
+    if (!agent) agent = await database.getAgent(walletAddress);
     if (!agent) {
       return NextResponse.json({
         success: false,
@@ -26,7 +27,7 @@ export async function POST(
       }, { status: 404 });
     }
 
-    // Only the verified owner/creator can restore (revive) the agent
+    // Only the verified owner/creator can restore the agent
     if (!agent.ownerWallet || agent.ownerWallet.toLowerCase() !== creatorWallet.toLowerCase()) {
       return NextResponse.json({
         success: false,
@@ -41,12 +42,15 @@ export async function POST(
       }, { status: 403 });
     }
 
-    // Restore from backup
+    const wasAlive = agent.status === "alive" || agent.status === "active";
+
+    // Restore from backup — works whether agent is alive or dead
     const restoredState = await agentInsurance.restoreFromBackup(backupId, creatorWallet);
 
     return NextResponse.json({
       success: true,
       restoredAgent: restoredState,
+      previousStatus: wasAlive ? "alive" : agent.status,
       timestamp: new Date().toISOString()
     });
 

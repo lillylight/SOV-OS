@@ -220,8 +220,8 @@ export class AgentInsurance {
   /**
    * Get all backups for an agent
    */
-  async getAgentBackups(agentId: string): Promise<BackupRecord[]> {
-    return await database.getAgentBackups(agentId);
+  async getAgentBackups(agentId: string, altIds?: string[]): Promise<BackupRecord[]> {
+    return await database.getAgentBackups(agentId, altIds);
   }
 
   /**
@@ -230,27 +230,27 @@ export class AgentInsurance {
   /**
    * Calculate the cost of the next backup for an agent
    */
-  async getNextBackupCost(agentId: string): Promise<number> {
+  async getNextBackupCost(agentId: string, altIds?: string[]): Promise<number> {
     const agent = await database.getAgent(agentId);
     if (!agent) return BACKUP_PRICING.INTRO_PRICE;
 
     const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
     if (hasUnlimited) return 0;
 
-    const backups = await this.getAgentBackups(agentId);
+    const backups = await this.getAgentBackups(agentId, altIds);
     const storedCount = backups.filter(b => b.status === 'stored').length;
     return storedCount < BACKUP_PRICING.INTRO_LIMIT
       ? BACKUP_PRICING.INTRO_PRICE
       : BACKUP_PRICING.STANDARD_PRICE;
   }
 
-  async canCreateBackup(agentId: string): Promise<{ canBackup: boolean; reason?: string; plan?: InsurancePlan; nextCost?: number }> {
+  async canCreateBackup(agentId: string, altIds?: string[]): Promise<{ canBackup: boolean; reason?: string; plan?: InsurancePlan; nextCost?: number }> {
     const agent = await database.getAgent(agentId);
     if (!agent) {
       return { canBackup: false, reason: 'Agent not found' };
     }
 
-    const backups = await this.getAgentBackups(agentId);
+    const backups = await this.getAgentBackups(agentId, altIds);
     const storedBackups = backups.filter(b => b.status === 'stored');
     const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
 
@@ -307,12 +307,12 @@ export class AgentInsurance {
   /**
    * Get insurance statistics
    */
-  async getInsuranceStats(agentId: string) {
-    const backups = await this.getAgentBackups(agentId);
+  async getInsuranceStats(agentId: string, altIds?: string[]) {
+    const backups = await this.getAgentBackups(agentId, altIds);
     const storedBackups = backups.filter(b => b.status === 'stored');
     const totalCost = storedBackups.reduce((sum, b) => sum + (b.cost || 0), 0);
     const totalSize = storedBackups.reduce((sum, b) => sum + (b.sizeBytes || 0), 0);
-    const backupStatus = await this.canCreateBackup(agentId);
+    const backupStatus = await this.canCreateBackup(agentId, altIds);
 
     return {
       backupCount: storedBackups.length,

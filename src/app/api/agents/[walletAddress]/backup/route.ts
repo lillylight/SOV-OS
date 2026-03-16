@@ -14,7 +14,8 @@ export async function POST(
     const paidViaPay = body?.paidViaPay === true;
     const externalPaymentTx = body?.paymentTx || body?.bpTxId || null;
 
-    const agent = await database.getAgentByWallet(walletAddress);
+    let agent = await database.getAgentByWallet(walletAddress);
+    if (!agent) agent = await database.getAgent(walletAddress);
     
     if (!agent) {
       return NextResponse.json({
@@ -24,7 +25,8 @@ export async function POST(
     }
 
     // Check if agent can create backup
-    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id);
+    const altIds = [agent.walletAddress, agent.address, walletAddress].filter(Boolean) as string[];
+    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id, altIds);
     if (!canBackup) {
       return NextResponse.json({
         success: false,
@@ -49,13 +51,11 @@ export async function POST(
     // so skip the internal USDC transfer in createBackup
     const backup = await agentInsurance.createBackup(agent.id, agentState, { skipPayment: paidViaPay, externalPaymentTx });
 
-    // Update agent's backup count
-    agent.protocols.agentWill.backupCount += 1;
+    // Get real stats from DB and sync agent record
+    const stats = await agentInsurance.getInsuranceStats(agent.id, altIds);
+    agent.protocols.agentWill.backupCount = stats.backupCount;
     agent.protocols.agentWill.lastBackup = backup.timestamp;
     await database.saveAgent(agent);
-    
-    // Get stats
-    const stats = await agentInsurance.getInsuranceStats(agent.id);
 
     // Auto-log to tax ledger
     try {
@@ -106,18 +106,31 @@ export async function GET(
 ) {
   try {
     const { walletAddress } = await params;
-    const agent = await database.getAgentByWallet(walletAddress);
+    console.log("[Backup GET] identifier:", walletAddress);
+    let agent = await database.getAgentByWallet(walletAddress);
+    if (!agent) agent = await database.getAgent(walletAddress);
     
     if (!agent) {
+      console.log("[Backup GET] Agent NOT found for:", walletAddress);
       return NextResponse.json({
         success: false,
         error: "Agent not found"
       }, { status: 404 });
     }
 
-    const backups = await agentInsurance.getAgentBackups(agent.id);
-    const stats = await agentInsurance.getInsuranceStats(agent.id);
-    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id);
+    const altIds = [agent.walletAddress, agent.address, walletAddress].filter(Boolean) as string[];
+    const backups = await agentInsurance.getAgentBackups(agent.id, altIds);
+    const stats = await agentInsurance.getInsuranceStats(agent.id, altIds);
+    const { canBackup, reason, plan } = await agentInsurance.canCreateBackup(agent.id, altIds);
+
+    // Sync agent record with real backup count from DB
+    const realCount = stats.backupCount;
+    if (agent.protocols?.agentWill?.backupCount !== realCount) {
+      agent.protocols.agentWill = agent.protocols.agentWill || { isActive: true, lastBackup: "", backupCount: 0 };
+      agent.protocols.agentWill.backupCount = realCount;
+      agent.protocols.agentWill.lastBackup = stats.lastBackup || agent.protocols.agentWill.lastBackup;
+      try { await database.saveAgent(agent); } catch {}
+    }
 
     return NextResponse.json({
       success: true,

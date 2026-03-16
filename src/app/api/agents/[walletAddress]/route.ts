@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { AgenticWallet } from "@/lib/agenticWallet";
+import { mergeSkillsWithCatalog } from "@/lib/skillsCatalog";
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +26,7 @@ export async function GET(
       try {
         const liveBalance = await AgenticWallet.getCompleteBalance(liveWalletAddr);
         agent.protocols = agent.protocols || {};
-        agent.protocols.agenticWallet = {
+        (agent.protocols as any).agenticWallet = {
           ...agent.protocols.agenticWallet,
           balance: liveBalance.usdc,
           ethBalance: liveBalance.eth,
@@ -36,6 +37,9 @@ export async function GET(
         console.warn("[Balance] Live balance fetch failed:", balErr instanceof Error ? balErr.message : balErr);
       }
     }
+
+    // Merge full skills catalog with agent's saved skill states
+    agent.skills = mergeSkillsWithCatalog(agent.skills) as any;
 
     return NextResponse.json({ success: true, agent });
   } catch (error: any) {
@@ -84,6 +88,9 @@ export async function PATCH(
           ...(body.metadata.preferences || {}),
         },
       };
+    }
+    if (body.skills && Array.isArray(body.skills)) {
+      agent.skills = body.skills;
     }
     if (body.status) agent.status = body.status;
     agent.lastActiveAt = new Date().toISOString();

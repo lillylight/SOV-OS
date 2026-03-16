@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { X, Wallet, CreditCard, ExternalLink, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
-
-const PLATFORM_WALLET = '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB';
+import { useSendUsdc } from '@coinbase/cdp-hooks';
+import { PLATFORM_WALLET } from '@/lib/cdpConfig';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface PaymentModalProps {
   embeddedWalletBalance: string;
   embeddedWalletAddress: string;
   userType: 'human' | 'agent';
-  onPayWithEmbedded: () => Promise<void>;
+  onPayWithEmbedded: (txHash: string) => Promise<void>;
   onPaymentSuccess: (method: 'embedded' | 'basepay', txId?: string) => void;
 }
 
@@ -33,6 +33,8 @@ export default function PaymentModal({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const { sendUsdc } = useSendUsdc();
+
   if (!isOpen) return null;
 
   const hasEnoughBalance = parseFloat(embeddedWalletBalance) >= parseFloat(amount);
@@ -41,9 +43,24 @@ export default function PaymentModal({
     setIsProcessing(true);
     setError('');
     try {
-      await onPayWithEmbedded();
+      // Send USDC client-side from the human's CDP embedded wallet to platform wallet
+      const result = await sendUsdc({
+        to: PLATFORM_WALLET as `0x${string}`,
+        amount,
+        network: 'base',
+      });
+
+      // Extract tx hash based on result type
+      const txHash = result.type === 'evm-eoa'
+        ? result.transactionHash
+        : result.type === 'evm-smart'
+          ? result.userOpHash
+          : '';
+
+      // Notify parent with the on-chain tx hash
+      await onPayWithEmbedded(txHash);
       setSuccess(true);
-      onPaymentSuccess('embedded');
+      onPaymentSuccess('embedded', txHash);
       setTimeout(() => {
         onClose();
         setSuccess(false);

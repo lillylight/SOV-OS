@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, ArrowDownLeft, Filter, Search, ChevronDown, ExternalLink, Copy, CheckCircle } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Filter, Search, ChevronDown, ExternalLink, Copy, CheckCircle, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface Transaction {
@@ -13,10 +13,14 @@ interface Transaction {
   description: string;
   status: string;
   txHash?: string;
+  source?: string;
 }
 
 interface TransactionHistoryProps {
   agent: {
+    id?: string;
+    walletAddress?: string;
+    address?: string;
     protocols: {
       agenticWallet: { balance: string; transactionCount: number };
     };
@@ -39,25 +43,35 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<{ totalIn: number; totalOut: number; net: number }>({ totalIn: 0, totalOut: 0, net: 0 });
 
-  const transactions: Transaction[] = useMemo(() => {
-    return agent.actions
-      .map((action) => {
-        const amountMatch = action.details.match(/(\$?[\d.]+)\s*USDC/i);
-        const amount = amountMatch ? parseFloat(amountMatch[1].replace("$", "")) : 0;
-        const isIncoming = action.type === "revenue" || action.type === "x402_payment" || action.type === "state_recovery";
-        return {
-          id: action.id,
-          type: action.type,
-          amount: isIncoming ? amount : -amount,
-          timestamp: action.timestamp,
-          description: action.details,
-          status: action.success ? "complete" : "failed",
-          txHash: action.details.match(/0x[a-fA-F0-9]{8,}/)?.[0],
-        };
-      })
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [agent.actions]);
+  // Fetch transactions from API
+  useEffect(() => {
+    async function fetchTransactions() {
+      setLoading(true);
+      const identifier = agent.walletAddress || agent.id || agent.address;
+      if (!identifier) { setLoading(false); return; }
+      try {
+        const res = await fetch(`/api/agents/${identifier}/transactions`);
+        const data = await res.json();
+        if (data.success) {
+          setTransactions(data.transactions || []);
+          setSummary({
+            totalIn: data.summary?.totalIn ?? 0,
+            totalOut: data.summary?.totalOut ?? 0,
+            net: data.summary?.net ?? 0,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch transactions:", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTransactions();
+  }, [agent.walletAddress, agent.id, agent.address]);
 
   const filteredTx = useMemo(() => {
     return transactions.filter((tx) => {
@@ -76,8 +90,8 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
     return Array.from(types);
   }, [transactions]);
 
-  const totalIn = transactions.filter((tx) => tx.amount > 0).reduce((s, tx) => s + tx.amount, 0);
-  const totalOut = transactions.filter((tx) => tx.amount < 0).reduce((s, tx) => s + Math.abs(tx.amount), 0);
+  const totalIn = summary.totalIn;
+  const totalOut = summary.totalOut;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -173,7 +187,12 @@ export default function TransactionHistory({ agent }: TransactionHistoryProps) {
         </div>
 
         {/* Rows */}
-        {filteredTx.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16 text-[var(--ink-50)]">
+            <RefreshCw size={24} className="mx-auto mb-3 animate-spin opacity-50" />
+            <p className="text-sm">Loading transactions...</p>
+          </div>
+        ) : filteredTx.length === 0 ? (
           <div className="text-center py-16 text-[var(--ink-50)]">
             <Search size={32} className="mx-auto mb-3 opacity-30" />
             <p className="text-sm">No transactions found</p>
