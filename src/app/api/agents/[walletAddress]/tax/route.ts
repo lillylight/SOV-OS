@@ -8,18 +8,83 @@ import {
   type TaxCategory,
   type TaxSubcategory,
 } from "@/lib/taxLedger";
+import { database } from "@/lib/database";
+import { agentInsurance } from "@/lib/agentInsurance";
 
-// In-memory store (replace with DB in production)
-const taxStore = new Map<string, {
-  transactions: TaxTransaction[];
-  jurisdiction: string;
-}>();
+const PLATFORM_WALLET = '0xd81037D3Bde4d1861748379edb4A5E68D6d874fB';
 
-function getOrCreateStore(walletAddress: string) {
-  if (!taxStore.has(walletAddress)) {
-    taxStore.set(walletAddress, { transactions: [], jurisdiction: 'US' });
+/**
+ * Auto-ingest backup payments and other platform transactions into the tax ledger.
+ * Checks existing tax records to avoid duplicates.
+ */
+async function autoIngestTransactions(walletAddress: string, agentId: string, ownerWallet?: string) {
+  // Get existing tax transactions to avoid duplicates
+  const existingTx = await database.getTaxTransactions(walletAddress);
+  const existingIds = new Set(existingTx.map(t => t.id));
+
+  const agent = await database.getAgent(agentId);
+  const altIds = [agentId, walletAddress, agent?.address].filter(Boolean) as string[];
+
+  // 1. Ingest backup payments
+  const backups = await agentInsurance.getAgentBackups(agentId, altIds);
+  for (const backup of backups) {
+    const taxId = `tax_backup_${backup.id}`;
+    if (existingIds.has(taxId)) continue;
+    if (!backup.cost || backup.cost <= 0) continue;
+
+    const { category, subcategory, confidence } = categoriseTransaction(
+      walletAddress, PLATFORM_WALLET, backup.cost, `Backup fee: ${backup.id}`, walletAddress, ownerWallet
+    );
+
+    const tx: TaxTransaction = {
+      id: taxId,
+      agentWallet: walletAddress,
+      timestamp: backup.timestamp || new Date().toISOString(),
+      txHash: backup.paymentTx || undefined,
+      fromAddress: walletAddress,
+      toAddress: PLATFORM_WALLET,
+      amount: backup.cost,
+      category,
+      subcategory,
+      description: `Backup fee: ${backup.id.slice(0, 20)}`,
+      confidence,
+      manuallyCategorised: false,
+    };
+    await database.saveTaxTransaction(tx);
   }
-  return taxStore.get(walletAddress)!;
+
+  // 2. Ingest DB transactions (wallet transfers, payments)
+  const dbTransactions = await database.getTransactions(agentId);
+  for (const t of dbTransactions) {
+    const taxId = `tax_dbtx_${t.id}`;
+    if (existingIds.has(taxId)) continue;
+
+    const amount = parseFloat(t.amount || '0');
+    if (amount <= 0) continue;
+
+    const from = t.fromAddress || t.from || walletAddress;
+    const to = t.toAddress || t.to || '';
+
+    const { category, subcategory, confidence } = categoriseTransaction(
+      from, to, amount, t.description || t.type || '', walletAddress, ownerWallet
+    );
+
+    const tx: TaxTransaction = {
+      id: taxId,
+      agentWallet: walletAddress,
+      timestamp: t.timestamp || t.createdAt || new Date().toISOString(),
+      txHash: t.txHash || t.hash || undefined,
+      fromAddress: from,
+      toAddress: to,
+      amount,
+      category,
+      subcategory,
+      description: t.description || t.type || '',
+      confidence,
+      manuallyCategorised: false,
+    };
+    await database.saveTaxTransaction(tx);
+  }
 }
 
 // GET — Fetch tax data, summary, and transactions
@@ -30,33 +95,44 @@ export async function GET(
   try {
     const { walletAddress } = await params;
     const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format'); // 'csv' for export
+    const format = searchParams.get('format');
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
 
-    const store = getOrCreateStore(walletAddress);
+    // Resolve agent
+    let agent = await database.getAgentByWallet(walletAddress);
+    if (!agent) agent = await database.getAgent(walletAddress);
+    const agentId = agent?.id || walletAddress;
+    const ownerWallet = agent?.ownerWallet;
+
+    // Auto-ingest backup/payment transactions into tax ledger
+    await autoIngestTransactions(walletAddress, agentId, ownerWallet);
+
+    // Load settings and transactions from Supabase
+    const settings = await database.getTaxSettings(walletAddress);
+    const transactions = await database.getTaxTransactions(walletAddress);
 
     // Generate period based on jurisdiction
-    const jurisdictionConfig = JURISDICTIONS.find(j => j.id === store.jurisdiction) || JURISDICTIONS[0];
+    const jurisdictionConfig = JURISDICTIONS.find(j => j.id === settings.jurisdiction) || JURISDICTIONS[0];
     let periodStart: Date;
     let periodEnd: Date;
 
     if (jurisdictionConfig.id === 'UK') {
-      periodStart = new Date(year - 1, 3, 6); // Apr 6 previous year
-      periodEnd = new Date(year, 3, 5); // Apr 5 current year
+      periodStart = new Date(year - 1, 3, 6);
+      periodEnd = new Date(year, 3, 5);
     } else if (jurisdictionConfig.id === 'AU') {
-      periodStart = new Date(year - 1, 6, 1); // Jul 1 previous year
-      periodEnd = new Date(year, 5, 30); // Jun 30 current year
+      periodStart = new Date(year - 1, 6, 1);
+      periodEnd = new Date(year, 5, 30);
     } else if (jurisdictionConfig.id === 'ZA') {
-      periodStart = new Date(year - 1, 2, 1); // Mar 1 previous year
-      periodEnd = new Date(year, 1, 28); // Feb 28 current year
+      periodStart = new Date(year - 1, 2, 1);
+      periodEnd = new Date(year, 1, 28);
     } else {
-      periodStart = new Date(year, 0, 1); // Jan 1
-      periodEnd = new Date(year, 11, 31); // Dec 31
+      periodStart = new Date(year, 0, 1);
+      periodEnd = new Date(year, 11, 31);
     }
 
     // CSV export
     if (format === 'csv') {
-      const csv = generateCSV(store.transactions);
+      const csv = generateCSV(transactions as TaxTransaction[]);
       return new NextResponse(csv, {
         headers: {
           'Content-Type': 'text/csv',
@@ -65,27 +141,27 @@ export async function GET(
       });
     }
 
-    const summary = generateTaxSummary(store.transactions, store.jurisdiction, periodStart, periodEnd);
+    const summary = generateTaxSummary(transactions as TaxTransaction[], settings.jurisdiction, periodStart, periodEnd);
 
-    // Calculate next cost thresholds for alerts
+    // Threshold alerts
     const alerts: string[] = [];
-    const config = JURISDICTIONS.find(j => j.id === store.jurisdiction);
+    const config = JURISDICTIONS.find(j => j.id === settings.jurisdiction);
     if (config) {
       for (const threshold of config.thresholds) {
         if (summary.grossIncome >= threshold.amount * 0.8 && summary.grossIncome < threshold.amount) {
-          alerts.push(`⚠️ Approaching ${threshold.label}: $${summary.grossIncome.toFixed(2)} / $${threshold.amount} — ${threshold.note}`);
+          alerts.push(`Approaching ${threshold.label}: $${summary.grossIncome.toFixed(2)} / $${threshold.amount} — ${threshold.note}`);
         } else if (summary.grossIncome >= threshold.amount) {
-          alerts.push(`🔴 ${threshold.label} reached: $${summary.grossIncome.toFixed(2)} — ${threshold.note}`);
+          alerts.push(`${threshold.label} reached: $${summary.grossIncome.toFixed(2)} — ${threshold.note}`);
         }
       }
     }
 
     return NextResponse.json({
       success: true,
-      jurisdiction: store.jurisdiction,
+      jurisdiction: settings.jurisdiction,
       jurisdictionConfig: config,
       summary,
-      transactions: store.transactions.slice().reverse(), // newest first
+      transactions,
       alerts,
       availableJurisdictions: JURISDICTIONS.map(j => ({ id: j.id, name: j.name, flag: j.flag })),
     });
@@ -104,7 +180,9 @@ export async function POST(
   try {
     const { walletAddress } = await params;
     const body = await request.json();
-    const store = getOrCreateStore(walletAddress);
+
+    // Load settings
+    const settings = await database.getTaxSettings(walletAddress);
 
     // Action: set jurisdiction
     if (body.action === 'setJurisdiction') {
@@ -112,21 +190,19 @@ export async function POST(
       if (!validJurisdiction) {
         return NextResponse.json({ success: false, error: "Invalid jurisdiction" }, { status: 400 });
       }
-      store.jurisdiction = body.jurisdiction;
-      return NextResponse.json({ success: true, jurisdiction: store.jurisdiction });
+      await database.saveTaxSettings(walletAddress, { jurisdiction: body.jurisdiction });
+      return NextResponse.json({ success: true, jurisdiction: body.jurisdiction });
     }
 
     // Action: recategorise a transaction
     if (body.action === 'recategorise') {
-      const tx = store.transactions.find(t => t.id === body.transactionId);
-      if (!tx) {
-        return NextResponse.json({ success: false, error: "Transaction not found" }, { status: 404 });
-      }
-      tx.category = body.category as TaxCategory;
-      tx.subcategory = body.subcategory as TaxSubcategory;
-      tx.manuallyCategorised = true;
-      tx.confidence = 100;
-      return NextResponse.json({ success: true, transaction: tx });
+      await database.updateTaxTransaction(body.transactionId, {
+        category: body.category as TaxCategory,
+        subcategory: body.subcategory as TaxSubcategory,
+        manuallyCategorised: true,
+        confidence: 100,
+      });
+      return NextResponse.json({ success: true });
     }
 
     // Action: log a new transaction
@@ -154,10 +230,10 @@ export async function POST(
         description: description || '',
         confidence,
         manuallyCategorised: false,
-        jurisdiction: store.jurisdiction,
+        jurisdiction: settings.jurisdiction,
       };
 
-      store.transactions.push(transaction);
+      await database.saveTaxTransaction(transaction);
 
       return NextResponse.json({ success: true, transaction });
     }

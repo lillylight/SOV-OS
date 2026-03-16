@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { database } from "@/lib/database";
 import { Transaction } from "@/lib/database";
 import { AgenticWallet } from "@/lib/agenticWallet";
+import { categoriseTransaction, type TaxTransaction } from "@/lib/taxLedger";
 
 export async function POST(
   request: NextRequest,
@@ -84,6 +85,31 @@ export async function POST(
     };
     
     await database.createTransaction(newTransaction);
+
+    // ── Auto-log in tax ledger ──
+    try {
+      const ownerWallet = agent.ownerWallet || undefined;
+      const { category, subcategory, confidence } = categoriseTransaction(
+        walletAddress, to, amountNum, description, walletAddress, ownerWallet
+      );
+      const taxTx: TaxTransaction = {
+        id: `tx_pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        agentWallet: walletAddress,
+        timestamp: txResult.timestamp,
+        txHash: txResult.hash,
+        fromAddress: walletAddress,
+        toAddress: to,
+        amount: amountNum,
+        category,
+        subcategory,
+        description,
+        confidence,
+        manuallyCategorised: false,
+      };
+      await database.saveTaxTransaction(taxTx);
+    } catch (taxErr) {
+      console.error('Tax ledger logging failed (non-blocking):', taxErr);
+    }
 
     console.log(`Payment sent: ${amount} USDC from ${agent.name} to ${to}`);
 

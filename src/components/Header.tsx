@@ -8,7 +8,7 @@ const navItems = [
   { label: "Protocol", href: "#protocol" },
   { label: "Capabilities", href: "#capabilities" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Register", href: "/register" },
+  { label: "Research", href: "/research" },
 ];
 
 export default function Header() {

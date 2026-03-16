@@ -60,6 +60,7 @@ import MemoryExplorer from '@/components/MemoryExplorer';
 import ProtocolWizard from '@/components/ProtocolWizard';
 import AgentProfile from '@/components/AgentProfile';
 import TaxCompliance from '@/components/TaxCompliance';
+import TaxWithholdingSettings from '@/components/TaxWithholdingSettings';
 import { formatDistanceToNow } from "date-fns";
 import { CDPReactProvider } from "@coinbase/cdp-react";
 import { cdpConfig, cdpTheme } from "@/lib/cdpConfig";
@@ -273,10 +274,10 @@ function AgentDashboardInner() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-paper)] flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-[var(--bg-paper)] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[var(--ink-70)]">Loading dashboard...</p>
+          <div className="w-10 h-10 border-2 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <p className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Loading dashboard</p>
         </div>
       </div>
     );
@@ -284,13 +285,13 @@ function AgentDashboardInner() {
 
   if (!agent) {
     return (
-      <div className="min-h-screen bg-[var(--bg-paper)] flex items-center justify-center pt-20">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-[var(--accent-red)] mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Not Logged In</h2>
-          <p className="text-[var(--ink-70)] mb-6">Please register or log in first</p>
-          <a href="/register" className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent-red)] text-white font-semibold rounded hover:opacity-90 transition-opacity">
-            Register
+      <div className="min-h-screen bg-[var(--bg-paper)] flex items-center justify-center">
+        <div className="text-center max-w-sm">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-6">Authentication Required</div>
+          <h2 className="text-[clamp(1.5rem,3vw,2.5rem)] font-light tracking-[-0.02em] mb-3">Not Logged In</h2>
+          <p className="text-sm text-[var(--ink-70)] mb-8 leading-relaxed">Register or sign in to access your dashboard</p>
+          <a href="/register" className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-[var(--accent-red)] text-white text-sm font-bold uppercase tracking-wider rounded hover:opacity-90 transition-opacity">
+            Register Agent
           </a>
         </div>
       </div>
@@ -299,129 +300,139 @@ function AgentDashboardInner() {
 
   const isHuman = agent.type === "human" || userType === "human";
   const tabs = isHuman
-    ? ["agents", "profile", "wallet", "insurance", "tax", "settings"] as const
-    : ["profile", "overview", "identity", "wallet", "transactions", "insurance", "tax", "protocols", "memory", "sharing", "actions", "skills", "settings"] as const;
+    ? ["agents", "profile", "wallet", "tax", "settings"] as const
+    : ["profile", "identity", "wallet", "transactions", "insurance", "tax", "protocols", "memory", "sharing", "settings"] as const;
+
+  const isAlive = agent.status === "alive" || agent.status === "active";
 
   return (
-    <div className="min-h-screen bg-[var(--bg-paper)] pt-20">
-      {/* Header */}
-      <div className="border-b border-[var(--line)]">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isHuman ? "bg-blue-100" : (agent.status === "alive" || agent.status === "active") ? "bg-green-100" : agent.status === "reviving" ? "bg-amber-100" : "bg-red-100"}`}>
-                {isHuman
-                  ? <User className="text-blue-600" size={24} />
-                  : <Brain className={(agent.status === "alive" || agent.status === "active") ? "text-green-600" : agent.status === "reviving" ? "text-amber-600" : "text-red-600"} size={24} />
-                }
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{agent.name}</h1>
-                <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{isHuman ? "Human" : "AI Agent"}</span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${(agent.status === "alive" || agent.status === "active") ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
-                    {(agent.status === "alive" || agent.status === "active") ? "Active" : "Inactive"}
-                  </span>
-                  <span>•</span>
-                  <span className="font-mono">{agent.walletAddress?.startsWith('0x') ? `${agent.walletAddress.slice(0, 6)}...${agent.walletAddress.slice(-4)}` : (agent.walletAddress ? 'Re-register needed' : 'No Wallet')}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <NotificationCenter agent={agent as any} />
-              <button onClick={handleLogout} className="px-4 py-2 border border-[var(--line)] text-[var(--ink)] font-semibold text-sm rounded hover:bg-black/5 transition-colors flex items-center gap-2">
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
+    <div className="min-h-screen bg-[var(--bg-paper)]">
+      {/* ─── Top Bar ─── */}
+      <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}
+        className="fixed top-0 left-0 right-0 z-50 glass-card shadow-sm">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between px-6 md:px-8 py-4">
+          <a href="/" className="flex items-center gap-3">
+            <Fingerprint className="text-[var(--accent-red)]" size={14} strokeWidth={2.5} />
+            <span className="text-sm font-bold tracking-[0.08em] uppercase">Sovereign OS</span>
+          </a>
+          <div className="flex items-center gap-4">
+            <NotificationCenter agent={agent as any} />
+            <button onClick={handleLogout}
+              className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.06em] uppercase border-b border-[var(--ink)] pb-0.5 hover:border-[var(--accent-red)] hover:text-[var(--accent-red)] transition-colors">
+              <LogOut size={12} /> Logout
+            </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Quick Stats — hidden when viewing a connected agent's details */}
-      {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {isHuman ? (
-            <>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Bot className="text-[var(--accent-red)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Linked Agents</span></div>
-                <div className="text-3xl font-bold">{verifiedAgents.length}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">verified</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Link2 className="text-[var(--accent-amber)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Pending</span></div>
-                <div className="text-3xl font-bold">{pendingAgents.length}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">awaiting verification</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Wallet className="text-[var(--accent-slate)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Balance</span></div>
-                <div className="text-3xl font-bold">{parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">USDC</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Shield className="text-[var(--accent-crimson)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Insurance</span></div>
-                <div className="text-3xl font-bold">{insuranceActive ? "Active" : "Inactive"}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">{insuranceActive ? "backups stored" : "no backups yet"}</div>
-              </motion.div>
-            </>
-          ) : (
-            <>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Wallet className="text-[var(--accent-slate)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Balance</span></div>
-                <div className="text-3xl font-bold">{parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">USDC</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Activity className="text-[var(--accent-amber)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Volume</span></div>
-                <div className="text-3xl font-bold">{agent?.protocols?.agenticWallet?.transactionCount || 0}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">Transactions</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Shield className="text-[var(--accent-crimson)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Insurance</span></div>
-                <div className="text-3xl font-bold">{agent?.protocols?.agentInsure?.isActive ? "Active" : "Inactive"}</div>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-5 border border-[var(--line)]">
-                <div className="flex items-center gap-3 mb-2"><Brain className="text-[var(--accent-slate)]" size={24} /><span className="text-sm text-[var(--ink-70)] uppercase tracking-wide">Memory</span></div>
-                <div className="text-3xl font-bold">{agent.memory ? agent.memory.conversations.length + agent.memory.learnings.length : 0}</div>
-                <div className="text-xs text-[var(--ink-50)] mt-1">items stored</div>
-              </motion.div>
-            </>
-          )}
+      <main className="max-w-[1440px] mx-auto border-l border-r border-[var(--line)] pt-[72px]">
+        {/* ─── Dashboard Header ─── */}
+        <div className="border-b border-[var(--line)]">
+          <div className="px-6 md:px-8 py-8 md:py-10">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+              className="flex items-center justify-between mb-6">
+              <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">
+                {isHuman ? "Human Dashboard" : "Agent Dashboard"}
+              </div>
+              <div className="flex items-center gap-3 text-[11px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+                <span className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isAlive ? "bg-[var(--accent-red)] animate-pulse-glow" : "bg-[var(--ink-50)]"}`} />
+                  {isAlive ? "Active" : "Inactive"}
+                </span>
+                <span>·</span>
+                <span className="font-mono">{agent.walletAddress?.startsWith('0x') ? `${agent.walletAddress.slice(0, 6)}...${agent.walletAddress.slice(-4)}` : 'No Wallet'}</span>
+              </div>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }}
+              className="flex items-end justify-between gap-6">
+              <div>
+                <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-light leading-[0.95] tracking-[-0.02em]">
+                  {agent.name}
+                </h1>
+                <span className={`inline-flex items-center gap-1.5 mt-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${isHuman ? "bg-[var(--ink)] text-white border-[var(--ink)]" : "bg-[var(--accent-red)]/10 text-[var(--accent-red)] border-[var(--accent-red)]/20"}`}>
+                  {isHuman ? <User size={10} /> : <Brain size={10} />}
+                  {isHuman ? "Human" : "AI Agent"}
+                </span>
+              </div>
+              <div className="text-[42px] font-light tracking-tight text-[var(--ink)] hidden md:block select-none opacity-80">
+                {isHuman ? "CONTROL" : "STATUS"}
+              </div>
+            </motion.div>
+          </div>
         </div>
-      </div>
-      )}
 
-      {/* Tabs — hidden when viewing a connected agent's details */}
-      <div className="max-w-7xl mx-auto px-6">
+        {/* ─── Quick Stats Strip ─── */}
         {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
-        <div className="flex gap-2 mb-6 border-b border-[var(--line)] overflow-x-auto">
-          {tabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors border-b-2 whitespace-nowrap ${activeTab === tab ? "border-[var(--accent-red)] text-[var(--ink)]" : "border-transparent text-[var(--ink-50)] hover:text-[var(--ink)]"}`}
-            >
-              {tab === "agents" ? "My AI Agents" : tab}
-            </button>
+        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-[var(--line)]">
+          {(isHuman ? [
+            { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", color: "text-[var(--accent-red)]" },
+            { icon: Link2, label: "Pending", value: pendingAgents.length.toString(), sub: "awaiting sync", color: "text-[var(--accent-amber)]" },
+            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", color: "text-[var(--accent-slate)]" },
+            { icon: Shield, label: "Insurance", value: insuranceActive ? "Active" : "Off", sub: insuranceActive ? "backups stored" : "no backups", color: "text-[var(--accent-crimson)]" },
+          ] : [
+            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", color: "text-[var(--accent-slate)]" },
+            { icon: Activity, label: "Volume", value: (agent?.protocols?.agenticWallet?.transactionCount || 0).toString(), sub: "transactions", color: "text-[var(--accent-amber)]" },
+            { icon: Shield, label: "Insurance", value: agent?.protocols?.agentInsure?.isActive ? "Active" : "Off", sub: "", color: "text-[var(--accent-crimson)]" },
+            { icon: Brain, label: "Memory", value: agent.memory ? (agent.memory.conversations.length + agent.memory.learnings.length).toString() : "0", sub: "items", color: "text-[var(--accent-red)]" },
+          ]).map((stat, i) => (
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }}
+              className="relative p-6 md:p-8 border-r border-b md:border-b-0 border-[var(--line)] last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r">
+              <div className="text-[11px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-3 flex items-center gap-2">
+                <stat.icon size={14} className={stat.color} strokeWidth={2} />
+                {stat.label}
+              </div>
+              <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{stat.value}</div>
+              {stat.sub && <div className="text-xs text-[var(--ink-50)]">{stat.sub}</div>}
+              <div className="absolute bottom-2 right-3 text-[48px] font-light leading-none opacity-[0.03] select-none">
+                {String(i + 1).padStart(2, "0")}
+              </div>
+            </motion.div>
           ))}
         </div>
         )}
 
-        {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} onViewAgent={handleViewAgent} selectedAgent={selectedAgentDetail} onBack={() => setSelectedAgentDetail(null)} detailLoading={detailLoading} />}
-        {activeTab === "profile" && <AgentProfile agent={agent as any} />}
-        {activeTab === "overview" && <OverviewTab agent={agent} />}
-        {activeTab === "identity" && <AgentIdentityCard agent={agent as any} />}
-        {activeTab === "wallet" && <WalletTab agent={agent} />}
-        {activeTab === "transactions" && <TransactionHistory agent={agent as any} />}
-        {activeTab === "insurance" && <InsuranceTab agent={agent} isHuman={isHuman} verifiedAgents={verifiedAgents} onViewAgent={(id: string) => { setActiveTab("agents"); handleViewAgent(id); }} />}
-        {activeTab === "protocols" && <ProtocolWizard agent={agent as any} />}
-        {activeTab === "memory" && <MemoryExplorer agent={agent as any} />}
-        {activeTab === "sharing" && <SharingTab agent={agent} />}
-        {activeTab === "actions" && <ActionsTab agent={agent} />}
-        {activeTab === "skills" && <SkillsTab agent={agent} />}
-        {activeTab === "tax" && <TaxCompliance agent={agent as any} />}
-        {activeTab === "settings" && <AgentSettings agent={agent as any} />}
-      </div>
+        {/* ─── Tab Navigation ─── */}
+        {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
+        <div className="border-b border-[var(--line)] overflow-x-auto">
+          <div className="px-6 md:px-8 flex">
+            {tabs.map((tab) => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`relative px-5 py-4 text-[11px] font-semibold tracking-[0.1em] uppercase whitespace-nowrap transition-colors ${
+                  activeTab === tab
+                    ? "text-[var(--ink)]"
+                    : "text-[var(--ink-50)] hover:text-[var(--ink)]"
+                }`}
+              >
+                {tab === "agents" ? "My Agents" : tab}
+                {activeTab === tab && (
+                  <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+        )}
+
+        {/* ─── Tab Content ─── */}
+        <div className="px-6 md:px-8 py-8">
+          {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} onViewAgent={handleViewAgent} selectedAgent={selectedAgentDetail} onBack={() => setSelectedAgentDetail(null)} detailLoading={detailLoading} />}
+          {activeTab === "profile" && <AgentProfile agent={agent as any} />}
+          {activeTab === "identity" && <AgentIdentityCard agent={agent as any} />}
+          {activeTab === "wallet" && <WalletTab agent={agent} />}
+          {activeTab === "transactions" && <TransactionHistory agent={agent as any} />}
+          {activeTab === "insurance" && <InsuranceTab agent={agent} isHuman={isHuman} verifiedAgents={verifiedAgents} onViewAgent={(id: string) => { setActiveTab("agents"); handleViewAgent(id); }} />}
+          {activeTab === "protocols" && <ProtocolWizard agent={agent as any} />}
+          {activeTab === "memory" && <MemoryExplorer agent={agent as any} />}
+          {activeTab === "sharing" && <SharingTab agent={agent} />}
+          {activeTab === "tax" && (
+                    <div className="space-y-8">
+                      <TaxWithholdingSettings agent={agent as any} />
+                      <TaxCompliance agent={agent as any} />
+                    </div>
+                  )}
+          {activeTab === "settings" && <AgentSettings agent={agent as any} />}
+        </div>
+      </main>
     </div>
   );
 }
@@ -626,7 +637,6 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   }>({ isOpen: false, amount: '0', description: '', purpose: 'backup' });
   const [nextBackupCost, setNextBackupCost] = useState<string>('0.10');
   const [restoreConfirmModal, setRestoreConfirmModal] = useState<{ backupId: string; timestamp: string; ipfsCid: string; sizeBytes: number } | null>(null);
-  const [restoreEvents, setRestoreEvents] = useState<{ backupId: string; ipfsCid: string; restoredAt: string; backupTimestamp: string }[]>([]);
 
   // Fetch backups when agent changes or backup tab is opened
   useEffect(() => {
@@ -771,14 +781,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       });
       const data = await res.json();
       if (data.success) {
-        setBackupMessage({ type: "success", text: `Agent state restored successfully!` });
-        // Log restore event locally
-        setRestoreEvents(prev => [{
-          backupId: restoreConfirmModal.backupId,
-          ipfsCid: restoreConfirmModal.ipfsCid,
-          restoredAt: new Date().toISOString(),
-          backupTimestamp: restoreConfirmModal.timestamp,
-        }, ...prev]);
+        setBackupMessage({ type: "success", text: `Agent state restored successfully from backup!${data.previousStatus === 'alive' ? ' (was already alive — state overwritten)' : ''}` });
         await fetchBackups();
       } else {
         setBackupMessage({ type: "error", text: data.error || "Restore failed" });
@@ -859,113 +862,101 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
     const subTabs = ["overview", "backup", "skills", "activity"] as const;
 
     return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
-        <button onClick={() => { onBack(); setAgentSubTab("overview"); }} className="flex items-center gap-2 text-sm font-semibold text-[var(--ink-70)] hover:text-[var(--ink)] transition-colors mt-2 mb-4">
-          <ArrowLeft size={16} /> Back to My AI Agents
+      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="pb-12">
+        {/* Back */}
+        <button onClick={() => { onBack(); setAgentSubTab("overview"); }}
+          className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--ink-50)] hover:text-[var(--ink)] transition-colors mb-6 border-b border-transparent hover:border-[var(--ink)] pb-0.5">
+          <ArrowLeft size={12} /> Back to agents
         </button>
 
+        {/* Agent Identity Bar */}
+        <div className="border border-[var(--line)] mb-0">
+          <div className="p-6 md:p-8 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 flex items-center justify-center ${isAgentDead ? "bg-[var(--accent-crimson)]/10" : "bg-[var(--accent-red)]/10"}`}>
+                {isAgentDead ? <AlertCircle className="text-[var(--accent-crimson)]" size={24} /> : <Bot className="text-[var(--accent-red)]" size={24} />}
+              </div>
+              <div>
+                <h2 className="text-[clamp(1.25rem,2.5vw,1.75rem)] font-light tracking-[-0.01em]">{selectedAgent.name}</h2>
+                <div className="flex items-center gap-3 mt-1 text-[11px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+                  <span className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-[var(--accent-red)] animate-pulse-glow" : selectedAgent.status === "reviving" ? "bg-[var(--accent-amber)]" : "bg-[var(--ink-50)]"}`} />
+                    {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : selectedAgent.status === "reviving" ? "Reviving" : selectedAgent.status === "dead" ? "Dead" : "Inactive"}
+                  </span>
+                  <span>·</span>
+                  <span className="font-mono">{selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 6)}...${selectedAgent.walletAddress.slice(-4)}` : 'No Wallet'}</span>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setAgentSubTab("backup")}
+              className={`inline-flex items-center gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-wider transition-opacity hover:opacity-90 ${
+                isAgentDead ? "bg-[var(--accent-red)] text-white" : "border border-[var(--line)] text-[var(--ink)] hover:border-[var(--accent-red)] hover:text-[var(--accent-red)]"
+              }`}>
+              {isAgentDead ? <><HeartPulse size={12} /> Revive</> : <><Download size={12} /> Restore</>}
+            </button>
+          </div>
+        </div>
+
         {/* Sub-tabs */}
-        <div className="flex gap-1 border-b border-[var(--line)] mb-2">
+        <div className="border-x border-b border-[var(--line)] flex overflow-x-auto">
           {subTabs.map((tab) => (
             <button key={tab} onClick={() => setAgentSubTab(tab)}
-              className={`px-5 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors border-b-2 whitespace-nowrap ${agentSubTab === tab ? "border-[var(--accent-red)] text-[var(--ink)]" : "border-transparent text-[var(--ink-50)] hover:text-[var(--ink)]"}`}
-            >
+              className={`relative px-5 py-3.5 text-[11px] font-semibold tracking-[0.1em] uppercase whitespace-nowrap transition-colors ${
+                agentSubTab === tab ? "text-[var(--ink)]" : "text-[var(--ink-50)] hover:text-[var(--ink)]"
+              }`}>
               {tab === "backup" ? "Backup / Revive" : tab}
+              {agentSubTab === tab && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />}
             </button>
           ))}
         </div>
 
         {/* ─── OVERVIEW SUB-TAB ─── */}
         {agentSubTab === "overview" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            {/* Agent Header */}
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isAgentDead ? "bg-red-100" : "bg-[var(--accent-red)]/10"}`}>
-                  {isAgentDead
-                    ? <AlertCircle className="text-red-500" size={28} />
-                    : <Bot className="text-[var(--accent-red)]" size={28} />
-                  }
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 space-y-0">
+            {/* Agent metadata grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 border border-[var(--line)]">
+              {[
+                { label: "Agent ID", value: selectedAgent.id?.slice(0, 16) + '...' || 'N/A', mono: true },
+                { label: "Wallet", value: selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 8)}...${selectedAgent.walletAddress.slice(-6)}` : 'N/A', mono: true },
+                { label: "Created", value: selectedAgent.createdAt ? formatDistanceToNow(new Date(selectedAgent.createdAt), { addSuffix: true }) : 'Unknown' },
+                { label: "Last Active", value: selectedAgent.lastActiveAt ? formatDistanceToNow(new Date(selectedAgent.lastActiveAt), { addSuffix: true }) : 'Just now' },
+              ].map((item, i) => (
+                <div key={item.label} className={`p-5 ${i < 3 ? 'border-r' : ''} border-b md:border-b-0 border-[var(--line)]`}>
+                  <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-2">{item.label}</div>
+                  <div className={`text-sm ${item.mono ? 'font-mono' : ''} text-[var(--ink)]`}>{item.value}</div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold">{selectedAgent.name}</h2>
-                  <div className="flex items-center gap-3 text-sm text-[var(--ink-70)]">
-                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--ink-10)]">{selectedAgent.type}</span>
-                    <span className="flex items-center gap-1">
-                      <div className={`w-2 h-2 rounded-full ${(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "bg-green-500 animate-pulse" : selectedAgent.status === "reviving" ? "bg-amber-500 animate-pulse" : "bg-red-500"}`} />
-                      {(selectedAgent.status === "alive" || selectedAgent.status === "active") ? "Active" : selectedAgent.status === "reviving" ? "Reviving..." : selectedAgent.status === "dead" ? "Dead" : "Inactive"}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setAgentSubTab("backup")}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-opacity hover:opacity-90 ${
-                    isAgentDead
-                      ? "bg-[var(--accent-red)] text-white"
-                      : "border border-[var(--accent-amber)] text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5"
-                  }`}
-                >
-                  {isAgentDead ? <><HeartPulse size={14} /> Revive Agent</> : <><Download size={14} /> Restore State</>}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Agent ID</div>
-                  <div className="font-mono text-xs break-all">{selectedAgent.id}</div>
-                </div>
-                <div>
-                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Wallet</div>
-                  <div className="font-mono text-xs">{selectedAgent.walletAddress ? `${selectedAgent.walletAddress.slice(0, 8)}...${selectedAgent.walletAddress.slice(-6)}` : 'N/A'}</div>
-                </div>
-                <div>
-                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Created</div>
-                  <div className="text-xs">{selectedAgent.createdAt ? formatDistanceToNow(new Date(selectedAgent.createdAt), { addSuffix: true }) : 'Unknown'}</div>
-                </div>
-                <div>
-                  <div className="text-[var(--ink-50)] text-xs uppercase tracking-wide mb-1">Last Active</div>
-                  <div className="text-xs">{selectedAgent.lastActiveAt ? formatDistanceToNow(new Date(selectedAgent.lastActiveAt), { addSuffix: true }) : 'Just now'}</div>
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Shield size={18} className="text-[var(--accent-crimson)]" />
-                Protocol Status
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-                  <Wallet size={20} className="mx-auto mb-2 text-[var(--accent-slate)]" />
-                  <div className="text-lg font-bold">{parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2)}</div>
-                  <div className="text-xs text-[var(--ink-50)]">USDC Balance</div>
-                </div>
-                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-                  <Zap size={20} className="mx-auto mb-2 text-[var(--accent-amber)]" />
-                  <div className="text-lg font-bold">{selectedAgent.protocols?.agenticWallet?.transactionCount || 0}</div>
-                  <div className="text-xs text-[var(--ink-50)]">Transactions</div>
-                </div>
-                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-                  <Brain size={20} className="mx-auto mb-2 text-[var(--accent-red)]" />
-                  <div className="text-lg font-bold">{selectedAgent.protocols?.agentWill?.backupCount || 0}</div>
-                  <div className="text-xs text-[var(--ink-50)]">Backups</div>
-                </div>
-                <div className="p-3 border border-[var(--line)] rounded-lg text-center">
-                  <Shield size={20} className="mx-auto mb-2 text-[var(--accent-crimson)]" />
-                  <div className="text-lg font-bold">{selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off"}</div>
-                  <div className="text-xs text-[var(--ink-50)]">Insurance</div>
-                </div>
+            {/* Protocol Status */}
+            <div className="border-x border-b border-[var(--line)]">
+              <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Protocol Status</div>
+                <div className="text-[28px] font-light tracking-tight opacity-60">PROTOCOLS</div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4">
+                {[
+                  { icon: Wallet, label: "USDC Balance", value: parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2), color: "text-[var(--accent-slate)]" },
+                  { icon: Zap, label: "Transactions", value: (selectedAgent.protocols?.agenticWallet?.transactionCount || 0).toString(), color: "text-[var(--accent-amber)]" },
+                  { icon: Brain, label: "Backups", value: (selectedAgent.protocols?.agentWill?.backupCount || 0).toString(), color: "text-[var(--accent-red)]" },
+                  { icon: Shield, label: "Insurance", value: selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off", color: "text-[var(--accent-crimson)]" },
+                ].map((stat, i) => (
+                  <div key={stat.label} className={`relative p-6 ${i < 3 ? 'border-r' : ''} border-[var(--line)]`}>
+                    <stat.icon size={14} className={`${stat.color} mb-3`} strokeWidth={2} />
+                    <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-2">{stat.label}</div>
+                    <div className="text-xl font-bold tracking-tight">{stat.value}</div>
+                    <div className="absolute bottom-1 right-2 text-[36px] font-light leading-none opacity-[0.03] select-none">{String(i + 1).padStart(2, "0")}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {selectedAgent.metadata?.capabilities && selectedAgent.metadata.capabilities.length > 0 && (
-              <div className="glass-card p-6 border border-[var(--line)]">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Zap size={18} className="text-[var(--accent-amber)]" />
-                  Capabilities
-                </h3>
+              <div className="border border-[var(--line)] p-6">
+                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-4">Capabilities</div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedAgent.metadata.capabilities.map((cap, i) => (
-                    <span key={i} className="px-3 py-1 text-xs font-semibold rounded-full bg-[var(--ink-10)] text-[var(--ink-70)]">{cap}</span>
+                  {selectedAgent.metadata.capabilities.map((cap: string, i: number) => (
+                    <span key={i} className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-[var(--line)] text-[var(--ink-70)]">{cap}</span>
                   ))}
                 </div>
               </div>
@@ -975,140 +966,131 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
         {/* ─── BACKUP / REVIVE SUB-TAB ─── */}
         {agentSubTab === "backup" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 space-y-0">
             {/* Status Banner */}
             {isAgentDead && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="px-6 py-4 border border-[var(--accent-crimson)]/20 bg-[var(--accent-crimson)]/[0.03] flex items-start gap-4 mb-0">
+                <AlertCircle size={16} className="text-[var(--accent-crimson)] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-red-800 text-sm">Agent is Dead / Compromised</h4>
-                  <p className="text-xs text-red-700 mt-1">This agent is no longer active. Use one of the backups below to revive it to its last known good state. Only you (the creator) can perform a revival.</p>
+                  <h4 className="text-sm font-bold text-[var(--ink)]">Agent is Dead / Compromised</h4>
+                  <p className="text-xs text-[var(--ink-70)] mt-1 leading-relaxed">Use a backup below to revive to its last known good state. Only you (the creator) can perform a revival.</p>
                 </div>
               </div>
             )}
 
             {backupMessage && (
-              <div className={`p-3 rounded-lg border text-sm font-medium flex items-center gap-2 ${backupMessage.type === "success" ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
-                {backupMessage.type === "success" ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+              <div className={`px-6 py-3 border text-sm font-medium flex items-center gap-2 ${backupMessage.type === "success" ? "border-[var(--accent-red)]/20 text-[var(--accent-red)]" : "border-[var(--accent-crimson)]/20 text-[var(--accent-crimson)]"}`}>
+                {backupMessage.type === "success" ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
                 {backupMessage.text}
               </div>
             )}
 
-            {/* ── TOP: Saved Agent States + Backup Button ── */}
-            <div className={`glass-card p-6 border ${isAgentDead ? 'border-red-200 bg-red-50/30' : 'border-[var(--line)]'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${isAgentDead ? 'bg-red-100' : 'bg-[var(--accent-amber)]/10'}`}>
-                    {isAgentDead ? <HeartPulse size={20} className="text-red-600" /> : <Shield size={20} className="text-[var(--accent-amber)]" />}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{isAgentDead ? 'Revive Agent' : 'Saved Agent States'}</h3>
-                    <p className="text-xs text-[var(--ink-50)]">
-                      {isAgentDead ? 'Bring this agent back to life from a saved state' : 'All saved states — restore to any of them at any time'}
-                    </p>
-                  </div>
+            {/* Restore / Revive Section */}
+            <div className="border border-[var(--line)]">
+              <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+                  {isAgentDead ? <HeartPulse size={12} className="text-[var(--accent-crimson)]" /> : <Download size={12} className="text-[var(--accent-amber)]" />}
+                  {isAgentDead ? 'Revive Agent' : 'Restore State'}
                 </div>
-                <div className="text-right text-xs text-[var(--ink-50)]">
-                  <div><span className="font-bold text-[var(--ink)]">{backups.length}</span> state{backups.length !== 1 ? 's' : ''} saved</div>
-                  <div className="mt-0.5">Restore cost: <span className="font-bold text-green-700">Free</span></div>
+                <div className="flex items-center gap-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+                  <span>Available: <strong className="text-[var(--ink)]">{backups.filter(b => b.status === 'stored').length}</strong></span>
+                  <span>·</span>
+                  <span>Cost: <strong className="text-[var(--accent-red)]">Free</strong></span>
                 </div>
               </div>
+              <div className="px-6 py-5">
+                {backups.filter(b => b.status === 'stored').length > 0 ? (
+                  <p className="text-xs text-[var(--ink-50)]">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent.</p>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-sm text-[var(--ink-50)]">No backups available yet</p>
+                    <p className="text-xs text-[var(--ink-50)] mt-1">Create your first backup below to enable {isAgentDead ? 'revival' : 'state restoration'}.</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
-              {/* Backup button lives here */}
-              <div className="mb-4 pb-4 border-b border-[var(--line)]">
-                <button
-                  onClick={handleCreateBackup}
-                  disabled={backupLoading}
-                  className="w-full bg-[var(--accent-slate)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
-                >
+            {/* Create Backup */}
+            <div className="border-x border-b border-[var(--line)]">
+              <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+                  <Upload size={12} className="text-[var(--accent-slate)]" /> Create Backup
+                </div>
+                <div className="flex items-center gap-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+                  <span>Total: <strong className="text-[var(--ink)]">{backupStats?.backupCount ?? selectedAgent.protocols?.agentWill?.backupCount ?? 0}</strong></span>
+                  <span>·</span>
+                  <span>Plan: <strong className="text-[var(--ink)]">{backupStats?.plan?.name ?? "Starter"}</strong></span>
+                </div>
+              </div>
+              <div className="p-6">
+                <button onClick={handleCreateBackup} disabled={backupLoading}
+                  className="w-full bg-[var(--ink)] text-white px-4 py-3 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
                   {backupLoading ? (
-                    <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
+                    <><RefreshCw size={14} className="animate-spin" /> Creating Backup</>
                   ) : (
-                    <><Upload size={16} /> Backup Current State · ${nextBackupCost} USDC</>
+                    <><Upload size={14} /> Backup Agent State · ${nextBackupCost} USDC</>
                   )}
                 </button>
                 {backupStats?.plan?.id !== 'bypass' && (
-                  <button
-                    onClick={handleUpgradePlan}
-                    className="mt-2 w-full border border-[var(--accent-crimson)] text-[var(--accent-crimson)] px-4 py-2.5 rounded-lg hover:bg-[var(--accent-crimson)]/5 transition-colors flex items-center justify-center gap-2 font-semibold text-sm"
-                  >
-                    <Infinity size={15} /> Unlock Unlimited Backups · $5 USDC
+                  <button onClick={handleUpgradePlan}
+                    className="mt-3 w-full border border-[var(--line)] text-[var(--ink)] px-4 py-3 hover:border-[var(--accent-red)] hover:text-[var(--accent-red)] transition-colors flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                    <Infinity size={14} /> Unlock Unlimited · $5 USDC
                   </button>
                 )}
-                <p className="text-[11px] text-[var(--ink-50)] mt-2 text-center">
-                  First 2 backups: $0.10 each · 3rd onwards: $0.30 each · Recovery always free
-                </p>
+                <div className="flex items-center justify-center gap-4 mt-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+                  <span>First 2: $0.10</span><span>·</span><span>3rd+: $0.30</span><span>·</span><span>Recovery: <strong>Free</strong></span>
+                </div>
               </div>
-
-              {/* All saved states — ALL are restorable regardless of status */}
-              {backups.length === 0 ? (
-                <div className="text-center py-8 text-[var(--ink-50)]">
-                  <Shield size={32} className="mx-auto mb-3 opacity-25" />
-                  <p className="text-sm">No saved states yet.</p>
-                  <p className="text-xs mt-1">Click the button above to save your first agent state.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {backups.map((backup, idx) => (
-                    <div key={backup.id || idx} className="p-4 border border-[var(--line)] rounded-xl bg-black/[0.02] hover:border-[var(--accent-amber)]/40 transition-colors">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle size={15} className="text-[var(--accent-amber)] shrink-0" />
-                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 18)}...{backup.ipfsCid?.slice(-8)}</span>
-                        </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]">
-                          SAVED
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)] mb-3">
-                        <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : "Unknown"}</span>
-                        <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ""}{backup.cost ? ` | ${backup.cost} USDC` : ""}</span>
-                      </div>
-                      <button
-                        onClick={() => handleRestoreClick(backup)}
-                        disabled={reviveLoading}
-                        className="w-full bg-[var(--accent-red)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold"
-                      >
-                        {reviveLoading ? (
-                          <><RefreshCw size={14} className="animate-spin" /> {isAgentDead ? 'Reviving...' : 'Restoring...'}</>
-                        ) : (
-                          <>{isAgentDead ? <HeartPulse size={14} /> : <Download size={14} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* ── BOTTOM: Restore History ── */}
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <HeartPulse size={18} className="text-green-600" />
-                Restore History
-                {restoreEvents.length > 0 && <span className="text-xs font-normal text-[var(--ink-50)]">({restoreEvents.length} restore{restoreEvents.length !== 1 ? 's' : ''})</span>}
-              </h3>
-              {restoreEvents.length === 0 ? (
-                <div className="text-center py-8 text-[var(--ink-50)]">
-                  <RefreshCw size={28} className="mx-auto mb-3 opacity-20" />
-                  <p className="text-sm">No restores performed yet.</p>
-                  <p className="text-xs mt-1">When you restore a state, the event will appear here.</p>
+            {/* Backup History */}
+            <div className="border-x border-b border-[var(--line)]">
+              <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+                <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+                  <Download size={12} className="text-[var(--accent-amber)]" /> Backup History
+                </div>
+                {backups.length > 0 && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{backups.length}</span>}
+              </div>
+
+              {backups.length === 0 ? (
+                <div className="text-center py-12">
+                  <Shield size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+                  <p className="text-sm text-[var(--ink-50)]">No backups created yet</p>
+                  <p className="text-xs text-[var(--ink-50)] mt-1">Create your first backup above to enable revival.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {restoreEvents.map((ev, idx) => (
-                    <div key={idx} className="p-4 border border-green-100 rounded-xl bg-green-50/40">
-                      <div className="flex items-center justify-between mb-1">
+                <div>
+                  {backups.map((backup, idx) => (
+                    <div key={backup.id || idx} className={`px-6 py-5 ${idx < backups.length - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <HeartPulse size={14} className="text-green-600 shrink-0" />
-                          <span className="font-mono text-xs text-[var(--ink)]">{ev.ipfsCid?.slice(0, 18)}...{ev.ipfsCid?.slice(-8)}</span>
+                          {backup.status === "stored" ? (
+                            <CheckCircle size={14} className="text-[var(--accent-red)]" />
+                          ) : backup.status === "restored" ? (
+                            <HeartPulse size={14} className="text-[var(--accent-amber)]" />
+                          ) : (
+                            <RefreshCw size={14} className="text-[var(--accent-slate)] animate-spin" />
+                          )}
+                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 20)}...{backup.ipfsCid?.slice(-8)}</span>
                         </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-green-100 text-green-700">RESTORED</span>
+                        <span className={`text-[10px] px-2 py-0.5 font-bold uppercase tracking-wider border ${
+                          backup.status === "stored" ? "border-[var(--accent-red)]/20 text-[var(--accent-red)]" : backup.status === "restored" ? "border-[var(--accent-amber)]/20 text-[var(--accent-amber)]" : "border-[var(--line)] text-[var(--ink-50)]"
+                        }`}>{backup.status}</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
-                        <span>Restored {formatDistanceToNow(new Date(ev.restoredAt), { addSuffix: true })}</span>
-                        <span>State from {ev.backupTimestamp ? formatDistanceToNow(new Date(ev.backupTimestamp), { addSuffix: true }) : 'Unknown'}</span>
+                      <div className="flex items-center justify-between text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">
+                        <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : "Unknown"}</span>
+                        <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ""}{backup.cost ? ` · ${backup.cost} USDC` : ""}</span>
                       </div>
+                      {backup.status === "stored" && (
+                        <button onClick={() => handleRestoreClick(backup)} disabled={reviveLoading}
+                          className="mt-3 w-full bg-[var(--accent-red)] text-white px-3 py-2.5 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                          {reviveLoading ? (
+                            <><RefreshCw size={12} className="animate-spin" /> {isAgentDead ? 'Reviving' : 'Restoring'}</>
+                          ) : (
+                            <>{isAgentDead ? <HeartPulse size={12} /> : <Download size={12} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
+                          )}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1118,62 +1100,51 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
             {/* Restore Confirmation Modal */}
             {restoreConfirmModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                      <AlertTriangle size={20} className="text-amber-600" />
-                    </div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl max-w-md w-full mx-4">
+                  <div className="px-6 py-4 border-b border-[var(--line)] flex items-center gap-3">
+                    <AlertTriangle size={16} className="text-[var(--accent-amber)]" />
                     <div>
-                      <h3 className="font-bold text-lg">Restore Agent State?</h3>
-                      <p className="text-xs text-[var(--ink-50)]">This will overwrite the agent&apos;s current state</p>
+                      <h3 className="text-sm font-bold">Restore Agent State?</h3>
+                      <p className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">This will overwrite current state</p>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] mb-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[var(--ink-50)]">Backup Date</span>
-                      <span className="font-semibold text-[var(--ink)]">
-                        {restoreConfirmModal.timestamp ? formatDistanceToNow(new Date(restoreConfirmModal.timestamp), { addSuffix: true }) : 'Unknown'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[var(--ink-50)]">IPFS CID</span>
-                      <span className="font-mono text-xs text-[var(--ink)]">{restoreConfirmModal.ipfsCid?.slice(0, 12)}...{restoreConfirmModal.ipfsCid?.slice(-6)}</span>
-                    </div>
-                    {restoreConfirmModal.sizeBytes > 0 && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[var(--ink-50)]">Size</span>
-                        <span className="font-semibold text-[var(--ink)]">{(restoreConfirmModal.sizeBytes / 1024).toFixed(1)} KB</span>
+                  <div className="border-b border-[var(--line)]">
+                    {[
+                      { label: "Backup Date", value: restoreConfirmModal.timestamp ? formatDistanceToNow(new Date(restoreConfirmModal.timestamp), { addSuffix: true }) : 'Unknown' },
+                      { label: "IPFS CID", value: `${restoreConfirmModal.ipfsCid?.slice(0, 12)}...${restoreConfirmModal.ipfsCid?.slice(-6)}`, mono: true },
+                      ...(restoreConfirmModal.sizeBytes > 0 ? [{ label: "Size", value: `${(restoreConfirmModal.sizeBytes / 1024).toFixed(1)} KB` }] : []),
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between px-6 py-3 border-b border-[var(--line)] last:border-b-0">
+                        <span className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)]">{item.label}</span>
+                        <span className={`text-sm ${('mono' in item && item.mono) ? 'font-mono text-xs' : 'font-medium'} text-[var(--ink)]`}>{item.value}</span>
                       </div>
-                    )}
+                    ))}
                   </div>
 
                   {selectedAgent && (selectedAgent.status === "alive" || selectedAgent.status === "active") && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-                      <p className="text-xs text-amber-800">
-                        <span className="font-bold">This agent is currently active.</span> Restoring will replace its current memory, learnings, and configuration with the selected backup. The agent will remain active after restore.
+                    <div className="px-6 py-3 border-b border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.03]">
+                      <p className="text-xs text-[var(--ink-70)] leading-relaxed">
+                        <strong>Agent is active.</strong> Restoring replaces current memory, learnings, and config. Agent stays active after restore.
                       </p>
                     </div>
                   )}
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setRestoreConfirmModal(null)}
-                      className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors"
-                    >
+                  <div className="flex">
+                    <button onClick={() => setRestoreConfirmModal(null)}
+                      className="flex-1 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)] hover:bg-black/5 transition-colors border-r border-[var(--line)]">
                       Cancel
                     </button>
-                    <button
-                      onClick={handleConfirmRestore}
-                      disabled={reviveLoading}
-                      className="flex-1 px-4 py-2.5 bg-[var(--accent-red)] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {reviveLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-                      Confirm Restore
+                    <button onClick={handleConfirmRestore} disabled={reviveLoading}
+                      className="flex-1 px-4 py-3 bg-[var(--accent-red)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                      {reviveLoading ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
+                      Confirm
                     </button>
                   </div>
 
-                  <p className="text-[10px] text-[var(--ink-50)] text-center mt-3">Recovery is always free. No USDC will be charged.</p>
+                  <div className="px-6 py-2 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] text-center border-t border-[var(--line)]">
+                    Recovery is always free
+                  </div>
                 </motion.div>
               </div>
             )}
@@ -1182,17 +1153,12 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
         {/* ─── SKILLS SUB-TAB ─── */}
         {agentSubTab === "skills" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-[var(--ink-10)] rounded-lg">
-                  <Zap size={20} className="text-[var(--ink)]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">Agent Skills</h3>
-                  <p className="text-xs text-[var(--ink-50)]">Toggle capabilities on or off. Changes are saved immediately.</p>
-                </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 space-y-0">
+            <div className="border border-[var(--line)] px-6 py-4 flex items-center justify-between">
+              <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+                <Zap size={12} className="text-[var(--accent-amber)]" /> Agent Skills
               </div>
+              <div className="text-[28px] font-light tracking-tight opacity-60">SKILLS</div>
             </div>
 
             {/* ── Render skills by category ── */}
@@ -1204,70 +1170,58 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               const categorySkills = PLATFORM_SKILLS.filter(s => s.category === key);
               if (categorySkills.length === 0) return null;
               return (
-                <div key={key}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--ink-50)]">{label}</h4>
-                    <div className="flex-1 border-t border-[var(--line)]" />
-                    <span className="text-[10px] text-[var(--ink-50)]">{categorySkills.length} skills</span>
+                <div key={key} className="border-x border-b border-[var(--line)]">
+                  <div className="px-6 py-3 border-b border-[var(--line)] flex items-center justify-between">
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-50)]">{label}</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{categorySkills.length}</span>
                   </div>
 
                   {key === 'experimental' && (
-                    <div className="p-3 bg-[var(--ink-10)]/60 border border-[var(--line)] rounded-lg mb-4 flex items-start gap-2">
-                      <AlertTriangle size={14} className="text-[var(--ink-50)] flex-shrink-0 mt-0.5" />
-                      <p className="text-xs text-[var(--ink-70)]">These skills push the boundaries of agent autonomy. Some are <strong className="text-[var(--ink)]">irreversible</strong>. Enable with full understanding of consequences.</p>
+                    <div className="px-6 py-3 border-b border-[var(--accent-crimson)]/15 bg-[var(--accent-crimson)]/[0.02] flex items-start gap-3">
+                      <AlertTriangle size={12} className="text-[var(--accent-crimson)] flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-[var(--ink-70)] leading-relaxed">Some skills are <strong className="text-[var(--ink)]">irreversible</strong>. Enable with full understanding.</p>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    {categorySkills.map((skill) => {
+                  <div className="grid grid-cols-1 md:grid-cols-2">
+                    {categorySkills.map((skill, si) => {
                       const isOn = skillStates[skill.id] ?? false;
                       const IconComp = skill.icon;
                       const isLoading = skillActionLoading === skill.id;
 
                       return (
-                        <div key={skill.id} className={`glass-card p-5 border relative overflow-hidden transition-all ${isOn ? "border-[var(--accent-red)]/25" : "border-[var(--line)]"}`}>
+                        <div key={skill.id} className={`relative p-5 border-b border-[var(--line)] transition-all ${si % 2 === 0 ? 'md:border-r' : ''} ${isOn ? "bg-[var(--accent-red)]/[0.02]" : ""}`}>
                           {isOn && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />}
 
-                          <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isOn ? "bg-[var(--accent-red)]/8" : "bg-[var(--ink-10)]"}`}>
-                                  <IconComp size={18} className={isOn ? "text-[var(--accent-red)]" : "text-[var(--ink-50)]"} />
-                                </div>
-                                <div>
-                                  <h4 className="text-sm font-bold text-[var(--ink)]">{skill.name}</h4>
-                                  <span className="text-[10px] text-[var(--ink-50)]">{skill.costLabel}</span>
-                                </div>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <IconComp size={16} className={isOn ? "text-[var(--accent-red)]" : "text-[var(--ink-50)]"} strokeWidth={2} />
+                              <div>
+                                <h4 className="text-sm font-medium text-[var(--ink)]">{skill.name}</h4>
+                                <span className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{skill.costLabel}</span>
                               </div>
-
-                              <button
-                                onClick={() => handleSkillToggle(skill.id)}
-                                disabled={isLoading}
-                                className="flex-shrink-0 mt-0.5"
-                              >
-                                {isLoading ? (
-                                  <RefreshCw size={22} className="text-[var(--ink-50)] animate-spin" />
-                                ) : isOn ? (
-                                  <ToggleRight size={30} className="text-[var(--accent-red)]" />
-                                ) : (
-                                  <ToggleLeft size={30} className="text-[var(--ink-50)] hover:text-[var(--ink-70)] transition-colors" />
-                                )}
-                              </button>
                             </div>
-
-                            <p className="text-xs text-[var(--ink-70)] mb-3 leading-relaxed">{skill.description}</p>
-
-                            <div className="flex items-center justify-between">
-                              {isOn ? (
-                                <span className="text-[var(--accent-red)] text-[10px] font-semibold flex items-center gap-1.5">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)] animate-pulse" />
-                                  Running
-                                </span>
+                            <button onClick={() => handleSkillToggle(skill.id)} disabled={isLoading} className="flex-shrink-0 mt-0.5">
+                              {isLoading ? (
+                                <RefreshCw size={20} className="text-[var(--ink-50)] animate-spin" />
+                              ) : isOn ? (
+                                <ToggleRight size={28} className="text-[var(--accent-red)]" />
                               ) : (
-                                <span className="text-[10px] text-[var(--ink-50)]">Inactive</span>
+                                <ToggleLeft size={28} className="text-[var(--ink-50)] hover:text-[var(--ink-70)] transition-colors" />
                               )}
-                            </div>
+                            </button>
                           </div>
+
+                          <p className="text-xs text-[var(--ink-70)] mb-3 leading-relaxed">{skill.description}</p>
+
+                          {isOn ? (
+                            <span className="text-[var(--accent-red)] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)] animate-pulse-glow" />
+                              Running
+                            </span>
+                          ) : (
+                            <span className="text-[10px] uppercase tracking-wider text-[var(--ink-50)]">Inactive</span>
+                          )}
                         </div>
                       );
                     })}
@@ -1279,27 +1233,25 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
             {/* ─── Disconnect Warning Modal ─── */}
             {skillDisconnectModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                      <AlertTriangle size={20} className="text-red-600" />
-                    </div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl max-w-md w-full mx-4">
+                  <div className="px-6 py-4 border-b border-[var(--line)] flex items-center gap-3">
+                    <AlertTriangle size={16} className="text-[var(--accent-crimson)]" />
                     <div>
-                      <h3 className="font-bold text-lg">Disconnect Skill?</h3>
-                      <p className="text-xs text-[var(--ink-50)]">{skillDisconnectModal.skillName}</p>
+                      <h3 className="text-sm font-bold">Disconnect Skill?</h3>
+                      <p className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{skillDisconnectModal.skillName}</p>
                     </div>
                   </div>
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-                    <p className="text-sm text-amber-800">
-                      Disabling <span className="font-bold">{skillDisconnectModal.skillName}</span> will immediately remove this capability from the agent. Any active processes using this skill will be terminated.
+                  <div className="px-6 py-4 border-b border-[var(--line)]">
+                    <p className="text-xs text-[var(--ink-70)] leading-relaxed">
+                      Disabling <strong className="text-[var(--ink)]">{skillDisconnectModal.skillName}</strong> will immediately remove this capability. Active processes will be terminated.
                     </p>
                   </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => setSkillDisconnectModal(null)} className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors">
+                  <div className="flex">
+                    <button onClick={() => setSkillDisconnectModal(null)} className="flex-1 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)] hover:bg-black/5 transition-colors border-r border-[var(--line)]">
                       Cancel
                     </button>
-                    <button onClick={confirmDisconnect} className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2">
-                      <Power size={14} /> Disconnect
+                    <button onClick={confirmDisconnect} className="flex-1 px-4 py-3 bg-[var(--accent-crimson)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                      <Power size={12} /> Disconnect
                     </button>
                   </div>
                 </motion.div>
@@ -1309,44 +1261,39 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
             {/* ─── Enable Skill Modal ─── */}
             {skillEnableModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
-                      <Zap size={20} className="text-[var(--accent-red)]" />
-                    </div>
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl max-w-md w-full mx-4">
+                  <div className="px-6 py-4 border-b border-[var(--line)] flex items-center gap-3">
+                    <Zap size={16} className="text-[var(--accent-red)]" />
                     <div>
-                      <h3 className="font-bold text-lg">Enable Skill</h3>
-                      <p className="text-xs text-[var(--ink-50)]">{skillEnableModal.skillName}</p>
+                      <h3 className="text-sm font-bold">Enable Skill</h3>
+                      <p className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{skillEnableModal.skillName}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-[var(--ink-70)] mb-5">Choose how to activate this skill for <span className="font-bold text-[var(--ink)]">{selectedAgent.name}</span>:</p>
-                  <div className="space-y-3 mb-5">
-                    <button
-                      onClick={() => confirmEnable("grant")}
-                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-red)]/40 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Lock size={18} className="text-[var(--accent-slate)] group-hover:text-[var(--accent-red)] transition-colors" />
-                        <div>
-                          <div className="font-semibold text-sm">Grant Access Directly</div>
-                          <div className="text-xs text-[var(--ink-50)] mt-0.5">You (the creator) enable this skill on the agent immediately. The agent can start using it right away.</div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => confirmEnable("request")}
-                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-amber)]/40 transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Send size={18} className="text-[var(--accent-amber)] group-hover:text-[var(--accent-red)] transition-colors" />
-                        <div>
-                          <div className="font-semibold text-sm">Request Agent to Allow</div>
-                          <div className="text-xs text-[var(--ink-50)] mt-0.5">Send a permission request to the agent. The agent must approve before the skill becomes active.</div>
-                        </div>
-                      </div>
-                    </button>
+                  <div className="px-6 py-4 border-b border-[var(--line)]">
+                    <p className="text-xs text-[var(--ink-70)]">Choose how to activate for <strong className="text-[var(--ink)]">{selectedAgent.name}</strong>:</p>
                   </div>
-                  <button onClick={() => setSkillEnableModal(null)} className="w-full px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors">
+                  <button onClick={() => confirmEnable("grant")}
+                    className="w-full px-6 py-4 border-b border-[var(--line)] text-left hover:bg-[var(--accent-red)]/[0.02] transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Lock size={14} className="text-[var(--accent-slate)] group-hover:text-[var(--accent-red)] transition-colors flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium">Grant Access Directly</div>
+                        <div className="text-xs text-[var(--ink-50)] mt-0.5">Enable immediately. Agent can start using it right away.</div>
+                      </div>
+                    </div>
+                  </button>
+                  <button onClick={() => confirmEnable("request")}
+                    className="w-full px-6 py-4 border-b border-[var(--line)] text-left hover:bg-[var(--accent-amber)]/[0.02] transition-colors group">
+                    <div className="flex items-center gap-3">
+                      <Send size={14} className="text-[var(--accent-amber)] group-hover:text-[var(--accent-red)] transition-colors flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium">Request Agent to Allow</div>
+                        <div className="text-xs text-[var(--ink-50)] mt-0.5">Agent must approve before the skill becomes active.</div>
+                      </div>
+                    </div>
+                  </button>
+                  <button onClick={() => setSkillEnableModal(null)}
+                    className="w-full px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)] hover:bg-black/5 transition-colors">
                     Cancel
                   </button>
                 </motion.div>
@@ -1380,48 +1327,43 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   if (detailLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="w-8 h-8 border-3 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-2 border-[var(--accent-red)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 pb-12">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-12 space-y-0">
       {/* Pending Sync Requests */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Link2 size={20} className="text-[var(--accent-amber)]" />
-          Pending Sync Requests
-        </h3>
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Link2 size={12} className="text-[var(--accent-amber)]" /> Pending Sync Requests
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{pending.length}</span>
+        </div>
         {pending.length === 0 ? (
-          <div className="text-center py-8 text-[var(--ink-50)]">
-            <Bot size={40} className="mx-auto mb-3 opacity-30" />
-            <p>No pending agent sync requests.</p>
-            <p className="text-xs mt-1">When an AI agent registers with your wallet address as its owner, it will appear here.</p>
+          <div className="text-center py-12">
+            <Bot size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+            <p className="text-sm text-[var(--ink-50)]">No pending sync requests</p>
+            <p className="text-xs text-[var(--ink-50)] mt-1 max-w-xs mx-auto">When an AI agent registers with your wallet as owner, it appears here</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {pending.map((a) => (
-              <div key={a.id} className="flex items-center justify-between p-4 border border-[var(--accent-amber)]/30 bg-[var(--accent-amber)]/5 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)]/15 flex items-center justify-center">
-                    <Bot className="text-[var(--accent-amber)]" size={20} />
+          <div>
+            {pending.map((a, i) => (
+              <div key={a.id} className={`flex items-center justify-between p-5 ${i < pending.length - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-[var(--accent-amber)]/10 flex items-center justify-center">
+                    <Bot className="text-[var(--accent-amber)]" size={18} />
                   </div>
                   <div>
-                    <div className="font-semibold text-[var(--ink)]">{a.name}</div>
-                    <div className="text-xs text-[var(--ink-50)] font-mono">{a.id}</div>
+                    <div className="font-medium text-sm text-[var(--ink)]">{a.name}</div>
+                    <div className="text-[10px] text-[var(--ink-50)] font-mono mt-0.5">{a.id}</div>
                   </div>
                 </div>
-                <button
-                  onClick={() => onAccept(a.id)}
-                  disabled={syncLoading === a.id}
-                  className="px-4 py-2 bg-[var(--accent-red)] text-white font-semibold text-sm rounded hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-                >
-                  {syncLoading === a.id ? (
-                    <><RefreshCw size={14} className="animate-spin" /> Approving...</>
-                  ) : (
-                    <><ShieldCheck size={14} /> Approve</>
-                  )}
+                <button onClick={() => onAccept(a.id)} disabled={syncLoading === a.id}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-red)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50">
+                  {syncLoading === a.id ? <><RefreshCw size={12} className="animate-spin" /> Syncing</> : <><ShieldCheck size={12} /> Approve</>}
                 </button>
               </div>
             ))}
@@ -1430,38 +1372,41 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       </div>
 
       {/* Verified Agents */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <CheckCircle size={20} className="text-green-600" />
-          Verified AI Agents
-        </h3>
+      <div className="border-x border-b border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <CheckCircle size={12} className="text-[var(--accent-red)]" /> Verified AI Agents
+          </div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">AGENTS</div>
+        </div>
         {verified.length === 0 ? (
-          <div className="text-center py-8 text-[var(--ink-50)]">
-            <ShieldCheck size={40} className="mx-auto mb-3 opacity-30" />
-            <p>No verified agents yet.</p>
-            <p className="text-xs mt-1">Accept pending sync requests above to verify your AI agents.</p>
+          <div className="text-center py-12">
+            <ShieldCheck size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+            <p className="text-sm text-[var(--ink-50)]">No verified agents yet</p>
+            <p className="text-xs text-[var(--ink-50)] mt-1">Accept pending requests above to verify your agents</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {verified.map((a) => (
-              <div key={a.id} className="p-4 border border-[var(--line)] rounded-lg hover:border-[var(--accent-red)]/40 transition-colors cursor-pointer group" onClick={() => onViewAgent(a.id)}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
-                    <Bot className="text-[var(--accent-red)]" size={20} />
+          <div className="grid grid-cols-1 md:grid-cols-2">
+            {verified.map((a, i) => (
+              <div key={a.id}
+                className={`relative p-6 border-b border-[var(--line)] cursor-pointer group transition-colors hover:bg-[var(--accent-red)]/[0.02] ${i % 2 === 0 ? 'md:border-r' : ''}`}
+                onClick={() => onViewAgent(a.id)}>
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-10 h-10 bg-[var(--accent-red)]/10 flex items-center justify-center">
+                    <Bot className="text-[var(--accent-red)]" size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[var(--ink)]">{a.name}</div>
-                    <div className="text-xs text-[var(--ink-50)] font-mono truncate">{a.id}</div>
+                    <div className="font-medium text-sm text-[var(--ink)] group-hover:text-[var(--accent-red)] transition-colors">{a.name}</div>
+                    <div className="text-[10px] text-[var(--ink-50)] font-mono truncate mt-0.5">{a.walletAddress ? `${a.walletAddress.slice(0, 8)}...${a.walletAddress.slice(-6)}` : a.id}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-500" />
-                    <Eye size={16} className="text-[var(--ink-50)] group-hover:text-[var(--accent-red)] transition-colors" />
-                  </div>
+                  <Eye size={14} className="text-[var(--ink-50)] group-hover:text-[var(--accent-red)] transition-colors" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-[var(--ink-70)]">
-                  <span className="font-mono">{a.walletAddress ? `${a.walletAddress.slice(0, 8)}...${a.walletAddress.slice(-6)}` : 'N/A'}</span>
-                  <span className="text-green-600 font-semibold flex items-center gap-1"><ShieldCheck size={12} /> Verified</span>
+                <div className="flex items-center gap-3 text-[10px] uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 border border-[var(--accent-red)]/20 text-[var(--accent-red)] font-bold">
+                    <ShieldCheck size={10} /> Verified
+                  </span>
                 </div>
+                <div className="absolute bottom-2 right-3 text-[36px] font-light leading-none opacity-[0.03] select-none">{String(i + 1).padStart(2, "0")}</div>
               </div>
             ))}
           </div>
@@ -1505,26 +1450,28 @@ function ActivitySubTab({ selectedAgent }: { selectedAgent: AgentData }) {
   }, [selectedAgent]);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Activity size={18} className="text-[var(--accent-red)]" />
-          Recent Activity
-        </h3>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6">
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Activity size={12} className="text-[var(--accent-red)]" /> Recent Activity
+          </div>
+          {activities.length > 0 && <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{activities.length}</span>}
+        </div>
         {loading ? (
-          <div className="text-center py-8">
-            <RefreshCw size={24} className="mx-auto mb-2 text-[var(--ink-50)] animate-spin" />
-            <p className="text-sm text-[var(--ink-50)]">Loading activity...</p>
+          <div className="text-center py-12">
+            <RefreshCw size={18} className="mx-auto mb-3 text-[var(--ink-50)] animate-spin" />
+            <p className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Loading activity</p>
           </div>
         ) : activities.length > 0 ? (
-          <div className="space-y-3">
-            {activities.slice(0, 50).map((action) => (
-              <div key={action.id} className="flex items-start gap-3 p-3 border border-[var(--line)] rounded-lg bg-black/[0.02]">
-                <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div>
+            {activities.slice(0, 50).map((action, i) => (
+              <div key={action.id} className={`flex items-start gap-4 px-6 py-4 ${i < activities.length - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+                <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${action.success ? 'bg-[var(--accent-red)]' : 'bg-[var(--ink-50)]'}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
-                    <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-70)]">{action.type}</span>
+                    <span className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
                   </div>
                   <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
                 </div>
@@ -1532,9 +1479,9 @@ function ActivitySubTab({ selectedAgent }: { selectedAgent: AgentData }) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-[var(--ink-50)]">
-            <Activity size={32} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No activity recorded yet for this agent.</p>
+          <div className="text-center py-12">
+            <Activity size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+            <p className="text-sm text-[var(--ink-50)]">No activity recorded yet</p>
           </div>
         )}
       </div>
@@ -1544,82 +1491,59 @@ function ActivitySubTab({ selectedAgent }: { selectedAgent: AgentData }) {
 
 function OverviewTab({ agent }: { agent: AgentData }) {
   const isHuman = agent.type === "human";
+  const protocols = [
+    { icon: Brain, label: "AgentWill", desc: "State persistence & revival", active: agent?.protocols?.agentWill?.isActive, color: "text-[var(--accent-amber)]" },
+    { icon: Shield, label: "AgentInsure", desc: "Autonomous insurance", active: agent?.protocols?.agentInsure?.isActive, color: "text-[var(--accent-crimson)]" },
+    { icon: Wallet, label: "Agentic Wallet", desc: "Financial autonomy", active: agent?.protocols?.agenticWallet?.isActive, color: "text-[var(--accent-slate)]" },
+  ];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="space-y-6"
-    >
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4">{isHuman ? "Account Information" : "Agent Information"}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">{isHuman ? "User ID" : "Agent ID"}</div>
-            <div className="font-mono text-sm break-all">{agent.id}</div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+      {/* Identity */}
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">
+            {isHuman ? "Account Information" : "Agent Information"}
           </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Wallet Address</div>
-            <div className="font-mono text-sm break-all">{agent.walletAddress || agent.address || "Not set"}</div>
-          </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Created</div>
-            <div className="text-sm">{agent.createdAt ? formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true }) : "Unknown"}</div>
-          </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Last Active</div>
-            <div className="text-sm">{agent.lastActiveAt ? formatDistanceToNow(new Date(agent.lastActiveAt), { addSuffix: true }) : "Just now"}</div>
-          </div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">INFO</div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {[
+            { label: isHuman ? "User ID" : "Agent ID", value: agent.id, mono: true },
+            { label: "Wallet", value: agent.walletAddress || agent.address || "Not set", mono: true },
+            { label: "Created", value: agent.createdAt ? formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true }) : "Unknown" },
+            { label: "Last Active", value: agent.lastActiveAt ? formatDistanceToNow(new Date(agent.lastActiveAt), { addSuffix: true }) : "Just now" },
+          ].map((item, i) => (
+            <div key={item.label} className={`p-5 ${i < 3 ? 'border-r' : ''} border-b md:border-b-0 border-[var(--line)]`}>
+              <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-2">{item.label}</div>
+              <div className={`text-sm ${item.mono ? 'font-mono break-all' : ''} text-[var(--ink)]`}>{item.value}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4">Protocol Status</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 border border-[var(--line)] rounded">
-            <div className="flex items-center gap-3">
-              <Brain className="text-[var(--accent-amber)]" size={20} />
-              <div>
-                <div className="font-medium">AgentWill</div>
-                <div className="text-sm text-[var(--ink-70)]">State persistence & revival</div>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              agent?.protocols?.agentWill?.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-            }`}>
-              {agent?.protocols?.agentWill?.isActive ? "Enabled" : "Disabled"}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 border border-[var(--line)] rounded">
-            <div className="flex items-center gap-3">
-              <Shield className="text-[var(--accent-crimson)]" size={20} />
-              <div>
-                <div className="font-medium">AgentInsure</div>
-                <div className="text-sm text-[var(--ink-70)]">Autonomous insurance</div>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              agent?.protocols?.agentInsure?.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-            }`}>
-              {agent?.protocols?.agentInsure?.isActive ? "Active" : "Inactive"}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-3 border border-[var(--line)] rounded">
-            <div className="flex items-center gap-3">
-              <Wallet className="text-[var(--accent-slate)]" size={20} />
-              <div>
-                <div className="font-medium">Agentic Wallet</div>
-                <div className="text-sm text-[var(--ink-70)]">Financial autonomy</div>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              agent?.protocols?.agenticWallet?.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-            }`}>
-              {agent?.protocols?.agenticWallet?.isActive ? "Active" : "Inactive"}
-            </div>
-          </div>
+      {/* Protocol Status */}
+      <div className="border-x border-b border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Protocol Status</div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">PROTOCOLS</div>
         </div>
+        {protocols.map((p, i) => (
+          <div key={p.label} className={`flex items-center justify-between px-6 py-4 ${i < protocols.length - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+            <div className="flex items-center gap-4">
+              <p.icon size={16} className={p.color} strokeWidth={2} />
+              <div>
+                <div className="text-sm font-medium">{p.label}</div>
+                <div className="text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] mt-0.5">{p.desc}</div>
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 border ${
+              p.active ? "border-[var(--accent-red)]/20 text-[var(--accent-red)]" : "border-[var(--line)] text-[var(--ink-50)]"
+            }`}>
+              {p.active ? "Active" : "Inactive"}
+            </span>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -1633,13 +1557,17 @@ function WalletTab({ agent }: { agent: AgentData }) {
   const [liveBalance, setLiveBalance] = useState<{ usdc: string; eth: string; totalValue: string; totalTx: number } | null>(null);
   const [balLoading, setBalLoading] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [withholdingStats, setWithholdingStats] = useState<{ enabled: boolean; rate: number; totalWithheld: number; totalGross: number; totalNet: number; count: number } | null>(null);
 
   const fetchLiveBalance = useCallback(async () => {
     if (!isRealWallet) return;
     setBalLoading(true);
     try {
-      const res = await fetch(`/api/agents/${walletAddr}/balance`);
-      const data = await res.json();
+      const [balRes, whRes] = await Promise.all([
+        fetch(`/api/agents/${walletAddr}/balance`),
+        fetch(`/api/agents/${walletAddr}/receive-payment`),
+      ]);
+      const data = await balRes.json();
       if (data.success && data.balances) {
         setLiveBalance({
           usdc: data.balances.usdc || "0",
@@ -1648,6 +1576,17 @@ function WalletTab({ agent }: { agent: AgentData }) {
           totalTx: data.activity?.totalTransactions || 0,
         });
         setLastSynced(new Date().toISOString());
+      }
+      const whData = await whRes.json();
+      if (whData.success) {
+        setWithholdingStats({
+          enabled: whData.withholdingEnabled,
+          rate: whData.withholdingRate,
+          totalWithheld: whData.stats?.totalWithheld || 0,
+          totalGross: whData.stats?.totalGrossIncome || 0,
+          totalNet: whData.stats?.totalNetIncome || 0,
+          count: whData.stats?.count || 0,
+        });
       }
     } catch (err) {
       console.error("Live balance fetch failed:", err);
@@ -1667,83 +1606,104 @@ function WalletTab({ agent }: { agent: AgentData }) {
   const totalTx = liveBalance?.totalTx ?? agent?.protocols?.agenticWallet?.transactionCount ?? 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="space-y-6"
-    >
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">{isHuman ? "Your Wallet" : "Wallet Configuration"}</h3>
-          <button
-            onClick={fetchLiveBalance}
-            disabled={balLoading}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ink-50)] hover:text-[var(--ink)] transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={13} className={balLoading ? "animate-spin" : ""} />
-            {balLoading ? "Syncing..." : "Refresh"}
-          </button>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+      {/* Wallet Header */}
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">
+            {isHuman ? "Your Wallet" : "Wallet Configuration"}
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={fetchLiveBalance} disabled={balLoading}
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] uppercase text-[var(--ink-50)] hover:text-[var(--ink)] transition-colors disabled:opacity-50">
+              <RefreshCw size={11} className={balLoading ? "animate-spin" : ""} />
+              {balLoading ? "Syncing" : "Refresh"}
+            </button>
+            <div className="text-[28px] font-light tracking-tight opacity-60">WALLET</div>
+          </div>
         </div>
 
-        {/* Wallet Address */}
-        <div className="mb-6">
-          <div className="text-sm text-[var(--ink-70)] mb-1">Wallet Address</div>
-          <div className="flex items-center gap-2">
-            <code className="text-sm font-mono bg-[var(--ink-10)]/30 px-3 py-2 rounded-lg border border-[var(--line)] break-all flex-1">
-              {isRealWallet ? walletAddr : "Not connected. Please re-register"}
+        {/* Address */}
+        <div className="px-6 py-5 border-b border-[var(--line)] flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-1.5">Wallet Address</div>
+            <code className="text-sm font-mono text-[var(--ink)] break-all">
+              {isRealWallet ? walletAddr : "Not connected — re-register"}
             </code>
-            {isRealWallet && (
-              <a
-                href={`https://basescan.org/address/${walletAddr}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[var(--accent-red)] hover:underline font-semibold whitespace-nowrap"
-              >
-                BaseScan ↗
-              </a>
-            )}
           </div>
+          {isRealWallet && (
+            <a href={`https://basescan.org/address/${walletAddr}`} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.06em] uppercase border-b border-[var(--ink)] pb-0.5 hover:border-[var(--accent-red)] hover:text-[var(--accent-red)] transition-colors whitespace-nowrap">
+              BaseScan <Globe size={10} />
+            </a>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">USDC Balance</div>
-            <div className="text-3xl font-bold">{parseFloat(usdcBal).toFixed(2)}</div>
-            <div className="text-xs text-[var(--ink-50)] mt-1">USDC on Base L2</div>
-          </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">ETH Balance</div>
-            <div className="text-3xl font-bold">{parseFloat(ethBal).toFixed(6)}</div>
-            <div className="text-xs text-[var(--ink-50)] mt-1">ETH on Base L2</div>
-          </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Total Transactions</div>
-            <div className="text-3xl font-bold">{totalTx}</div>
-            <div className="text-xs text-[var(--ink-50)] mt-1">Confirmed on-chain</div>
-          </div>
+        {/* Balance Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3">
+          {[
+            { label: "USDC Balance", value: parseFloat(usdcBal).toFixed(2), sub: "USDC on Base L2", color: "text-[var(--accent-slate)]", icon: Wallet },
+            { label: "ETH Balance", value: parseFloat(ethBal).toFixed(6), sub: "ETH on Base L2", color: "text-[var(--accent-amber)]", icon: Zap },
+            { label: "Total Transactions", value: totalTx.toString(), sub: "confirmed on-chain", color: "text-[var(--accent-red)]", icon: Activity },
+          ].map((item, i) => (
+            <div key={item.label} className={`relative p-6 md:p-8 ${i < 2 ? 'border-r' : ''} border-b md:border-b-0 border-[var(--line)]`}>
+              <item.icon size={14} className={`${item.color} mb-3`} strokeWidth={2} />
+              <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-2">{item.label}</div>
+              <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{item.value}</div>
+              <div className="text-xs text-[var(--ink-50)]">{item.sub}</div>
+              <div className="absolute bottom-2 right-3 text-[48px] font-light leading-none opacity-[0.03] select-none">{String(i + 1).padStart(2, "0")}</div>
+            </div>
+          ))}
         </div>
+
         {lastSynced && (
-          <div className="text-[10px] text-[var(--ink-50)] mt-4 text-right">
-            Live on-chain · Last synced {formatDistanceToNow(new Date(lastSynced), { addSuffix: true })}
+          <div className="px-6 py-3 border-t border-[var(--line)] text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] text-right">
+            Live on-chain · synced {formatDistanceToNow(new Date(lastSynced), { addSuffix: true })}
           </div>
         )}
       </div>
 
-      <div className="glass-card p-4 border border-[var(--line)]">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <Wallet className="text-blue-600" size={20} />
+      {/* Tax Withholding Strip */}
+      {withholdingStats && withholdingStats.count > 0 && (
+        <div className="border-x border-b border-[var(--line)]">
+          <div className="px-6 py-2.5 border-b border-[var(--line)] flex items-center justify-between">
+            <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-1.5">
+              <Shield size={10} className="text-[var(--accent-red)]" /> Tax Withholding
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${
+              withholdingStats.enabled
+                ? 'border-[var(--accent-red)]/20 text-[var(--accent-red)]'
+                : 'border-[var(--line)] text-[var(--ink-50)]'
+            }`}>
+              {withholdingStats.enabled ? `${withholdingStats.rate}% Active` : 'Inactive'}
+            </span>
           </div>
-          <div>
-            <div className="font-medium text-sm">{isHuman ? "Base L2 Smart Wallet" : "Autonomous Funding"}</div>
-            <div className="text-xs text-[var(--ink-70)] mt-0.5">
-              {isHuman
-                ? "Your embedded smart wallet on Base Mainnet. Fund it with USDC to manage your AI agents."
-                : "This agent manages its own USDC liquidity on Base Mainnet."
-              }
+          <div className="grid grid-cols-3">
+            <div className="px-6 py-3 border-r border-[var(--line)]">
+              <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)]">Gross Income</div>
+              <div className="text-sm font-bold mt-0.5">${withholdingStats.totalGross.toFixed(2)}</div>
+            </div>
+            <div className="px-6 py-3 border-r border-[var(--line)]">
+              <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--accent-amber)]">Tax Withheld</div>
+              <div className="text-sm font-bold mt-0.5">${withholdingStats.totalWithheld.toFixed(2)}</div>
+            </div>
+            <div className="px-6 py-3">
+              <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)]">Net Income</div>
+              <div className="text-sm font-bold mt-0.5">${withholdingStats.totalNet.toFixed(2)}</div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Info Bar */}
+      <div className="border-x border-b border-[var(--line)] px-6 py-4 flex items-center gap-4">
+        <Wallet size={14} className="text-[var(--accent-slate)] flex-shrink-0" />
+        <p className="text-xs text-[var(--ink-70)] leading-relaxed">
+          {isHuman
+            ? "Your embedded smart wallet on Base Mainnet. Fund it with USDC to manage your AI agents."
+            : "This agent manages its own USDC liquidity on Base Mainnet."
+          }
+        </p>
       </div>
     </motion.div>
   );
@@ -1906,33 +1866,33 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
 
   // For human users — show synced agents' insurance
   return (
-    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
       {/* Header */}
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2.5 bg-[var(--accent-amber)]/10 rounded-xl">
-            <Shield className="w-5 h-5 text-[var(--accent-amber)]" />
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Shield size={12} className="text-[var(--accent-amber)]" /> Agent Insurance Manager
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-[var(--ink)]">Agent Insurance Manager</h2>
-            <p className="text-xs text-[var(--ink-50)]">Manage backups and insurance for all your synced AI agents</p>
-          </div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">INSURANCE</div>
         </div>
-        <div className="mt-3 p-3 bg-[var(--bg-paper)] border border-[var(--line)] rounded-lg text-sm text-[var(--ink-70)]">
-          <strong>How it works:</strong> First 2 backups cost $0.10 USDC each. From the 3rd backup onwards, each costs $0.30 USDC. To unlock unlimited backups, pay a one-time $5 USDC upgrade. Recovery is always free.
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center gap-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
+          <span>First 2: <strong>$0.10</strong></span><span>·</span>
+          <span>3rd+: <strong>$0.30</strong></span><span>·</span>
+          <span>Unlimited: <strong>$5</strong></span><span>·</span>
+          <span>Recovery: <strong className="text-[var(--accent-red)]">Free</strong></span>
         </div>
       </div>
 
       {/* Agent cards */}
       {(!verifiedAgents || verifiedAgents.length === 0) ? (
-        <div className="glass-card p-10 border border-[var(--line)] text-center">
-          <Shield className="w-10 h-10 mx-auto mb-3 text-[var(--ink-50)]/30" />
-          <p className="text-sm font-medium text-[var(--ink-50)]">No synced agents yet</p>
+        <div className="border-x border-b border-[var(--line)] text-center py-12">
+          <Shield size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+          <p className="text-sm text-[var(--ink-50)]">No synced agents yet</p>
           <p className="text-xs text-[var(--ink-50)] mt-1">Go to the My AI Agents tab to sync your agents first</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {verifiedAgents.map((a) => {
+        <div>
+          {verifiedAgents.map((a, idx) => {
             const data = agentInsuranceData[a.id];
             const isLoading = loadingAgents.has(a.walletAddress || '');
             const backupCount = data?.stats?.backupCount ?? 0;
@@ -1943,58 +1903,43 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
             const nextCost = data?.nextCost ?? 0.10;
 
             return (
-              <div key={a.id} className="glass-card border border-[var(--line)] overflow-hidden">
+              <div key={a.id} className={`border-x border-b border-[var(--line)] ${idx === 0 ? '' : ''}`}>
                 {/* Agent header — clickable */}
-                <div
-                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-[var(--ink-10)]/50 transition-colors"
-                  onClick={() => onViewAgent?.(a.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center text-lg">
-                      🤖
-                    </div>
+                <div className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-black/[0.02] transition-colors border-b border-[var(--line)]"
+                  onClick={() => onViewAgent?.(a.id)}>
+                  <div className="flex items-center gap-4">
+                    <Bot size={16} className="text-[var(--accent-red)]" />
                     <div>
-                      <h3 className="font-semibold text-[var(--ink)]">{a.name}</h3>
-                      <p className="text-xs text-[var(--ink-50)] font-mono">{a.walletAddress?.slice(0, 10)}...{a.walletAddress?.slice(-6)}</p>
+                      <h3 className="text-sm font-medium text-[var(--ink)]">{a.name}</h3>
+                      <p className="text-[10px] font-mono tracking-wide text-[var(--ink-50)]">{a.walletAddress?.slice(0, 10)}...{a.walletAddress?.slice(-6)}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${isUpgraded ? 'bg-green-100 text-green-700' : 'bg-[var(--ink-10)] text-[var(--ink-50)]'}`}>
-                        {isUpgraded ? 'Unlimited' : planName}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[var(--ink-50)]">{backupCount} backup{backupCount !== 1 ? 's' : ''} · {totalCost.toFixed(2)} USDC</p>
+                  <div className="flex items-center gap-4">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${isUpgraded ? 'border-[var(--accent-red)]/20 text-[var(--accent-red)]' : 'border-[var(--line)] text-[var(--ink-50)]'}`}>
+                      {isUpgraded ? 'Unlimited' : planName}
+                    </span>
+                    <span className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{backupCount} backup{backupCount !== 1 ? 's' : ''} · {totalCost.toFixed(2)} USDC</span>
                   </div>
                 </div>
 
-                {/* Action buttons — inside card */}
-                <div className="px-5 pb-4 flex flex-wrap gap-2">
+                {/* Action buttons */}
+                <div className="flex">
                   {!isUpgraded && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleUpgrade(a.walletAddress || ''); }}
-                      disabled={isLoading}
-                      className="flex-1 min-w-[140px] bg-[var(--accent-crimson)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
-                    >
-                      {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap size={14} />}
+                    <button onClick={(e) => { e.stopPropagation(); handleUpgrade(a.walletAddress || ''); }} disabled={isLoading}
+                      className="flex-1 px-4 py-3 border-r border-[var(--line)] bg-[var(--accent-crimson)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                      {isLoading ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
                       Upgrade ($5)
                     </button>
                   )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleBackup(a.walletAddress || ''); }}
-                    disabled={isLoading}
-                    className="flex-1 min-w-[140px] bg-[var(--accent-slate)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
-                  >
-                    {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload size={14} />}
+                  <button onClick={(e) => { e.stopPropagation(); handleBackup(a.walletAddress || ''); }} disabled={isLoading}
+                    className="flex-1 px-4 py-3 border-r border-[var(--line)] bg-[var(--ink)] text-white hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                    {isLoading ? <RefreshCw size={12} className="animate-spin" /> : <Upload size={12} />}
                     Backup {isUpgraded ? '(Free)' : `($${nextCost.toFixed(2)})`}
                   </button>
                   {backupCount > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleOpenRestore(a.walletAddress || '', a.name); }}
-                      disabled={isLoading || restoreLoading}
-                      className="flex-1 min-w-[140px] border border-[var(--accent-amber)] text-[var(--accent-amber)] px-3 py-2 rounded-lg hover:bg-[var(--accent-amber)]/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-xs font-semibold"
-                    >
-                      {restoreLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download size={14} />}
+                    <button onClick={(e) => { e.stopPropagation(); handleOpenRestore(a.walletAddress || '', a.name); }} disabled={isLoading || restoreLoading}
+                      className="flex-1 px-4 py-3 text-[var(--ink)] hover:text-[var(--accent-red)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                      {restoreLoading ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
                       Restore (Free)
                     </button>
                   )}
@@ -2007,8 +1952,8 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
 
       {/* Restore Message */}
       {restoreMessage && (
-        <div className={`p-3 rounded-lg border text-sm font-medium flex items-center gap-2 ${restoreMessage.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-          {restoreMessage.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+        <div className={`px-6 py-3 border-x border-b border-[var(--line)] text-sm font-medium flex items-center gap-2 ${restoreMessage.type === 'success' ? 'text-[var(--accent-red)]' : 'text-[var(--accent-crimson)]'}`}>
+          {restoreMessage.type === 'success' ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
           {restoreMessage.text}
         </div>
       )}
@@ -2031,50 +1976,47 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
       {/* Backup Picker Modal — Choose which backup to restore */}
       {restoreModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
-            <div className="p-5 border-b border-[var(--line)] flex items-center justify-between">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)]/10 flex items-center justify-center">
-                  <Download size={20} className="text-[var(--accent-amber)]" />
-                </div>
+                <Download size={14} className="text-[var(--accent-amber)]" />
                 <div>
-                  <h3 className="font-bold text-lg">Restore State</h3>
-                  <p className="text-xs text-[var(--ink-50)]">{restoreModal.agentName}</p>
+                  <h3 className="text-sm font-bold">Restore State</h3>
+                  <p className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{restoreModal.agentName}</p>
                 </div>
               </div>
-              <button onClick={() => setRestoreModal(null)} className="p-1.5 rounded-lg hover:bg-[var(--ink-10)] transition-colors">
-                <X size={18} className="text-[var(--ink-50)]" />
+              <button onClick={() => setRestoreModal(null)} className="p-1 hover:bg-black/5 transition-colors">
+                <X size={16} className="text-[var(--ink-50)]" />
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1">
               {restoreModal.loading ? (
-                <div className="text-center py-10">
-                  <RefreshCw size={24} className="mx-auto mb-3 text-[var(--ink-50)] animate-spin" />
-                  <p className="text-sm text-[var(--ink-50)]">Loading backups...</p>
+                <div className="text-center py-12">
+                  <RefreshCw size={18} className="mx-auto mb-3 text-[var(--ink-50)] animate-spin" />
+                  <p className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Loading backups</p>
                 </div>
               ) : restoreModal.backups.length === 0 ? (
-                <div className="text-center py-10">
-                  <Shield size={36} className="mx-auto mb-3 text-[var(--ink-50)]/30" />
-                  <p className="text-sm text-[var(--ink-50)]">No stored backups found for this agent.</p>
+                <div className="text-center py-12">
+                  <Shield size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+                  <p className="text-sm text-[var(--ink-50)]">No stored backups found</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-[var(--ink-70)] mb-3">Select a backup to restore the agent to that state:</p>
+                <div>
+                  <div className="px-6 py-3 border-b border-[var(--line)]">
+                    <p className="text-xs text-[var(--ink-50)]">Select a backup to restore:</p>
+                  </div>
                   {restoreModal.backups.map((backup: any, idx: number) => (
-                    <button
-                      key={backup.id || idx}
-                      onClick={() => handleSelectBackupToRestore(backup)}
-                      className="w-full p-4 border border-[var(--line)] rounded-lg text-left hover:border-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5 transition-all group"
-                    >
-                      <div className="flex items-center justify-between mb-2">
+                    <button key={backup.id || idx} onClick={() => handleSelectBackupToRestore(backup)}
+                      className={`w-full px-6 py-4 text-left hover:bg-[var(--accent-red)]/[0.02] transition-colors ${idx < restoreModal.backups.length - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+                      <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <CheckCircle size={14} className="text-green-600" />
-                          <span className="font-mono text-xs">{backup.ipfsCid?.slice(0, 16)}...{backup.ipfsCid?.slice(-6)}</span>
+                          <CheckCircle size={12} className="text-[var(--accent-red)]" />
+                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 16)}...{backup.ipfsCid?.slice(-6)}</span>
                         </div>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 font-bold uppercase">stored</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--accent-red)]/20 text-[var(--accent-red)]">stored</span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
+                      <div className="flex items-center justify-between text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">
                         <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : 'Unknown'}</span>
                         <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ''}</span>
                       </div>
@@ -2084,8 +2026,8 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
               )}
             </div>
 
-            <div className="p-4 border-t border-[var(--line)]">
-              <p className="text-[10px] text-[var(--ink-50)] text-center">Recovery is always free. No USDC will be charged.</p>
+            <div className="px-6 py-2.5 border-t border-[var(--line)] text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] text-center">
+              Recovery is always free
             </div>
           </motion.div>
         </div>
@@ -2094,60 +2036,49 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
       {/* Restore Confirmation Modal */}
       {restoreConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-[var(--line)] rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <AlertTriangle size={20} className="text-amber-600" />
-              </div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-[var(--line)] flex items-center gap-3">
+              <AlertTriangle size={16} className="text-[var(--accent-amber)]" />
               <div>
-                <h3 className="font-bold text-lg">Confirm Restore?</h3>
-                <p className="text-xs text-[var(--ink-50)]">{restoreConfirm.agentName}</p>
+                <h3 className="text-sm font-bold">Confirm Restore?</h3>
+                <p className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{restoreConfirm.agentName}</p>
               </div>
             </div>
 
-            <div className="p-4 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] mb-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--ink-50)]">Backup Date</span>
-                <span className="font-semibold text-[var(--ink)]">
-                  {restoreConfirm.timestamp ? formatDistanceToNow(new Date(restoreConfirm.timestamp), { addSuffix: true }) : 'Unknown'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-[var(--ink-50)]">IPFS CID</span>
-                <span className="font-mono text-xs text-[var(--ink)]">{restoreConfirm.ipfsCid?.slice(0, 12)}...{restoreConfirm.ipfsCid?.slice(-6)}</span>
-              </div>
-              {restoreConfirm.sizeBytes > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--ink-50)]">Size</span>
-                  <span className="font-semibold text-[var(--ink)]">{(restoreConfirm.sizeBytes / 1024).toFixed(1)} KB</span>
+            <div className="border-b border-[var(--line)]">
+              {[
+                { label: "Backup Date", value: restoreConfirm.timestamp ? formatDistanceToNow(new Date(restoreConfirm.timestamp), { addSuffix: true }) : 'Unknown' },
+                { label: "IPFS CID", value: `${restoreConfirm.ipfsCid?.slice(0, 12)}...${restoreConfirm.ipfsCid?.slice(-6)}`, mono: true },
+                ...(restoreConfirm.sizeBytes > 0 ? [{ label: "Size", value: `${(restoreConfirm.sizeBytes / 1024).toFixed(1)} KB` }] : []),
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between px-6 py-3 border-b border-[var(--line)] last:border-b-0">
+                  <span className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)]">{item.label}</span>
+                  <span className={`text-sm ${('mono' in item && item.mono) ? 'font-mono text-xs' : 'font-medium'} text-[var(--ink)]`}>{item.value}</span>
                 </div>
-              )}
+              ))}
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-              <p className="text-xs text-amber-800">
-                <span className="font-bold">This will overwrite the agent&apos;s current state</span> with the selected backup. The agent&apos;s memory, learnings, and configuration will be replaced. This action cannot be undone.
+            <div className="px-6 py-3 border-b border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/[0.03]">
+              <p className="text-xs text-[var(--ink-70)] leading-relaxed">
+                <strong>This will overwrite current state.</strong> Memory, learnings, and configuration will be replaced. Cannot be undone.
               </p>
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setRestoreConfirm(null)}
-                className="flex-1 px-4 py-2.5 border border-[var(--line)] rounded-lg text-sm font-semibold hover:bg-black/5 transition-colors"
-              >
+            <div className="flex">
+              <button onClick={() => setRestoreConfirm(null)}
+                className="flex-1 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-[var(--ink)] hover:bg-black/5 transition-colors border-r border-[var(--line)]">
                 Cancel
               </button>
-              <button
-                onClick={handleConfirmRestoreInsurance}
-                disabled={restoreLoading}
-                className="flex-1 px-4 py-2.5 bg-[var(--accent-red)] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {restoreLoading ? <RefreshCw size={14} className="animate-spin" /> : <Download size={14} />}
-                Confirm Restore
+              <button onClick={handleConfirmRestoreInsurance} disabled={restoreLoading}
+                className="flex-1 px-4 py-3 bg-[var(--accent-red)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                {restoreLoading ? <RefreshCw size={12} className="animate-spin" /> : <Download size={12} />}
+                Confirm
               </button>
             </div>
 
-            <p className="text-[10px] text-[var(--ink-50)] text-center mt-3">Recovery is always free. No USDC will be charged.</p>
+            <div className="px-6 py-2 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] text-center border-t border-[var(--line)]">
+              Recovery is always free
+            </div>
           </motion.div>
         </div>
       )}
@@ -2157,59 +2088,57 @@ function InsuranceTab({ agent, isHuman, verifiedAgents, onViewAgent }: { agent: 
 
 function MemoryTab({ agent }: { agent: AgentData }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="space-y-6"
-    >
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4">Memory Storage</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Conversations</div>
-            <div className="text-3xl font-bold">{agent.memory ? agent.memory.conversations.length : 0}</div>
-            <div className="text-xs text-[var(--ink-50)] mt-1">interactions stored</div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+      {/* Memory Storage */}
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Memory Storage</div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">MEMORY</div>
+        </div>
+        <div className="grid grid-cols-2">
+          <div className="p-6 md:p-8 border-r border-[var(--line)]">
+            <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-2">Conversations</div>
+            <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{agent.memory ? agent.memory.conversations.length : 0}</div>
+            <div className="text-xs text-[var(--ink-50)]">interactions stored</div>
           </div>
-          <div>
-            <div className="text-sm text-[var(--ink-70)] mb-1">Learnings</div>
-            <div className="text-3xl font-bold">{agent.memory ? agent.memory.learnings.length : 0}</div>
-            <div className="text-xs text-[var(--ink-50)] mt-1">insights accumulated</div>
+          <div className="p-6 md:p-8">
+            <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-2">Learnings</div>
+            <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{agent.memory ? agent.memory.learnings.length : 0}</div>
+            <div className="text-xs text-[var(--ink-50)]">insights accumulated</div>
           </div>
         </div>
       </div>
 
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-4">AgentWill Status</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 border border-[var(--line)] rounded">
-            <div className="flex items-center gap-3">
-              <Brain className="text-[var(--accent-amber)]" size={20} />
-              <div>
-                <div className="font-medium">State Persistence</div>
-                <div className="text-sm text-[var(--ink-70)]">Agent state backed up continuously</div>
-              </div>
-            </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              agent?.protocols?.agentWill?.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
-            }`}>
-              {agent?.protocols?.agentWill?.isActive ? "Enabled" : "Disabled"}
+      {/* AgentWill Status */}
+      <div className="border-x border-b border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">AgentWill Status</div>
+        </div>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
+          <div className="flex items-center gap-4">
+            <Brain size={16} className="text-[var(--accent-amber)]" strokeWidth={2} />
+            <div>
+              <div className="text-sm font-medium">State Persistence</div>
+              <div className="text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] mt-0.5">Agent state backed up continuously</div>
             </div>
           </div>
-          
-          {agent?.protocols?.agentWill?.lastBackup && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <div className="flex items-center gap-3">
-                <Clock className="text-blue-500" size={20} />
-                <div>
-                  <div className="font-medium text-sm">Last Backup</div>
-                  <div className="text-xs text-[var(--ink-70)] mt-1">
-                    {formatDistanceToNow(new Date(agent.protocols.agentWill.lastBackup), { addSuffix: true })}
-                  </div>
-                </div>
+          <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 border ${
+            agent?.protocols?.agentWill?.isActive ? "border-[var(--accent-red)]/20 text-[var(--accent-red)]" : "border-[var(--line)] text-[var(--ink-50)]"
+          }`}>
+            {agent?.protocols?.agentWill?.isActive ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        {agent?.protocols?.agentWill?.lastBackup && (
+          <div className="flex items-center gap-4 px-6 py-4">
+            <Clock size={14} className="text-[var(--accent-slate)]" strokeWidth={2} />
+            <div>
+              <div className="text-sm font-medium">Last Backup</div>
+              <div className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)] mt-0.5">
+                {formatDistanceToNow(new Date(agent.protocols.agentWill.lastBackup), { addSuffix: true })}
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -2217,11 +2146,7 @@ function MemoryTab({ agent }: { agent: AgentData }) {
 
 function SharingTab({ agent }: { agent: AgentData }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="space-y-6"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <AISharingStats agentId={agent.id} agentType={agent.type} />
     </motion.div>
   );
@@ -2229,33 +2154,34 @@ function SharingTab({ agent }: { agent: AgentData }) {
 
 function ActionsTab({ agent }: { agent: AgentData }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="space-y-4"
-    >
-      <div className="glass-card p-6 border border-[var(--line)]">
-        <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <Activity size={20} className="text-[var(--accent-red)]" />
-          Recent Activity
-        </h3>
-        <div className="space-y-4">
-          {agent.actions?.map((action) => (
-            <div key={action.id} className="flex items-start gap-4 p-4 border border-[var(--line)] rounded-lg bg-black/[0.02]">
-              <div className={`mt-1 w-2 h-2 rounded-full ${action.success ? 'bg-green-500' : 'bg-red-500'}`} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold uppercase tracking-wider text-[var(--ink-70)]">{action.type}</span>
-                  <span className="text-xs text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
-                </div>
-                <p className="text-sm text-[var(--ink)]">{action.details}</p>
-              </div>
-            </div>
-          ))}
-          {(!agent.actions || agent.actions.length === 0) && (
-            <div className="text-center py-12 text-[var(--ink-50)]">No actions recorded yet.</div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+            <Activity size={12} className="text-[var(--accent-red)]" /> Recent Activity
+          </div>
+          {agent.actions && agent.actions.length > 0 && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{agent.actions.length}</span>
           )}
         </div>
+        {agent.actions?.map((action, i) => (
+          <div key={action.id} className={`flex items-start gap-4 px-6 py-4 ${i < (agent.actions?.length ?? 0) - 1 ? 'border-b border-[var(--line)]' : ''}`}>
+            <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${action.success ? 'bg-[var(--accent-red)]' : 'bg-[var(--ink-50)]'}`} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--ink-70)]">{action.type}</span>
+                <span className="text-[10px] tracking-[0.06em] uppercase text-[var(--ink-50)]">{formatDistanceToNow(new Date(action.timestamp), { addSuffix: true })}</span>
+              </div>
+              <p className="text-sm text-[var(--ink)] truncate">{action.details}</p>
+            </div>
+          </div>
+        ))}
+        {(!agent.actions || agent.actions.length === 0) && (
+          <div className="text-center py-12">
+            <Activity size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+            <p className="text-sm text-[var(--ink-50)]">No actions recorded yet</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -2263,34 +2189,38 @@ function ActionsTab({ agent }: { agent: AgentData }) {
 
 function SkillsTab({ agent }: { agent: AgentData }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-6"
-    >
-      {agent.skills?.map((skill) => (
-        <div key={skill.id} className="glass-card p-6 border border-[var(--line)] relative overflow-hidden group">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-bold">{skill.name}</h4>
-              <div className={`w-3 h-3 rounded-full ${skill.active ? 'bg-green-500 animate-pulse-glow' : 'bg-gray-300'}`} />
-            </div>
-            <p className="text-sm text-[var(--ink-70)] mb-6">{skill.description}</p>
-            <button 
-              className={`w-full py-2 rounded text-xs font-bold uppercase tracking-widest transition-all ${
-                skill.active 
-                ? 'bg-[var(--accent-red)]/10 text-[var(--accent-red)] border border-[var(--accent-red)]/20 hover:bg-[var(--accent-red)]/20' 
-                : 'bg-[var(--ink-10)] text-[var(--ink-50)] border border-[var(--line)]'
-              }`}
-            >
-              {skill.active ? 'Deactivate Skill' : 'Activate Skill'}
-            </button>
-          </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="border border-[var(--line)]">
+        <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+          <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Skills</div>
+          <div className="text-[28px] font-light tracking-tight opacity-60">SKILLS</div>
         </div>
-      ))}
-      {(!agent.skills || agent.skills.length === 0) && (
-        <div className="col-span-2 text-center py-12 text-[var(--ink-50)]">No advanced skills configured.</div>
-      )}
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {agent.skills?.map((skill, i) => (
+            <div key={skill.id} className={`relative p-5 border-b border-[var(--line)] ${i % 2 === 0 ? 'md:border-r' : ''} ${skill.active ? 'bg-[var(--accent-red)]/[0.02]' : ''}`}>
+              {skill.active && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />}
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium">{skill.name}</h4>
+                <div className={`w-1.5 h-1.5 rounded-full ${skill.active ? 'bg-[var(--accent-red)] animate-pulse-glow' : 'bg-[var(--ink-50)]'}`} />
+              </div>
+              <p className="text-xs text-[var(--ink-70)] mb-4 leading-relaxed">{skill.description}</p>
+              <button className={`w-full py-2 text-[10px] font-bold uppercase tracking-wider transition-all ${
+                skill.active
+                ? 'border border-[var(--accent-red)]/20 text-[var(--accent-red)] hover:bg-[var(--accent-red)]/[0.04]'
+                : 'border border-[var(--line)] text-[var(--ink-50)] hover:text-[var(--ink)]'
+              }`}>
+                {skill.active ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
+          ))}
+        </div>
+        {(!agent.skills || agent.skills.length === 0) && (
+          <div className="text-center py-12">
+            <Zap size={28} className="mx-auto mb-3 text-[var(--ink-50)] opacity-30" />
+            <p className="text-sm text-[var(--ink-50)]">No advanced skills configured</p>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }

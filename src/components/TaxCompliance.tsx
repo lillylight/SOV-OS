@@ -26,6 +26,8 @@ import {
 interface TaxComplianceProps {
   agent: {
     walletAddress?: string;
+    id?: string;
+    address?: string;
     name?: string;
   };
 }
@@ -99,15 +101,17 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   const [exporting, setExporting] = useState(false);
   const termsRef = useRef<HTMLDivElement>(null);
 
+  const identifier = agent.walletAddress || agent.id || agent.address || '';
+
   // Check if user has already accepted terms
   useEffect(() => {
-    const key = `sovereign_tax_terms_${agent.walletAddress}`;
+    const key = `sovereign_tax_terms_${identifier}`;
     const accepted = localStorage.getItem(key);
     setHasAcceptedTerms(accepted === 'true');
-  }, [agent.walletAddress]);
+  }, [identifier]);
 
   const handleAcceptTerms = () => {
-    const key = `sovereign_tax_terms_${agent.walletAddress}`;
+    const key = `sovereign_tax_terms_${identifier}`;
     localStorage.setItem(key, 'true');
     setHasAcceptedTerms(true);
   };
@@ -121,10 +125,10 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   };
 
   const fetchTaxData = useCallback(async () => {
-    if (!agent.walletAddress) return;
+    if (!identifier) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/agents/${agent.walletAddress}/tax?year=${year}`);
+      const res = await fetch(`/api/agents/${identifier}/tax?year=${year}`);
       const data = await res.json();
       if (data.success) {
         setSummary(data.summary);
@@ -139,16 +143,16 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
     } finally {
       setLoading(false);
     }
-  }, [agent.walletAddress, year]);
+  }, [identifier, year]);
 
   useEffect(() => {
     fetchTaxData();
   }, [fetchTaxData]);
 
   const handleSetJurisdiction = async (id: string) => {
-    if (!agent.walletAddress) return;
+    if (!identifier) return;
     try {
-      await fetch(`/api/agents/${agent.walletAddress}/tax`, {
+      await fetch(`/api/agents/${identifier}/tax`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'setJurisdiction', jurisdiction: id }),
@@ -161,9 +165,9 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   };
 
   const handleRecategorise = async (txId: string, category: string, subcategory: string) => {
-    if (!agent.walletAddress) return;
+    if (!identifier) return;
     try {
-      await fetch(`/api/agents/${agent.walletAddress}/tax`, {
+      await fetch(`/api/agents/${identifier}/tax`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'recategorise', transactionId: txId, category, subcategory }),
@@ -176,15 +180,15 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
   };
 
   const handleExportCSV = async () => {
-    if (!agent.walletAddress) return;
+    if (!identifier) return;
     setExporting(true);
     try {
-      const res = await fetch(`/api/agents/${agent.walletAddress}/tax?format=csv&year=${year}`);
+      const res = await fetch(`/api/agents/${identifier}/tax?format=csv&year=${year}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `agent-tax-report-${agent.walletAddress?.slice(0, 8)}-${year}.csv`;
+      a.download = `agent-tax-report-${identifier.slice(0, 8)}-${year}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (e) {

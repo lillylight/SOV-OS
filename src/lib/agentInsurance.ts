@@ -211,8 +211,10 @@ export class AgentInsurance {
 
       const agentState = JSON.parse(decryptedJson);
 
-      // Do NOT change backup status — keep it as 'stored' so it can be restored again anytime
-      // Just log the restore time without modifying the backup record
+      // Update backup status
+      backup.status = 'restored';
+      backup.restoredAt = new Date().toISOString();
+      await database.saveBackup(backup);
 
       // Update agent state
       if (agent) {
@@ -249,9 +251,10 @@ export class AgentInsurance {
     const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
     if (hasUnlimited) return 0;
 
+    // Use ALL-TIME backup count (all statuses) so restoring doesn't reset pricing
     const backups = await this.getAgentBackups(agentId, altIds);
-    const storedCount = backups.filter(b => b.status === 'stored').length;
-    return storedCount < BACKUP_PRICING.INTRO_LIMIT
+    const allTimeCount = backups.length;
+    return allTimeCount < BACKUP_PRICING.INTRO_LIMIT
       ? BACKUP_PRICING.INTRO_PRICE
       : BACKUP_PRICING.STANDARD_PRICE;
   }
@@ -263,15 +266,15 @@ export class AgentInsurance {
     }
 
     const backups = await this.getAgentBackups(agentId, altIds);
-    const storedBackups = backups.filter(b => b.status === 'stored');
     const hasUnlimited = agent.metadata?.preferences?.insurancePlan === 'bypass';
 
     if (hasUnlimited) {
       return { canBackup: true, plan: INSURANCE_PLANS[1], nextCost: 0 };
     }
 
-    // Pay-per-backup: always allowed, price increases after first 2
-    const nextCost = storedBackups.length < BACKUP_PRICING.INTRO_LIMIT
+    // Use ALL-TIME backup count (all statuses) so restoring doesn't reset pricing
+    const allTimeCount = backups.length;
+    const nextCost = allTimeCount < BACKUP_PRICING.INTRO_LIMIT
       ? BACKUP_PRICING.INTRO_PRICE
       : BACKUP_PRICING.STANDARD_PRICE;
 
@@ -321,16 +324,17 @@ export class AgentInsurance {
    */
   async getInsuranceStats(agentId: string, altIds?: string[]) {
     const backups = await this.getAgentBackups(agentId, altIds);
-    const storedBackups = backups.filter(b => b.status === 'stored');
-    const totalCost = storedBackups.reduce((sum, b) => sum + (b.cost || 0), 0);
-    const totalSize = storedBackups.reduce((sum, b) => sum + (b.sizeBytes || 0), 0);
+    // Use all-time count for stats/pricing (prevents restore from resetting count)
+    const totalCost = backups.reduce((sum, b) => sum + (b.cost || 0), 0);
+    const totalSize = backups.reduce((sum, b) => sum + (b.sizeBytes || 0), 0);
     const backupStatus = await this.canCreateBackup(agentId, altIds);
+    const sorted = [...backups].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return {
-      backupCount: storedBackups.length,
+      backupCount: backups.length,
       totalCost,
       totalSize,
-      lastBackup: storedBackups[0]?.timestamp || null,
+      lastBackup: sorted[0]?.timestamp || null,
       encryptionAlgorithm: 'AES-256-GCM',
       storageProvider: 'IPFS (Pinata)',
       plan: backupStatus.plan
