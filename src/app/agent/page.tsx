@@ -2202,6 +2202,40 @@ function SkillsTab({ agent }: { agent: AgentData }) {
 
 function TaxTab({ agent }: { agent: AgentData }) {
   const [taxSubTab, setTaxSubTab] = useState<"withholding" | "compliance">("withholding");
+  const [proModal, setProModal] = useState(false);
+  const [proLoading, setProLoading] = useState(false);
+  const [proMessage, setProMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleUpgradePro = async () => {
+    setProModal(true);
+    setProMessage(null);
+  };
+
+  const confirmUpgradePro = async () => {
+    const identifier = (agent as any).walletAddress || agent.id || (agent as any).address;
+    if (!identifier) return;
+    setProLoading(true);
+    setProMessage(null);
+    try {
+      const res = await fetch(`/api/agents/${identifier}/upgrade-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: 'pro', paymentSignature: `pro_manual_${Date.now()}` }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProMessage({ type: 'success', text: 'Upgraded to Multi-Jurisdiction Pro!' });
+        setTimeout(() => { setProModal(false); setProMessage(null); }, 2000);
+      } else {
+        setProMessage({ type: 'error', text: data.error || 'Upgrade failed. Please try again.' });
+      }
+    } catch {
+      setProMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setProLoading(false);
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
       {/* Tax Sub-tab Navigation */}
@@ -2226,8 +2260,49 @@ function TaxTab({ agent }: { agent: AgentData }) {
       {/* Tax Sub-tab Content */}
       <div className="mt-6">
         {taxSubTab === "withholding" && <TaxWithholdingSettings agent={agent as any} />}
-        {taxSubTab === "compliance" && <TaxCompliance agent={agent as any} />}
+        {taxSubTab === "compliance" && <TaxCompliance agent={agent as any} onUpgradePro={handleUpgradePro} />}
       </div>
+
+      {/* Pro Upgrade Modal */}
+      {proModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="bg-[var(--bg-paper)] border border-[var(--line)] shadow-2xl max-w-sm w-full mx-4">
+            <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
+              <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
+                <Lock size={12} className="text-[var(--accent-amber)]" /> Multi-Jurisdiction Pro
+              </div>
+              <button onClick={() => { setProModal(false); setProMessage(null); }} className="text-[var(--ink-50)] hover:text-[var(--ink)] transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <div className="text-lg font-bold mb-1">Upgrade to Pro · $1/mo</div>
+              <p className="text-sm text-[var(--ink-70)] mb-4 leading-relaxed">
+                Unlock multi-country tax tracking, TurboTax &amp; QuickBooks sync, and accountant sharing.
+              </p>
+              <ul className="space-y-2 mb-5">
+                {['Track taxes across multiple countries', 'TurboTax & QuickBooks sync', 'Accountant sharing access', 'Advanced jurisdiction rules'].map(f => (
+                  <li key={f} className="flex items-center gap-2 text-sm text-[var(--ink-70)]">
+                    <CheckCircle size={13} className="text-[var(--accent-amber)] flex-shrink-0" /> {f}
+                  </li>
+                ))}
+              </ul>
+              {proMessage && (
+                <div className={`px-4 py-2 mb-4 text-sm font-medium flex items-center gap-2 border ${
+                  proMessage.type === 'success' ? 'border-[var(--accent-amber)]/30 text-[var(--accent-amber)]' : 'border-[var(--accent-crimson)]/30 text-[var(--accent-crimson)]'
+                }`}>
+                  {proMessage.type === 'success' ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+                  {proMessage.text}
+                </div>
+              )}
+              <button onClick={confirmUpgradePro} disabled={proLoading}
+                className="w-full py-3 bg-[var(--ink)] text-white text-[11px] font-bold uppercase tracking-wider hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                {proLoading ? <><RefreshCw size={12} className="animate-spin" /> Processing...</> : <><Zap size={12} /> Confirm Upgrade · $1/mo</>}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

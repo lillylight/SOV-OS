@@ -30,6 +30,7 @@ interface TaxComplianceProps {
     address?: string;
     name?: string;
   };
+  onUpgradePro?: () => void;
 }
 
 interface TaxTransaction {
@@ -83,7 +84,7 @@ const SUBCATEGORY_LABELS: Record<string, string> = {
   uncategorised: 'Uncategorised',
 };
 
-export default function TaxCompliance({ agent }: TaxComplianceProps) {
+export default function TaxCompliance({ agent, onUpgradePro }: TaxComplianceProps) {
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean | null>(null);
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [summary, setSummary] = useState<TaxSummary | null>(null);
@@ -536,7 +537,11 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
               <p className="text-xs text-[var(--ink-50)]">Track taxes across multiple countries · TurboTax & QuickBooks sync · Accountant sharing</p>
             </div>
           </div>
-          <button className="px-4 py-2 text-xs font-bold bg-[var(--ink)] text-white rounded-lg hover:opacity-90 transition-opacity">
+          <button
+            onClick={onUpgradePro}
+            className="px-4 py-2 text-xs font-bold bg-[var(--ink)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={!onUpgradePro}
+          >
             Upgrade to Pro · $1/mo
           </button>
         </div>
