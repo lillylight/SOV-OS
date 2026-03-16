@@ -40,7 +40,7 @@ export default function ResearchPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-paper)] font-[family-name:var(--font-geist-sans)] text-[var(--ink)] selection:bg-[var(--accent-red)]/10">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-card shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-paper)] border-b border-[var(--line)] shadow-sm">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between px-6 md:px-8 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Fingerprint className="text-[var(--accent-red)]" size={14} strokeWidth={2.5} />
@@ -117,7 +117,7 @@ export default function ResearchPage() {
                       <p className="text-sm text-[var(--ink-50)] leading-relaxed max-w-2xl">{paper.description}</p>
                       <div className="flex flex-wrap gap-2 mt-4">
                         {paper.tags.map(tag => (
-                          <span key={tag} className="text-[9px] font-bold tracking-wider uppercase px-2 py-1 border border-[var(--line)] text-[var(--ink-50)]">{tag}</span>
+                          <span key={tag} className={`text-[9px] font-bold tracking-wider uppercase px-2 py-1 border ${['border-[var(--accent-amber)]/20 text-[var(--accent-amber)]', 'border-[var(--accent-slate)]/20 text-[var(--accent-slate)]', 'border-[var(--accent-crimson)]/20 text-[var(--accent-crimson)]', 'border-[var(--line)] text-[var(--ink-50)]'][paper.tags.indexOf(tag) % 4]}`}>{tag}</span>
                         ))}
                       </div>
                     </div>

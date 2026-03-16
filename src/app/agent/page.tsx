@@ -365,25 +365,25 @@ function AgentDashboardInner() {
         {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
         <div className="grid grid-cols-2 md:grid-cols-4 border-b border-[var(--line)]">
           {(isHuman ? [
-            { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", color: "text-[var(--accent-red)]" },
-            { icon: Link2, label: "Pending", value: pendingAgents.length.toString(), sub: "awaiting sync", color: "text-[var(--accent-amber)]" },
-            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", color: "text-[var(--accent-slate)]" },
-            { icon: Shield, label: "Insurance", value: insuranceActive ? "Active" : "Off", sub: insuranceActive ? "backups stored" : "no backups", color: "text-[var(--accent-crimson)]" },
+            { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
+            { icon: Link2, label: "Pending", value: pendingAgents.length.toString(), sub: "awaiting sync", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+            { icon: Shield, label: "Insurance", value: insuranceActive ? "Active" : "Off", sub: insuranceActive ? "backups stored" : "no backups", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
           ] : [
-            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", color: "text-[var(--accent-slate)]" },
-            { icon: Activity, label: "Volume", value: (agent?.protocols?.agenticWallet?.transactionCount || 0).toString(), sub: "transactions", color: "text-[var(--accent-amber)]" },
-            { icon: Shield, label: "Insurance", value: agent?.protocols?.agentInsure?.isActive ? "Active" : "Off", sub: "", color: "text-[var(--accent-crimson)]" },
-            { icon: Brain, label: "Memory", value: agent.memory ? (agent.memory.conversations.length + agent.memory.learnings.length).toString() : "0", sub: "items", color: "text-[var(--accent-red)]" },
+            { icon: Wallet, label: "USDC Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
+            { icon: Activity, label: "Transactions", value: (agent?.protocols?.agenticWallet?.transactionCount || 0).toString(), sub: "transactions", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+            { icon: Shield, label: "Insurance", value: agent?.protocols?.agentInsure?.isActive ? "Active" : "Off", sub: "", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+            { icon: Brain, label: "Memory", value: agent.memory ? (agent.memory.conversations.length + agent.memory.learnings.length).toString() : "0", sub: "items", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
           ]).map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }}
-              className="relative p-6 md:p-8 border-r border-b md:border-b-0 border-[var(--line)] last:border-r-0 [&:nth-child(2)]:border-r-0 md:[&:nth-child(2)]:border-r">
-              <div className="text-[11px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-3 flex items-center gap-2">
-                <stat.icon size={14} className={stat.color} strokeWidth={2} />
+              className={`relative p-6 md:p-8 ${stat.bg} ${stat.text}`}>
+              <div className={`text-[11px] tracking-[0.1em] uppercase ${stat.subText} mb-3 flex items-center gap-2`}>
+                <stat.icon size={14} className={stat.iconColor} strokeWidth={2} />
                 {stat.label}
               </div>
               <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{stat.value}</div>
-              {stat.sub && <div className="text-xs text-[var(--ink-50)]">{stat.sub}</div>}
-              <div className="absolute bottom-2 right-3 text-[48px] font-light leading-none opacity-[0.03] select-none">
+              {stat.sub && <div className={`text-xs ${stat.subText}`}>{stat.sub}</div>}
+              <div className={`absolute bottom-2 right-3 text-[48px] font-light leading-none ${stat.numColor} select-none`}>
                 {String(i + 1).padStart(2, "0")}
               </div>
             </motion.div>
@@ -936,16 +936,16 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4">
                 {[
-                  { icon: Wallet, label: "USDC Balance", value: parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2), color: "text-[var(--accent-slate)]" },
-                  { icon: Zap, label: "Transactions", value: (selectedAgent.protocols?.agenticWallet?.transactionCount || 0).toString(), color: "text-[var(--accent-amber)]" },
-                  { icon: Brain, label: "Backups", value: (selectedAgent.protocols?.agentWill?.backupCount || 0).toString(), color: "text-[var(--accent-red)]" },
-                  { icon: Shield, label: "Insurance", value: selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off", color: "text-[var(--accent-crimson)]" },
+                  { icon: Wallet, label: "USDC Balance", value: parseFloat(selectedAgent.protocols?.agenticWallet?.balance || "0").toFixed(2), bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", sub: "text-[var(--ink)]/60", num: "text-[var(--ink)]/[0.06]" },
+                  { icon: Zap, label: "Transactions", value: (selectedAgent.protocols?.agenticWallet?.transactionCount || 0).toString(), bg: "bg-[var(--accent-slate)]", text: "text-white", sub: "text-white/60", num: "text-white/[0.08]" },
+                  { icon: Brain, label: "Backups", value: (selectedAgent.protocols?.agentWill?.backupCount || 0).toString(), bg: "bg-[var(--accent-crimson)]", text: "text-white", sub: "text-white/60", num: "text-white/[0.08]" },
+                  { icon: Shield, label: "Insurance", value: selectedAgent.protocols?.agentInsure?.isActive ? "Active" : "Off", bg: "bg-[var(--ink)]", text: "text-white", sub: "text-white/50", num: "text-white/[0.05]" },
                 ].map((stat, i) => (
-                  <div key={stat.label} className={`relative p-6 ${i < 3 ? 'border-r' : ''} border-[var(--line)]`}>
-                    <stat.icon size={14} className={`${stat.color} mb-3`} strokeWidth={2} />
-                    <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-2">{stat.label}</div>
+                  <div key={stat.label} className={`relative p-6 ${stat.bg} ${stat.text}`}>
+                    <stat.icon size={14} className={`${stat.sub} mb-3`} strokeWidth={2} />
+                    <div className={`text-[10px] tracking-[0.1em] uppercase ${stat.sub} mb-2`}>{stat.label}</div>
                     <div className="text-xl font-bold tracking-tight">{stat.value}</div>
-                    <div className="absolute bottom-1 right-2 text-[36px] font-light leading-none opacity-[0.03] select-none">{String(i + 1).padStart(2, "0")}</div>
+                    <div className={`absolute bottom-1 right-2 text-[36px] font-light leading-none ${stat.num} select-none`}>{String(i + 1).padStart(2, "0")}</div>
                   </div>
                 ))}
               </div>
@@ -955,9 +955,10 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               <div className="border border-[var(--line)] p-6">
                 <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-4">Capabilities</div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedAgent.metadata.capabilities.map((cap: string, i: number) => (
-                    <span key={i} className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider border border-[var(--line)] text-[var(--ink-70)]">{cap}</span>
-                  ))}
+                  {selectedAgent.metadata.capabilities.map((cap: string, i: number) => {
+                    const colors = ["bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] border-[var(--accent-amber)]/20", "bg-[var(--accent-slate)]/10 text-[var(--accent-slate)] border-[var(--accent-slate)]/20", "bg-[var(--accent-crimson)]/10 text-[var(--accent-crimson)] border-[var(--accent-crimson)]/20"];
+                    return <span key={i} className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider border ${colors[i % colors.length]}`}>{cap}</span>;
+                  })}
                 </div>
               </div>
             )}

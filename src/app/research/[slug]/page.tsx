@@ -50,7 +50,7 @@ export default function PaperPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-paper)] font-[family-name:var(--font-geist-sans)] text-[var(--ink)] selection:bg-[var(--accent-red)]/10">
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-card shadow-sm">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[var(--bg-paper)] border-b border-[var(--line)] shadow-sm">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between px-6 md:px-8 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Fingerprint className="text-[var(--accent-red)]" size={14} strokeWidth={2.5} />
