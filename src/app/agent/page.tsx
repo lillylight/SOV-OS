@@ -361,36 +361,6 @@ function AgentDashboardInner() {
           </div>
         </div>
 
-        {/* ─── Quick Stats Strip ─── */}
-        {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
-        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-[var(--line)]">
-          {(isHuman ? [
-            { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
-            { icon: Link2, label: "Pending", value: pendingAgents.length.toString(), sub: "awaiting sync", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
-            { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
-            { icon: Shield, label: "Insurance", value: insuranceActive ? "Active" : "Off", sub: insuranceActive ? "backups stored" : "no backups", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
-          ] : [
-            { icon: Wallet, label: "USDC Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
-            { icon: Activity, label: "Transactions", value: (agent?.protocols?.agenticWallet?.transactionCount || 0).toString(), sub: "transactions", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
-            { icon: Shield, label: "Insurance", value: agent?.protocols?.agentInsure?.isActive ? "Active" : "Off", sub: "", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
-            { icon: Brain, label: "Memory", value: agent.memory ? (agent.memory.conversations.length + agent.memory.learnings.length).toString() : "0", sub: "items", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
-          ]).map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }}
-              className={`relative p-6 md:p-8 ${stat.bg} ${stat.text}`}>
-              <div className={`text-[11px] tracking-[0.1em] uppercase ${stat.subText} mb-3 flex items-center gap-2`}>
-                <stat.icon size={14} className={stat.iconColor} strokeWidth={2} />
-                {stat.label}
-              </div>
-              <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{stat.value}</div>
-              {stat.sub && <div className={`text-xs ${stat.subText}`}>{stat.sub}</div>}
-              <div className={`absolute bottom-2 right-3 text-[48px] font-light leading-none ${stat.numColor} select-none`}>
-                {String(i + 1).padStart(2, "0")}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-        )}
-
         {/* ─── Tab Navigation ─── */}
         {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
         <div className="border-b border-[var(--line)] overflow-x-auto">
@@ -415,6 +385,35 @@ function AgentDashboardInner() {
 
         {/* ─── Tab Content ─── */}
         <div className="px-6 md:px-8 py-8">
+          {/* Quick Stats Strip — inside content area */}
+          {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
+          <div className="grid grid-cols-2 md:grid-cols-4 mb-8 -mx-6 md:-mx-8 -mt-8">
+            {(isHuman ? [
+              { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
+              { icon: Link2, label: "Pending", value: pendingAgents.length.toString(), sub: "awaiting sync", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+              { icon: Wallet, label: "Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+              { icon: Shield, label: "Insurance", value: insuranceActive ? "Active" : "Off", sub: insuranceActive ? "backups stored" : "no backups", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
+            ] : [
+              { icon: Wallet, label: "USDC Balance", value: parseFloat(agent?.protocols?.agenticWallet?.balance || "0").toFixed(2), sub: "USDC", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
+              { icon: Activity, label: "Transactions", value: (agent?.protocols?.agenticWallet?.transactionCount || 0).toString(), sub: "transactions", bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+              { icon: Shield, label: "Insurance", value: agent?.protocols?.agentInsure?.isActive ? "Active" : "Off", sub: "", bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", iconColor: "text-white/70", numColor: "text-white/[0.08]" },
+              { icon: Brain, label: "Memory", value: agent.memory ? (agent.memory.conversations.length + agent.memory.learnings.length).toString() : "0", sub: "items", bg: "bg-[var(--ink)]", text: "text-white", subText: "text-white/50", iconColor: "text-white/60", numColor: "text-white/[0.05]" },
+            ]).map((stat, i) => (
+              <motion.div key={stat.label} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }}
+                className={`relative p-6 md:p-8 ${stat.bg} ${stat.text}`}>
+                <div className={`text-[11px] tracking-[0.1em] uppercase ${stat.subText} mb-3 flex items-center gap-2`}>
+                  <stat.icon size={14} className={stat.iconColor} strokeWidth={2} />
+                  {stat.label}
+                </div>
+                <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{stat.value}</div>
+                {stat.sub && <div className={`text-xs ${stat.subText}`}>{stat.sub}</div>}
+                <div className={`absolute bottom-2 right-3 text-[48px] font-light leading-none ${stat.numColor} select-none`}>
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          )}
           {activeTab === "agents" && <LinkedAgentsTab pending={pendingAgents} verified={verifiedAgents} onAccept={handleAcceptAgent} syncLoading={syncLoading} onViewAgent={handleViewAgent} selectedAgent={selectedAgentDetail} onBack={() => setSelectedAgentDetail(null)} detailLoading={detailLoading} />}
           {activeTab === "profile" && <AgentProfile agent={agent as any} />}
           {activeTab === "identity" && <AgentIdentityCard agent={agent as any} />}
@@ -424,12 +423,7 @@ function AgentDashboardInner() {
           {activeTab === "protocols" && <ProtocolWizard agent={agent as any} />}
           {activeTab === "memory" && <MemoryExplorer agent={agent as any} />}
           {activeTab === "sharing" && <SharingTab agent={agent} />}
-          {activeTab === "tax" && (
-                    <div className="space-y-8">
-                      <TaxWithholdingSettings agent={agent as any} />
-                      <TaxCompliance agent={agent as any} />
-                    </div>
-                  )}
+          {activeTab === "tax" && <TaxTab agent={agent} />}
           {activeTab === "settings" && <AgentSettings agent={agent as any} />}
         </div>
       </main>
@@ -1144,17 +1138,17 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
 
             {/* ── Render skills by category ── */}
             {([
-              { key: 'core', label: 'Core', count: 6 },
-              { key: 'essential', label: 'Essential', count: 5 },
-              { key: 'experimental', label: 'Experimental', count: 5 },
-            ] as const).map(({ key, label }) => {
+              { key: 'core', label: 'Core', count: 6, bg: 'bg-[var(--accent-amber)]', text: 'text-[var(--ink)]' },
+              { key: 'essential', label: 'Essential', count: 5, bg: 'bg-[var(--accent-slate)]', text: 'text-white' },
+              { key: 'experimental', label: 'Experimental', count: 5, bg: 'bg-[var(--accent-crimson)]', text: 'text-white' },
+            ] as const).map(({ key, label, bg, text }) => {
               const categorySkills = PLATFORM_SKILLS.filter(s => s.category === key);
               if (categorySkills.length === 0) return null;
               return (
                 <div key={key} className="border-x border-b border-[var(--line)]">
-                  <div className="px-6 py-3 border-b border-[var(--line)] flex items-center justify-between">
-                    <h4 className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--ink-50)]">{label}</h4>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-[var(--line)] text-[var(--ink-50)]">{categorySkills.length}</span>
+                  <div className={`px-6 py-3 border-b border-[var(--line)] flex items-center justify-between ${bg} ${text}`}>
+                    <h4 className="text-[10px] font-bold uppercase tracking-[0.12em]">{label}</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border border-current/20">{categorySkills.length}</span>
                   </div>
 
                   {key === 'experimental' && (
@@ -1623,16 +1617,16 @@ function WalletTab({ agent }: { agent: AgentData }) {
         {/* Balance Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3">
           {[
-            { label: "USDC Balance", value: parseFloat(usdcBal).toFixed(2), sub: "USDC on Base L2", color: "text-[var(--accent-slate)]", icon: Wallet },
-            { label: "ETH Balance", value: parseFloat(ethBal).toFixed(6), sub: "ETH on Base L2", color: "text-[var(--accent-amber)]", icon: Zap },
-            { label: "Total Transactions", value: totalTx.toString(), sub: "confirmed on-chain", color: "text-[var(--accent-red)]", icon: Activity },
+            { label: "USDC Balance", value: parseFloat(usdcBal).toFixed(2), sub: "USDC on Base L2", icon: Wallet, bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", num: "text-[var(--ink)]/[0.06]" },
+            { label: "ETH Balance", value: parseFloat(ethBal).toFixed(6), sub: "ETH on Base L2", icon: Zap, bg: "bg-[var(--accent-slate)]", text: "text-white", subText: "text-white/60", num: "text-white/[0.08]" },
+            { label: "Total Transactions", value: totalTx.toString(), sub: "confirmed on-chain", icon: Activity, bg: "bg-[var(--accent-crimson)]", text: "text-white", subText: "text-white/60", num: "text-white/[0.08]" },
           ].map((item, i) => (
-            <div key={item.label} className={`relative p-6 md:p-8 ${i < 2 ? 'border-r' : ''} border-b md:border-b-0 border-[var(--line)]`}>
-              <item.icon size={14} className={`${item.color} mb-3`} strokeWidth={2} />
-              <div className="text-[10px] tracking-[0.1em] uppercase text-[var(--ink-50)] mb-2">{item.label}</div>
+            <div key={item.label} className={`relative p-6 md:p-8 ${item.bg} ${item.text}`}>
+              <item.icon size={14} className={`${item.subText} mb-3`} strokeWidth={2} />
+              <div className={`text-[10px] tracking-[0.1em] uppercase ${item.subText} mb-2`}>{item.label}</div>
               <div className="text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-none tracking-tight mb-1">{item.value}</div>
-              <div className="text-xs text-[var(--ink-50)]">{item.sub}</div>
-              <div className="absolute bottom-2 right-3 text-[48px] font-light leading-none opacity-[0.03] select-none">{String(i + 1).padStart(2, "0")}</div>
+              <div className={`text-xs ${item.subText}`}>{item.sub}</div>
+              <div className={`absolute bottom-2 right-3 text-[48px] font-light leading-none ${item.num} select-none`}>{String(i + 1).padStart(2, "0")}</div>
             </div>
           ))}
         </div>
@@ -2201,6 +2195,38 @@ function SkillsTab({ agent }: { agent: AgentData }) {
             <p className="text-sm text-[var(--ink-50)]">No advanced skills configured</p>
           </div>
         )}
+      </div>
+    </motion.div>
+  );
+}
+
+function TaxTab({ agent }: { agent: AgentData }) {
+  const [taxSubTab, setTaxSubTab] = useState<"withholding" | "compliance">("withholding");
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-0">
+      {/* Tax Sub-tab Navigation */}
+      <div className="border border-[var(--line)] flex overflow-x-auto">
+        {([
+          { key: "withholding" as const, label: "Tax Withholding", icon: Shield, color: "text-[var(--accent-amber)]" },
+          { key: "compliance" as const, label: "Tax & Compliance", icon: CheckCircle, color: "text-[var(--accent-slate)]" },
+        ]).map((tab) => (
+          <button key={tab.key} onClick={() => setTaxSubTab(tab.key)}
+            className={`relative flex-1 flex items-center justify-center gap-2 px-5 py-4 text-[11px] font-semibold tracking-[0.1em] uppercase whitespace-nowrap transition-colors border-r border-[var(--line)] last:border-r-0 ${
+              taxSubTab === tab.key
+                ? "text-[var(--ink)] bg-[var(--accent-amber)]/[0.04]"
+                : "text-[var(--ink-50)] hover:text-[var(--ink)] hover:bg-black/[0.01]"
+            }`}>
+            <tab.icon size={12} className={taxSubTab === tab.key ? tab.color : "text-[var(--ink-50)]"} />
+            {tab.label}
+            {taxSubTab === tab.key && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-red)]" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Tax Sub-tab Content */}
+      <div className="mt-6">
+        {taxSubTab === "withholding" && <TaxWithholdingSettings agent={agent as any} />}
+        {taxSubTab === "compliance" && <TaxCompliance agent={agent as any} />}
       </div>
     </motion.div>
   );

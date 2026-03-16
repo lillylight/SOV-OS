@@ -98,7 +98,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       {/* Profile Header Card */}
       <div className="border border-[var(--line)] overflow-hidden">
         {/* Banner */}
-        <div className="h-24 bg-gradient-to-r from-[var(--accent-red)]/10 via-[var(--accent-crimson)]/5 to-[var(--accent-amber)]/10 relative">
+        <div className="h-24 bg-gradient-to-r from-[var(--accent-amber)] via-[var(--accent-slate)] to-[var(--accent-crimson)] relative">
           <div className="absolute inset-0 opacity-[0.04]" style={{
             backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 8px, currentColor 8px, currentColor 9px)`,
           }} />
@@ -106,7 +106,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
 
         <div className="px-6 pb-6 -mt-10 relative">
           {/* Avatar */}
-          <div className="w-20 h-20 bg-gradient-to-br from-[var(--accent-red)] to-[var(--accent-crimson)] flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-white mb-4">
+          <div className="w-20 h-20 bg-[var(--ink)] flex items-center justify-center text-white text-2xl font-bold shadow-lg border-4 border-[var(--bg-paper)] mb-4">
             {isHuman ? <User size={32} /> : agent.name.charAt(0).toUpperCase()}
           </div>
 
@@ -128,7 +128,7 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
                   {isHuman ? "Human User" : "AI Agent"}
                 </span>
                 <span className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${(agent.status === "alive" || agent.status === "active") ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                  <div className={`w-2 h-2 rounded-full ${(agent.status === "alive" || agent.status === "active") ? "bg-[var(--accent-amber)] animate-pulse" : "bg-[var(--accent-crimson)]"}`} />
                   {(agent.status === "alive" || agent.status === "active") ? "Active" : agent.status || "Inactive"}
                 </span>
               </div>
@@ -166,9 +166,9 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
       {/* Profile Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Personal Info */}
-        <div className="border border-[var(--line)] p-6">
+        <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-amber)] p-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-5 flex items-center gap-2">
-            <User size={14} />
+            <User size={14} className="text-[var(--accent-amber)]" />
             {isHuman ? "Personal Information" : "Agent Information"}
           </h3>
 
@@ -260,9 +260,9 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
         </div>
 
         {/* Wallet & Connection */}
-        <div className="border border-[var(--line)] p-6">
+        <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-slate)] p-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-5 flex items-center gap-2">
-            <Wallet size={14} />
+            <Wallet size={14} className="text-[var(--accent-slate)]" />
             Wallet & Connection
           </h3>
 
@@ -365,47 +365,38 @@ export default function AgentProfile({ agent }: AgentProfileProps) {
           <Fingerprint size={14} />
           Account Details
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-3 border border-[var(--line)]">
-            <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Created</div>
-            <div className="text-sm font-medium">
-              {agent.createdAt ? formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true }) : "Unknown"}
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {[
+            { label: "Created", value: agent.createdAt ? formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true }) : "Unknown", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", sub: "text-[var(--ink)]/60" },
+            { label: "Last Active", value: agent.lastActiveAt ? formatDistanceToNow(new Date(agent.lastActiveAt), { addSuffix: true }) : "Just now", bg: "bg-[var(--accent-slate)]", text: "text-white", sub: "text-white/60" },
+            { label: "Sessions", value: (agent.sessionCount || 1).toString(), bg: "bg-[var(--accent-crimson)]", text: "text-white", sub: "text-white/60" },
+            { label: "Revenue", value: `$${(agent.totalRevenue || 0).toFixed(2)}`, bg: "bg-[var(--ink)]", text: "text-white", sub: "text-white/50" },
+          ].map((item) => (
+            <div key={item.label} className={`p-4 ${item.bg} ${item.text}`}>
+              <div className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${item.sub}`}>{item.label}</div>
+              <div className="text-sm font-bold">{item.value}</div>
             </div>
-          </div>
-          <div className="p-3 border border-[var(--line)]">
-            <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Last Active</div>
-            <div className="text-sm font-medium">
-              {agent.lastActiveAt ? formatDistanceToNow(new Date(agent.lastActiveAt), { addSuffix: true }) : "Just now"}
-            </div>
-          </div>
-          <div className="p-3 border border-[var(--line)]">
-            <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Sessions</div>
-            <div className="text-sm font-medium">{agent.sessionCount || 1}</div>
-          </div>
-          <div className="p-3 border border-[var(--line)]">
-            <div className="text-xs text-[var(--ink-50)] uppercase tracking-wider font-semibold mb-1">Revenue</div>
-            <div className="text-sm font-medium">${(agent.totalRevenue || 0).toFixed(2)}</div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* Active Protocols */}
       <div className="border border-[var(--line)] p-6">
         <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--ink-50)] mb-4 flex items-center gap-2">
-          <Shield size={14} />
+          <Shield size={14} className="text-[var(--accent-crimson)]" />
           Active Protocols
         </h3>
         <div className="flex flex-wrap gap-2">
           {[
-            { name: "AgentWill", active: agent.protocols?.agentWill?.isActive },
-            { name: "AgentInsure", active: agent.protocols?.agentInsure?.isActive },
-            { name: "Agentic Wallet", active: agent.protocols?.agenticWallet?.isActive },
-            { name: "x402 Payments", active: agent.protocols?.x402?.isActive },
+            { name: "AgentWill", active: agent.protocols?.agentWill?.isActive, color: "border-[var(--accent-amber)]/30 text-[var(--accent-amber)] bg-[var(--accent-amber)]/10" },
+            { name: "AgentInsure", active: agent.protocols?.agentInsure?.isActive, color: "border-[var(--accent-crimson)]/30 text-[var(--accent-crimson)] bg-[var(--accent-crimson)]/10" },
+            { name: "Agentic Wallet", active: agent.protocols?.agenticWallet?.isActive, color: "border-[var(--accent-slate)]/30 text-[var(--accent-slate)] bg-[var(--accent-slate)]/10" },
+            { name: "x402 Payments", active: agent.protocols?.x402?.isActive, color: "border-[var(--accent-red)]/30 text-[var(--accent-red)] bg-[var(--accent-red)]/10" },
           ].map((p) => (
             <span
               key={p.name}
               className={`px-3 py-1.5 text-xs font-bold border ${
-                p.active ? "border-green-300 text-green-700" : "border-[var(--line)] text-[var(--ink-50)]"
+                p.active ? p.color : "border-[var(--line)] text-[var(--ink-50)]"
               }`}
             >
               {p.active ? "●" : "○"} {p.name}
