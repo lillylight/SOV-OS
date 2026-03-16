@@ -385,8 +385,8 @@ function AgentDashboardInner() {
 
         {/* ─── Tab Content ─── */}
         <div className="px-6 md:px-8 py-8">
-          {/* Quick Stats Strip — inside content area */}
-          {!(isHuman && activeTab === "agents" && selectedAgentDetail) && (
+          {/* Quick Stats Strip — only on My Agents tab (human) or overview (AI) */}
+          {((isHuman && activeTab === "agents" && !selectedAgentDetail) || (!isHuman && activeTab === "overview")) && (
           <div className="grid grid-cols-2 md:grid-cols-4 mb-8 -mx-6 md:-mx-8 -mt-8">
             {(isHuman ? [
               { icon: Bot, label: "Linked Agents", value: verifiedAgents.length.toString(), sub: "verified", bg: "bg-[var(--accent-amber)]", text: "text-[var(--ink)]", subText: "text-[var(--ink)]/60", iconColor: "text-[var(--ink)]/70", numColor: "text-[var(--ink)]/[0.06]" },
@@ -981,7 +981,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
             )}
 
             {/* Create Backup */}
-            <div className="border-x border-b border-[var(--line)]">
+            <div className="border-x border-b border-[var(--line)] border-l-2 border-l-[var(--accent-slate)]">
               <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
                 <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
                   <Upload size={12} className="text-[var(--accent-slate)]" /> Create Backup
@@ -1007,14 +1007,14 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
                     <Infinity size={14} /> Unlock Unlimited · $5 USDC
                   </button>
                 )}
-                <div className="flex items-center justify-center gap-4 mt-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
-                  <span>First 2: $0.10</span><span>·</span><span>3rd+: $0.30</span><span>·</span><span>Recovery: <strong>Free</strong></span>
+                <div className="flex items-center justify-center gap-4 mt-4 text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)] py-2 border border-[var(--line)] bg-[var(--ink)]/[0.02]">
+                  <span>First 2: $0.10</span><span>·</span><span>3rd+: $0.30</span><span>·</span><span>Recovery: <strong className="text-[var(--accent-red)]">Free</strong></span>
                 </div>
               </div>
             </div>
 
             {/* Backup History */}
-            <div className="border-x border-b border-[var(--line)]">
+            <div className="border-x border-b border-[var(--line)] border-l-2 border-l-[var(--accent-amber)]">
               <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
                 <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
                   <Download size={12} className="text-[var(--accent-amber)]" /> Backup History

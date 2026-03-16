@@ -88,10 +88,10 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       className="space-y-6 pb-12"
     >
       {/* Profile Settings */}
-      <div className="border border-[var(--line)]">
+      <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-crimson)]">
         <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
           <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
-            <Settings size={12} className="text-[var(--accent-red)]" />
+            <Settings size={12} className="text-[var(--accent-crimson)]" />
             {isHuman ? "Profile Settings" : "Agent Profile"}
           </div>
           <div className="text-[28px] font-light tracking-tight opacity-60">SETTINGS</div>
@@ -135,7 +135,7 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Wallet Limits */}
-      <div className="border border-[var(--line)]">
+      <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-slate)]">
         <div className="px-6 py-4 border-b border-[var(--line)]">
           <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
             <Wallet size={12} className="text-[var(--accent-slate)]" />
@@ -181,7 +181,7 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Backup Settings */}
-      <div className="border border-[var(--line)]">
+      <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-amber)]">
         <div className="px-6 py-4 border-b border-[var(--line)]">
           <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
             <Brain size={12} className="text-[var(--accent-amber)]" />
@@ -224,7 +224,7 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
       </div>
 
       {/* Notification Preferences */}
-      <div className="border border-[var(--line)]">
+      <div className="border border-[var(--line)] border-l-2 border-l-[var(--accent-crimson)]">
         <div className="px-6 py-4 border-b border-[var(--line)]">
           <div className="text-[11px] tracking-[0.12em] uppercase text-[var(--ink-50)] flex items-center gap-2">
             <Bell size={12} className="text-[var(--accent-crimson)]" />
@@ -233,12 +233,12 @@ export default function AgentSettings({ agent }: AgentSettingsProps) {
         </div>
         <div className="p-6 space-y-3">
           {[
-            { key: "lowBalance", label: "Low Balance Warning", desc: "Alert when wallet balance drops below 10 USDC" },
-            { key: "backupComplete", label: "Backup Complete", desc: "Notify when state backup is successfully stored" },
-            { key: "syncRequest", label: "Agent Sync Request", desc: "Alert when an AI agent requests ownership sync" },
-            { key: "securityAlert", label: "Security Alerts", desc: "Critical alerts for unauthorized access attempts" },
+            { key: "lowBalance", label: "Low Balance Warning", desc: "Alert when wallet balance drops below 10 USDC", accent: "border-l-[var(--accent-amber)]" },
+            { key: "backupComplete", label: "Backup Complete", desc: "Notify when state backup is successfully stored", accent: "border-l-[var(--accent-slate)]" },
+            { key: "syncRequest", label: "Agent Sync Request", desc: "Alert when an AI agent requests ownership sync", accent: "border-l-[var(--accent-crimson)]" },
+            { key: "securityAlert", label: "Security Alerts", desc: "Critical alerts for unauthorized access attempts", accent: "border-l-[var(--ink)]" },
           ].map((item) => (
-            <div key={item.key} className="flex items-center justify-between p-3 border border-[var(--line)]">
+            <div key={item.key} className={`flex items-center justify-between p-3 border border-[var(--line)] border-l-2 ${item.accent}`}>
               <div>
                 <div className="font-medium text-sm">{item.label}</div>
                 <div className="text-xs text-[var(--ink-50)] mt-0.5">{item.desc}</div>

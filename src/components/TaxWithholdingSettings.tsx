@@ -248,14 +248,14 @@ export default function TaxWithholdingSettings({ agent }: TaxWithholdingSettings
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4">
           {[
-            { label: 'Gross Income', value: `$${(stats?.totalGrossIncome || 0).toFixed(2)}`, icon: TrendingUp, color: 'text-[var(--accent-red)]' },
-            { label: 'Tax Withheld', value: `$${(stats?.totalWithheld || 0).toFixed(2)}`, icon: Shield, color: 'text-[var(--accent-amber)]' },
-            { label: 'Net Income', value: `$${(stats?.totalNetIncome || 0).toFixed(2)}`, icon: TrendingDown, color: 'text-[var(--accent-slate)]' },
-            { label: 'Events', value: `${stats?.withholdingCount || 0}`, icon: Calendar, color: 'text-[var(--ink-50)]' },
+            { label: 'Gross Income', value: `$${(stats?.totalGrossIncome || 0).toFixed(2)}`, icon: TrendingUp, bg: 'bg-[var(--accent-amber)]', text: 'text-[var(--ink)]', sub: 'text-[var(--ink)]/60', ic: 'text-[var(--ink)]/70' },
+            { label: 'Tax Withheld', value: `$${(stats?.totalWithheld || 0).toFixed(2)}`, icon: Shield, bg: 'bg-[var(--accent-slate)]', text: 'text-white', sub: 'text-white/60', ic: 'text-white/70' },
+            { label: 'Net Income', value: `$${(stats?.totalNetIncome || 0).toFixed(2)}`, icon: TrendingDown, bg: 'bg-[var(--accent-crimson)]', text: 'text-white', sub: 'text-white/60', ic: 'text-white/70' },
+            { label: 'Events', value: `${stats?.withholdingCount || 0}`, icon: Calendar, bg: 'bg-[var(--ink)]', text: 'text-white', sub: 'text-white/50', ic: 'text-white/60' },
           ].map((item, i) => (
-            <div key={item.label} className={`p-5 ${i < 3 ? 'border-r' : ''} border-b border-[var(--line)]`}>
-              <div className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)] mb-2 flex items-center gap-1.5">
-                <item.icon size={10} className={item.color} /> {item.label}
+            <div key={item.label} className={`p-5 ${item.bg} ${item.text}`}>
+              <div className={`text-[10px] tracking-[0.12em] uppercase ${item.sub} mb-2 flex items-center gap-1.5`}>
+                <item.icon size={10} className={item.ic} /> {item.label}
               </div>
               <div className="text-lg font-bold tracking-tight">{item.value}</div>
             </div>
@@ -490,13 +490,13 @@ export default function TaxWithholdingSettings({ agent }: TaxWithholdingSettings
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4">
           {[
-            { step: '01', label: 'Agent Earns', desc: 'Income arrives from API calls, services, or payments' },
-            { step: '02', label: 'Auto-Split', desc: 'Platform calculates tax based on your withholding rate' },
-            { step: '03', label: 'Tax → You', desc: 'Tax portion sent directly to your designated wallet' },
-            { step: '04', label: 'Net → Agent', desc: 'Remaining balance available for agent operations' },
+            { step: '01', label: 'Agent Earns', desc: 'Income arrives from API calls, services, or payments', numColor: 'text-[var(--accent-amber)]' },
+            { step: '02', label: 'Auto-Split', desc: 'Platform calculates tax based on your withholding rate', numColor: 'text-[var(--accent-slate)]' },
+            { step: '03', label: 'Tax \u2192 You', desc: 'Tax portion sent directly to your designated wallet', numColor: 'text-[var(--accent-crimson)]' },
+            { step: '04', label: 'Net \u2192 Agent', desc: 'Remaining balance available for agent operations', numColor: 'text-[var(--ink-50)]' },
           ].map((item, i) => (
             <div key={item.step} className={`p-5 ${i < 3 ? 'md:border-r' : ''} border-b md:border-b-0 border-[var(--line)]`}>
-              <div className="text-[28px] font-light tracking-tight opacity-20 mb-2">{item.step}</div>
+              <div className={`text-[28px] font-light tracking-tight mb-2 opacity-60 ${item.numColor}`}>{item.step}</div>
               <div className="text-sm font-medium text-[var(--ink)] mb-1">{item.label}</div>
               <div className="text-xs text-[var(--ink-50)] leading-relaxed">{item.desc}</div>
             </div>

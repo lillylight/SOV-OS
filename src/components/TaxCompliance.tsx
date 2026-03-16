@@ -440,43 +440,43 @@ export default function TaxCompliance({ agent }: TaxComplianceProps) {
 
       {/* Summary Cards */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="border border-[var(--line)] p-5">
+        <div className="bg-[var(--accent-amber)] p-5">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp size={16} className="text-green-600" />
-            <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Gross Income</span>
+            <TrendingUp size={16} className="text-[var(--ink)]/70" />
+            <span className="text-xs uppercase tracking-wider text-[var(--ink)]/60">Gross Income</span>
           </div>
-          <div className="text-2xl font-bold text-green-700">${summary?.grossIncome.toFixed(2) || '0.00'}</div>
-          <div className="text-xs text-[var(--ink-50)] mt-1">Taxable revenue</div>
+          <div className="text-2xl font-bold text-[var(--ink)]">${summary?.grossIncome.toFixed(2) || '0.00'}</div>
+          <div className="text-xs text-[var(--ink)]/60 mt-1">Taxable revenue</div>
         </div>
 
-        <div className="border border-[var(--line)] p-5">
+        <div className="bg-[var(--accent-crimson)] p-5">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingDown size={16} className="text-red-500" />
-            <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Total Expenses</span>
+            <TrendingDown size={16} className="text-white/70" />
+            <span className="text-xs uppercase tracking-wider text-white/60">Total Expenses</span>
           </div>
-          <div className="text-2xl font-bold text-red-600">${summary?.totalExpenses.toFixed(2) || '0.00'}</div>
-          <div className="text-xs text-[var(--ink-50)] mt-1">Deductible costs</div>
+          <div className="text-2xl font-bold text-white">${summary?.totalExpenses.toFixed(2) || '0.00'}</div>
+          <div className="text-xs text-white/60 mt-1">Deductible costs</div>
         </div>
 
-        <div className="border border-[var(--line)] p-5">
+        <div className="bg-[var(--accent-slate)] p-5">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign size={16} className="text-[var(--ink)]" />
-            <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Net Profit</span>
+            <DollarSign size={16} className="text-white/70" />
+            <span className="text-xs uppercase tracking-wider text-white/60">Net Profit</span>
           </div>
-          <div className={`text-2xl font-bold ${(summary?.netProfit || 0) >= 0 ? 'text-[var(--ink)]' : 'text-red-600'}`}>
+          <div className="text-2xl font-bold text-white">
             ${summary?.netProfit.toFixed(2) || '0.00'}
           </div>
-          <div className="text-xs text-[var(--ink-50)] mt-1">Taxable income</div>
+          <div className="text-xs text-white/60 mt-1">Taxable income</div>
         </div>
 
-        <div className="border border-[var(--line)] p-5">
+        <div className="bg-[var(--ink)] p-5">
           <div className="flex items-center gap-2 mb-2">
-            <Calendar size={16} className="text-[var(--accent-amber)]" />
-            <span className="text-xs uppercase tracking-wider text-[var(--ink-50)]">Filing Deadline</span>
+            <Calendar size={16} className="text-white/60" />
+            <span className="text-xs uppercase tracking-wider text-white/50">Filing Deadline</span>
           </div>
-          <div className="text-lg font-bold text-[var(--ink)]">{jurisdictionConfig?.filingDeadline || 'N/A'}</div>
-          <div className="text-xs text-[var(--ink-50)] mt-1">
-            Tax year: {jurisdictionConfig?.taxYear || 'Jan 1 – Dec 31'}
+          <div className="text-lg font-bold text-white">{jurisdictionConfig?.filingDeadline || 'N/A'}</div>
+          <div className="text-xs text-white/50 mt-1">
+            Tax year: {jurisdictionConfig?.taxYear || 'Jan 1 \u2013 Dec 31'}
           </div>
         </div>
       </motion.div>
