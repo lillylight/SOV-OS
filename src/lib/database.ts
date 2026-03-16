@@ -389,6 +389,7 @@ class DatabaseService {
         timestamp: backup.timestamp,
         cost: backup.cost,
         status: backup.status,
+        encryptionKey: backup.encryptionKey || null,
       };
       const { error } = await supabase.from(this.T_BACKUPS).upsert(record)
       if (error) throw error

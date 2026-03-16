@@ -148,8 +148,9 @@ export class AgentInsurance {
         }
       }
 
-      // Save backup record to database
+      // Save backup record to database (encryptionKey now stored in Supabase)
       await database.saveBackup(backupRecord);
+      
       if (agent) {
         agent.totalBackupCost = (agent.totalBackupCost || 0) + cost;
         agent.protocols.agentWill = agent.protocols.agentWill || { isActive: true, lastBackup: "", backupCount: 0 };
@@ -181,10 +182,23 @@ export class AgentInsurance {
         throw new Error('Only the agent creator/owner can restore from backup');
       }
 
-      // Retrieve encrypted data from IPFS (Mocked gateway for now)
-      // In production, use a reliable gateway or dedicated Pinata gateway
-      const response = await fetch(`${process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud'}/ipfs/${backup.ipfsCid}`);
-      if (!response.ok) throw new Error('Failed to fetch backup from IPFS');
+      // Get encryption key from the backup record (stored in Supabase encryptionKey column)
+      const encryptionKey = backup.encryptionKey;
+      if (!encryptionKey) {
+        throw new Error('Encryption key not found for this backup — backup may have been created before schema fix');
+      }
+
+      // Retrieve encrypted data from IPFS
+      let gatewayUrl = process.env.NEXT_PUBLIC_GATEWAY_URL || 'https://gateway.pinata.cloud';
+      // Ensure protocol is present
+      if (!gatewayUrl.startsWith('http://') && !gatewayUrl.startsWith('https://')) {
+        gatewayUrl = `https://${gatewayUrl}`;
+      }
+      const ipfsUrl = `${gatewayUrl}/ipfs/${backup.ipfsCid}`;
+      console.log('[Restore] Fetching from:', ipfsUrl);
+      
+      const response = await fetch(ipfsUrl);
+      if (!response.ok) throw new Error(`Failed to fetch backup from IPFS: ${response.status} ${response.statusText}`);
       
       const data = await response.json();
       const encryptedData = new Uint8Array(Buffer.from(data.state, 'base64'));
@@ -192,7 +206,7 @@ export class AgentInsurance {
       // Decrypt the data
       const decryptedJson = await this.decryptData(
         encryptedData,
-        backup.encryptionKey
+        encryptionKey
       );
 
       const agentState = JSON.parse(decryptedJson);
