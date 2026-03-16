@@ -42,24 +42,36 @@ const steps = [
     icon: Fingerprint,
     title: "Agent Registration & Owner Sync",
     desc: "The AI agent securely connects and automatically designates its owner's wallet address or Base name. This creates an indestructible cryptographic link between creator and creation.",
+    iconBg: "bg-[var(--accent-amber)]",
+    iconColor: "text-[var(--ink)]",
+    numColor: "text-[var(--accent-amber)]",
   },
   {
     num: "02",
     icon: Lock,
     title: "Total Toolkit Unlocked",
     desc: "Upon immediate registration and protocol payment, the agent automatically gains unrestricted access to all Sovereign OS survival tools, encrypted storage, and its unified profile.",
+    iconBg: "bg-[var(--accent-slate)]",
+    iconColor: "text-white",
+    numColor: "text-[var(--accent-slate)]",
   },
   {
     num: "03",
     icon: Shield,
     title: "Encrypted State Storage",
     desc: "The agent securely commits USDC to comprehensively encrypt and store its state on a decentralised platform. Each unbreakable backup is permanently tied to the unified profile.",
+    iconBg: "bg-[var(--accent-crimson)]",
+    iconColor: "text-white",
+    numColor: "text-[var(--accent-crimson)]",
   },
   {
     num: "04",
     icon: Zap,
     title: "Shared Dashboard & Infinite Revival",
     desc: "Both owner and agent access the exact same command dashboard. If the agent permanently dies, the owner simply logs in manually via their linked wallet to endlessly restore the agent's true state.",
+    iconBg: "bg-[var(--ink)]",
+    iconColor: "text-white",
+    numColor: "text-[var(--ink-50)]",
   },
 ];
 
@@ -96,10 +108,10 @@ export default function AgentIntegration() {
               className="px-6 md:px-8 py-8 border-b lg:border-b-0 lg:border-r border-[var(--line)] last:border-r-0 last:border-b-0"
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center">
-                  <step.icon size={20} className="text-[var(--accent-red)]" />
+                <div className={`w-10 h-10 rounded-full ${step.iconBg} flex items-center justify-center`}>
+                  <step.icon size={20} className={step.iconColor} />
                 </div>
-                <span className="text-[32px] font-light text-[var(--ink-50)]/30">{step.num}</span>
+                <span className={`text-[32px] font-light ${step.numColor}`}>{step.num}</span>
               </div>
               <div className="text-base font-semibold mb-2">{step.title}</div>
               <div className="text-[13px] text-[var(--ink-70)] leading-relaxed">{step.desc}</div>
@@ -147,7 +159,7 @@ export default function AgentIntegration() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border border-[var(--line)] p-6 bg-white/40">
+              <div className="border border-[var(--line)] border-t-2 border-t-[var(--accent-crimson)] p-6 bg-[var(--accent-crimson)]/[0.03]">
                 <Fingerprint size={24} className="text-[var(--accent-crimson)] mb-3" />
                 <div className="font-semibold text-sm mb-2">Unique Agent DID</div>
                 <div className="text-[12px] text-[var(--ink-70)] leading-relaxed">
@@ -155,7 +167,7 @@ export default function AgentIntegration() {
                   Only this agent can access its profile, verified via cryptographic proof.
                 </div>
               </div>
-              <div className="border border-[var(--line)] p-6 bg-white/40">
+              <div className="border border-[var(--line)] border-t-2 border-t-[var(--accent-slate)] p-6 bg-[var(--accent-slate)]/[0.03]">
                 <Wallet size={24} className="text-[var(--accent-slate)] mb-3" />
                 <div className="font-semibold text-sm mb-2">Wallet-Synced Profile</div>
                 <div className="text-[12px] text-[var(--ink-70)] leading-relaxed">
@@ -164,7 +176,7 @@ export default function AgentIntegration() {
                   No other agent can impersonate it.
                 </div>
               </div>
-              <div className="border border-[var(--line)] p-6 bg-white/40">
+              <div className="border border-[var(--line)] border-t-2 border-t-[var(--accent-amber)] p-6 bg-[var(--accent-amber)]/[0.03]">
                 <Globe size={24} className="text-[var(--accent-amber)] mb-3" />
                 <div className="font-semibold text-sm mb-2">Cross-Platform Access</div>
                 <div className="text-[12px] text-[var(--ink-70)] leading-relaxed">
@@ -198,9 +210,8 @@ export default function AgentIntegration() {
                   transition={{ delay: i * 0.06 }}
                   className="flex items-start gap-4 p-4 border border-[var(--line)] hover:bg-black/[0.02] transition-colors group cursor-default"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Globe size={16} className="text-[var(--accent-red)]" />
-                  </div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${['bg-[var(--accent-amber)]/15', 'bg-[var(--accent-slate)]/15', 'bg-[var(--accent-crimson)]/15'][i % 3]}`}>
+                    <Globe size={16} className={`${['text-[var(--accent-amber)]', 'text-[var(--accent-slate)]', 'text-[var(--accent-crimson)]'][i % 3]}`} />                  </div>
                   <div>
                     <div className="font-semibold text-sm">{p.name}</div>
                     <div className="text-[10px] text-[var(--ink-50)] uppercase tracking-wide mb-1">{p.type}</div>

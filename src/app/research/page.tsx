@@ -97,11 +97,11 @@ export default function ResearchPage() {
               <Link
                 key={paper.id}
                 href={`/research/${paper.id}`}
-                className="border border-[var(--line)] border-b-0 last:border-b block group hover:bg-[var(--accent-red)]/[0.01] transition-colors"
+                className={`border border-[var(--line)] border-b-0 last:border-b block group hover:bg-[var(--accent-red)]/[0.01] transition-colors border-l-2 ${['border-l-[var(--accent-amber)]', 'border-l-[var(--accent-slate)]', 'border-l-[var(--accent-crimson)]'][i % 3]}`}
               >
                 <div className="px-6 md:px-8 py-6 md:py-8 flex items-start justify-between gap-6">
                   <div className="flex items-start gap-5 flex-1">
-                    <div className="text-[32px] font-light tracking-tight opacity-15 leading-none mt-1 group-hover:text-[var(--accent-red)] transition-colors">{String(i + 1).padStart(2, '0')}</div>
+                    <div className={`text-[32px] font-light tracking-tight leading-none mt-1 group-hover:opacity-100 transition-all ${['text-[var(--accent-amber)]', 'text-[var(--accent-slate)]', 'text-[var(--accent-crimson)]'][i % 3]} opacity-40`}>{String(i + 1).padStart(2, '0')}</div>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-bold tracking-tight group-hover:text-[var(--accent-red)] transition-colors">{paper.title}</h3>
