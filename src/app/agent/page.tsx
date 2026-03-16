@@ -626,6 +626,7 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
   }>({ isOpen: false, amount: '0', description: '', purpose: 'backup' });
   const [nextBackupCost, setNextBackupCost] = useState<string>('0.10');
   const [restoreConfirmModal, setRestoreConfirmModal] = useState<{ backupId: string; timestamp: string; ipfsCid: string; sizeBytes: number } | null>(null);
+  const [restoreEvents, setRestoreEvents] = useState<{ backupId: string; ipfsCid: string; restoredAt: string; backupTimestamp: string }[]>([]);
 
   // Fetch backups when agent changes or backup tab is opened
   useEffect(() => {
@@ -770,7 +771,14 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
       });
       const data = await res.json();
       if (data.success) {
-        setBackupMessage({ type: "success", text: `Agent state restored successfully from backup!${data.previousStatus === 'alive' ? ' (was already alive — state overwritten)' : ''}` });
+        setBackupMessage({ type: "success", text: `Agent state restored successfully!` });
+        // Log restore event locally
+        setRestoreEvents(prev => [{
+          backupId: restoreConfirmModal.backupId,
+          ipfsCid: restoreConfirmModal.ipfsCid,
+          restoredAt: new Date().toISOString(),
+          backupTimestamp: restoreConfirmModal.timestamp,
+        }, ...prev]);
         await fetchBackups();
       } else {
         setBackupMessage({ type: "error", text: data.error || "Restore failed" });
@@ -986,128 +994,121 @@ function LinkedAgentsTab({ pending, verified, onAccept, syncLoading, onViewAgent
               </div>
             )}
 
-            {/* Restore / Revive Card */}
-            <div className={`glass-card p-6 border ${isAgentDead ? 'border-red-200 bg-red-50/30' : 'border-[var(--accent-amber)]/30 bg-[var(--accent-amber)]/5'}`}>
-              <div className="flex items-center justify-between mb-3">
+            {/* ── TOP: Saved Agent States + Backup Button ── */}
+            <div className={`glass-card p-6 border ${isAgentDead ? 'border-red-200 bg-red-50/30' : 'border-[var(--line)]'}`}>
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg ${isAgentDead ? 'bg-red-100' : 'bg-[var(--accent-amber)]/10'}`}>
-                    {isAgentDead ? <HeartPulse size={20} className="text-red-600" /> : <Download size={20} className="text-[var(--accent-amber)]" />}
+                    {isAgentDead ? <HeartPulse size={20} className="text-red-600" /> : <Shield size={20} className="text-[var(--accent-amber)]" />}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{isAgentDead ? 'Revive Agent' : 'Restore State'}</h3>
+                    <h3 className="text-lg font-semibold">{isAgentDead ? 'Revive Agent' : 'Saved Agent States'}</h3>
                     <p className="text-xs text-[var(--ink-50)]">
-                      {isAgentDead
-                        ? 'Bring this agent back to life from a stored backup'
-                        : 'Roll back to a previous state — agent stays active after restore'}
+                      {isAgentDead ? 'Bring this agent back to life from a saved state' : 'All saved states — restore to any of them at any time'}
                     </p>
                   </div>
                 </div>
                 <div className="text-right text-xs text-[var(--ink-50)]">
-                  <div>Available: <span className="font-bold text-[var(--ink)]">{backups.filter(b => b.status === 'stored').length}</span> backup{backups.filter(b => b.status === 'stored').length !== 1 ? 's' : ''}</div>
-                  <div className="mt-0.5">Cost: <span className="font-bold text-green-700">Free</span></div>
+                  <div><span className="font-bold text-[var(--ink)]">{backups.length}</span> state{backups.length !== 1 ? 's' : ''} saved</div>
+                  <div className="mt-0.5">Restore cost: <span className="font-bold text-green-700">Free</span></div>
                 </div>
               </div>
-              {backups.filter(b => b.status === 'stored').length > 0 ? (
-                <p className="text-xs text-[var(--ink-50)] mb-3">Select a backup from the history below to {isAgentDead ? 'revive' : 'restore'} this agent.</p>
-              ) : (
-                <div className="p-3 bg-[var(--ink-10)]/50 rounded-lg border border-[var(--line)] text-center">
-                  <p className="text-sm text-[var(--ink-50)]">No backups available yet</p>
-                  <p className="text-xs text-[var(--ink-50)] mt-1">Create your first backup below to enable {isAgentDead ? 'revival' : 'state restoration'}.</p>
-                </div>
-              )}
-            </div>
 
-            {/* Create Backup */}
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[var(--accent-slate)]/10 rounded-lg">
-                    <Upload size={20} className="text-[var(--accent-slate)]" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">Create Backup</h3>
-                    <p className="text-xs text-[var(--ink-50)]">Encrypt and store the agent's current state</p>
-                  </div>
-                </div>
-                <div className="text-right text-xs text-[var(--ink-50)]">
-                  <div>Backups: <span className="font-bold text-[var(--ink)]">{backupStats?.backupCount ?? selectedAgent.protocols?.agentWill?.backupCount ?? 0}</span></div>
-                  <div>Plan: <span className="font-bold text-[var(--ink)]">{backupStats?.plan?.name ?? "Starter"}</span></div>
-                </div>
-              </div>
-              <button
-                onClick={handleCreateBackup}
-                disabled={backupLoading}
-                className="w-full bg-[var(--accent-slate)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
-              >
-                {backupLoading ? (
-                  <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
-                ) : (
-                  <><Upload size={16} /> Backup Agent State · ${nextBackupCost} USDC</>
-                )}
-              </button>
-              {backupStats?.plan?.id !== 'bypass' && (
+              {/* Backup button lives here */}
+              <div className="mb-4 pb-4 border-b border-[var(--line)]">
                 <button
-                  onClick={handleUpgradePlan}
-                  className="mt-3 w-full bg-[var(--accent-crimson)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 font-semibold"
+                  onClick={handleCreateBackup}
+                  disabled={backupLoading}
+                  className="w-full bg-[var(--accent-slate)] text-white px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold"
                 >
-                  <Infinity size={16} /> Unlock Unlimited Backups · $5 USDC
+                  {backupLoading ? (
+                    <><RefreshCw size={16} className="animate-spin" /> Creating Backup...</>
+                  ) : (
+                    <><Upload size={16} /> Backup Current State · ${nextBackupCost} USDC</>
+                  )}
                 </button>
-              )}
-              <p className="text-xs text-[var(--ink-50)] mt-3 text-center">
-                First 2 backups: $0.10 each · 3rd onwards: $0.30 each · Recovery is always free
-              </p>
-            </div>
+                {backupStats?.plan?.id !== 'bypass' && (
+                  <button
+                    onClick={handleUpgradePlan}
+                    className="mt-2 w-full border border-[var(--accent-crimson)] text-[var(--accent-crimson)] px-4 py-2.5 rounded-lg hover:bg-[var(--accent-crimson)]/5 transition-colors flex items-center justify-center gap-2 font-semibold text-sm"
+                  >
+                    <Infinity size={15} /> Unlock Unlimited Backups · $5 USDC
+                  </button>
+                )}
+                <p className="text-[11px] text-[var(--ink-50)] mt-2 text-center">
+                  First 2 backups: $0.10 each · 3rd onwards: $0.30 each · Recovery always free
+                </p>
+              </div>
 
-            {/* Backup History + Revive */}
-            <div className="glass-card p-6 border border-[var(--line)]">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Download size={18} className="text-[var(--accent-amber)]" />
-                Backup History
-                {backups.length > 0 && <span className="text-xs font-normal text-[var(--ink-50)]">({backups.length} stored)</span>}
-              </h3>
-
+              {/* All saved states — ALL are restorable regardless of status */}
               {backups.length === 0 ? (
-                <div className="text-center py-10 text-[var(--ink-50)]">
-                  <Shield size={36} className="mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">No backups created yet.</p>
-                  <p className="text-xs mt-1">Create your first backup above to enable agent revival.</p>
+                <div className="text-center py-8 text-[var(--ink-50)]">
+                  <Shield size={32} className="mx-auto mb-3 opacity-25" />
+                  <p className="text-sm">No saved states yet.</p>
+                  <p className="text-xs mt-1">Click the button above to save your first agent state.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {backups.map((backup, idx) => (
-                    <div key={backup.id || idx} className="p-4 border border-[var(--line)] rounded-lg bg-black/[0.02]">
-                      <div className="flex items-center justify-between mb-2">
+                    <div key={backup.id || idx} className="p-4 border border-[var(--line)] rounded-xl bg-black/[0.02] hover:border-[var(--accent-amber)]/40 transition-colors">
+                      <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          {backup.status === "stored" ? (
-                            <CheckCircle size={16} className="text-[var(--accent-amber)]" />
-                          ) : backup.status === "restored" ? (
-                            <HeartPulse size={16} className="text-green-600" />
-                          ) : (
-                            <RefreshCw size={16} className="text-[var(--accent-slate)] animate-spin" />
-                          )}
-                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 20)}...{backup.ipfsCid?.slice(-8)}</span>
+                          <CheckCircle size={15} className="text-[var(--accent-amber)] shrink-0" />
+                          <span className="font-mono text-xs text-[var(--ink)]">{backup.ipfsCid?.slice(0, 18)}...{backup.ipfsCid?.slice(-8)}</span>
                         </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
-                          backup.status === "stored" ? "bg-green-100 text-green-700" : backup.status === "restored" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
-                        }`}>{backup.status}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]">
+                          SAVED
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
+                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)] mb-3">
                         <span>{backup.timestamp ? formatDistanceToNow(new Date(backup.timestamp), { addSuffix: true }) : "Unknown"}</span>
                         <span>{backup.sizeBytes ? `${(backup.sizeBytes / 1024).toFixed(1)} KB` : ""}{backup.cost ? ` | ${backup.cost} USDC` : ""}</span>
                       </div>
-                      {backup.status === "stored" && (
-                        <button
-                          onClick={() => handleRestoreClick(backup)}
-                          disabled={reviveLoading}
-                          className="mt-3 w-full bg-[var(--accent-red)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold"
-                        >
-                          {reviveLoading ? (
-                            <><RefreshCw size={14} className="animate-spin" /> {isAgentDead ? 'Reviving...' : 'Restoring...'}</>
-                          ) : (
-                            <>{isAgentDead ? <HeartPulse size={14} /> : <Download size={14} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleRestoreClick(backup)}
+                        disabled={reviveLoading}
+                        className="w-full bg-[var(--accent-red)] text-white px-3 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-semibold"
+                      >
+                        {reviveLoading ? (
+                          <><RefreshCw size={14} className="animate-spin" /> {isAgentDead ? 'Reviving...' : 'Restoring...'}</>
+                        ) : (
+                          <>{isAgentDead ? <HeartPulse size={14} /> : <Download size={14} />} {isAgentDead ? 'Revive to This State' : 'Restore to This State'}</>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── BOTTOM: Restore History ── */}
+            <div className="glass-card p-6 border border-[var(--line)]">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <HeartPulse size={18} className="text-green-600" />
+                Restore History
+                {restoreEvents.length > 0 && <span className="text-xs font-normal text-[var(--ink-50)]">({restoreEvents.length} restore{restoreEvents.length !== 1 ? 's' : ''})</span>}
+              </h3>
+              {restoreEvents.length === 0 ? (
+                <div className="text-center py-8 text-[var(--ink-50)]">
+                  <RefreshCw size={28} className="mx-auto mb-3 opacity-20" />
+                  <p className="text-sm">No restores performed yet.</p>
+                  <p className="text-xs mt-1">When you restore a state, the event will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {restoreEvents.map((ev, idx) => (
+                    <div key={idx} className="p-4 border border-green-100 rounded-xl bg-green-50/40">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <HeartPulse size={14} className="text-green-600 shrink-0" />
+                          <span className="font-mono text-xs text-[var(--ink)]">{ev.ipfsCid?.slice(0, 18)}...{ev.ipfsCid?.slice(-8)}</span>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-green-100 text-green-700">RESTORED</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-[var(--ink-50)]">
+                        <span>Restored {formatDistanceToNow(new Date(ev.restoredAt), { addSuffix: true })}</span>
+                        <span>State from {ev.backupTimestamp ? formatDistanceToNow(new Date(ev.backupTimestamp), { addSuffix: true }) : 'Unknown'}</span>
+                      </div>
                     </div>
                   ))}
                 </div>

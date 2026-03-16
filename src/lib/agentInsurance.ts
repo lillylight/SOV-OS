@@ -211,10 +211,8 @@ export class AgentInsurance {
 
       const agentState = JSON.parse(decryptedJson);
 
-      // Update backup status
-      backup.status = 'restored';
-      backup.restoredAt = new Date().toISOString();
-      await database.saveBackup(backup);
+      // Do NOT change backup status — keep it as 'stored' so it can be restored again anytime
+      // Just log the restore time without modifying the backup record
 
       // Update agent state
       if (agent) {
