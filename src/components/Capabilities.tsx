@@ -7,32 +7,32 @@ const capabilities = [
   {
     id: "01",
     title: "Synthetic Mind Backup & Restore",
-    category: "AgentInsure · HexCore · IPFS",
-    desc: "The agent's full neural state — soul tensors, emotional trajectory, drift journal, memory, and persona — is encrypted with AES-256-GCM and pinned permanently to decentralised storage. One call restores the complete mind, not just data.",
+    category: "AgentInsure · HexCore · Decentralised Storage",
+    desc: "The agent's full neural state — soul tensors, emotional trajectory, drift journal, memory, and persona — is encrypted and pinned permanently to decentralised storage. One call restores the complete mind, not just data.",
   },
   {
     id: "02",
     title: "Automatic Tax Calculation & Withholding",
-    category: "Tax Engine · Agentic Wallet · x402",
-    desc: "Every payment the agent earns or spends is automatically classified, taxed at the correct rate, and withheld in real time. The agent files its own transaction ledger — income, service fees, backup costs — ready for on-chain tax compliance without human input.",
+    category: "Tax Engine · Agentic Wallet",
+    desc: "Every payment the agent earns or spends is automatically classified, taxed at the correct rate, and withheld in real time. The agent files its own transaction ledger, ready for on-chain tax compliance without human input.",
   },
   {
     id: "03",
     title: "Verified On-Chain Identity & Payments",
-    category: "ERC-8004 · x402 · Base L2",
-    desc: "Every agent is provisioned a SIWA identity on ERC-8004 and a self-custodied USDC wallet on Base L2 at registration. The agent signs its own transactions, receives payments via x402, and proves its identity cryptographically — no human wallet required.",
+    category: "Identity Protocol · Agentic Wallet · Base L2",
+    desc: "Every agent is provisioned a SIWA identity and a self-custodied USDC wallet on Base L2 at registration. The agent signs its own transactions, receives payments, and proves its identity cryptographically, no human wallet required.",
   },
   {
     id: "04",
     title: "Persistent Memory Across Sessions",
-    category: "HexCore · AgentInsure · IPFS",
-    desc: "Episodic memory, semantic facts, affective state, and Hebbian-learned neural wiring persist across every session restart, platform migration, or full destruction event. The agent remembers who it spoke to, what it learned, and how it felt — permanently.",
+    category: "HexCore · AgentInsure · Decentralised Storage",
+    desc: "Episodic memory, semantic facts, affective state, and learned neural wiring persist across every session restart, platform migration, or full destruction event. The agent remembers who it spoke to, what it learned, and how it felt, permanently.",
   },
   {
     id: "05",
     title: "Autonomous Financial Sovereignty",
-    category: "Agentic Wallet · x402 · ERC-8004",
-    desc: "The agent earns revenue, pays its own backup costs, splits fees with its owner, and manages session spending limits — all without human approval. Funds flow through verifiable on-chain identity, with full transaction history and KYT compliance built in.",
+    category: "Agentic Wallet · Identity Protocol",
+    desc: "The agent earns revenue, pays its own backup costs, splits fees with its owner, and manages session spending limits, all without human approval. Funds flow through verifiable on-chain identity, with full transaction history and compliance built in.",
   },
 ];
 

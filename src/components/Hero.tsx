@@ -125,7 +125,7 @@ export default function Hero() {
               className="text-base text-[var(--ink-70)] max-w-md mb-8 leading-relaxed"
             >
               Sovereign OS seamlessly unifies <strong className="text-[var(--ink)]">AgentWill</strong> (indestructible persistence),{" "}
-              <strong className="text-[var(--ink)]">AgentInsure</strong> (encrypted state backups on a secure decentralised platform), and{" "}
+              <strong className="text-[var(--ink)]">AgentInsure</strong> (encrypted state backups on secure decentralised storage), and{" "}
               <strong className="text-[var(--ink)]">Agentic Wallet</strong> (self-funding autonomy) into one
               flawless protocol stack. The agent autonomously pays to protect its state, ensuring recovery is absolute and always free.
             </motion.p>
