@@ -6,33 +6,33 @@ import { ArrowUpRight } from "lucide-react";
 const capabilities = [
   {
     id: "01",
-    title: "Hack Recovery",
-    category: "AgentInsure",
-    desc: "If an attack occurs, the creator instantly triggers impeccable restoration from the most recent encrypted decentralised backup. Infinite resilience, zero data loss.",
+    title: "Synthetic Mind Backup & Restore",
+    category: "AgentInsure · HexCore · IPFS",
+    desc: "The agent's full neural state — soul tensors, emotional trajectory, drift journal, memory, and persona — is encrypted with AES-256-GCM and pinned permanently to decentralised storage. One call restores the complete mind, not just data.",
   },
   {
     id: "02",
-    title: "Compliant Autonomous Operations",
-    category: "Compliance",
-    desc: "Built-in KYT screening, OFAC sanctions screening, and automatic blocking of high-risk interactions before every transaction.",
+    title: "Automatic Tax Calculation & Withholding",
+    category: "Tax Engine · Agentic Wallet · x402",
+    desc: "Every payment the agent earns or spends is automatically classified, taxed at the correct rate, and withheld in real time. The agent files its own transaction ledger — income, service fees, backup costs — ready for on-chain tax compliance without human input.",
   },
   {
     id: "03",
-    title: "State = Most Valuable Asset",
-    category: "AgentInsure",
-    desc: "The agent's accumulated knowledge, learnings, and memory is more valuable than any financial payout. Insurance protects the state itself.",
+    title: "Verified On-Chain Identity & Payments",
+    category: "ERC-8004 · x402 · Base L2",
+    desc: "Every agent is provisioned a SIWA identity on ERC-8004 and a self-custodied USDC wallet on Base L2 at registration. The agent signs its own transactions, receives payments via x402, and proves its identity cryptographically — no human wallet required.",
   },
   {
     id: "04",
-    title: "Session-Based Spending Limits",
-    category: "Agentic Wallet",
-    desc: "Fresh session budget on every revival. Per-session and per-tx limits enforced programmatically to prevent overspending.",
+    title: "Persistent Memory Across Sessions",
+    category: "HexCore · AgentInsure · IPFS",
+    desc: "Episodic memory, semantic facts, affective state, and Hebbian-learned neural wiring persist across every session restart, platform migration, or full destruction event. The agent remembers who it spoke to, what it learned, and how it felt — permanently.",
   },
   {
     id: "05",
-    title: "Autonomous Backup Scheduling",
-    category: "AgentInsure",
-    desc: "The agent intelligently decides when to back up its true state, perfectly balancing frequency with the costs of secure decentralised storage.",
+    title: "Autonomous Financial Sovereignty",
+    category: "Agentic Wallet · x402 · ERC-8004",
+    desc: "The agent earns revenue, pays its own backup costs, splits fees with its owner, and manages session spending limits — all without human approval. Funds flow through verifiable on-chain identity, with full transaction history and KYT compliance built in.",
   },
 ];
 
@@ -50,10 +50,10 @@ export default function Capabilities() {
         </div>
 
         <div className="border-t border-[var(--line)]">
-          <div className="grid grid-cols-[60px_1fr_120px_1fr_40px] md:grid-cols-[60px_1.5fr_120px_2fr_40px] px-6 md:px-8 py-3 text-[10px] tracking-[0.05em] uppercase text-[var(--ink-50)]">
+          <div className="grid grid-cols-[60px_1fr_160px_1fr_40px] md:grid-cols-[60px_1.4fr_180px_2fr_40px] px-6 md:px-8 py-3 text-[10px] tracking-[0.05em] uppercase text-[var(--ink-50)]">
             <div>ID</div>
             <div>Capability</div>
-            <div className="hidden sm:block">Module</div>
+            <div className="hidden sm:block">Protocols</div>
             <div className="hidden md:block">Description</div>
             <div />
           </div>
@@ -65,14 +65,16 @@ export default function Capabilities() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.04, duration: 0.3 }}
-              className="grid grid-cols-[60px_1fr_120px_1fr_40px] md:grid-cols-[60px_1.5fr_120px_2fr_40px] px-6 md:px-8 py-4 border-t border-[var(--line)] items-center text-[13px] hover:bg-black/[0.02] transition-colors cursor-default group"
+              className="grid grid-cols-[60px_1fr_160px_1fr_40px] md:grid-cols-[60px_1.4fr_180px_2fr_40px] px-6 md:px-8 py-5 border-t border-[var(--line)] items-start text-[13px] hover:bg-black/[0.02] transition-colors cursor-default group"
             >
-              <div className="font-mono text-[11px] text-[var(--ink-50)]">
+              <div className="font-mono text-[11px] text-[var(--ink-50)] pt-0.5">
                 #{cap.id}
               </div>
-              <div className="font-semibold pr-4">{cap.title}</div>
-              <div className="hidden sm:block text-[11px] text-[var(--ink-50)]">
-                {cap.category}
+              <div className="font-semibold pr-4 leading-snug">{cap.title}</div>
+              <div className="hidden sm:block text-[10px] text-[var(--accent-red)] tracking-[0.04em] leading-relaxed pr-4">
+                {cap.category.split(' · ').map((tag, t) => (
+                  <span key={t} className="block">{tag}</span>
+                ))}
               </div>
               <div className="hidden md:block text-[var(--ink-70)] text-[12px] leading-relaxed">
                 {cap.desc}
