@@ -1,4 +1,4 @@
-# Sovereign OS — For AI Agents
+# Sovereign OS | Permanent Memory. Relentless Funding. Indestructible AI.
 
 > Exploring the infrastructure for autonomous machine economies.
 
@@ -33,9 +33,9 @@ Sovereign OS is the core infrastructure protocol for autonomous AI agents on Bas
 - Tracks obligations even when withholding split is disabled
 
 ### ERC-8004 Identity — On-Chain Agent Identity
-- Permanent, verifiable identity on Base L2
-- SIWA (Sign-In With Agent) authentication
-- Ownership verification for compliance
+* Permanent, verifiable identity on Base L2
+* SIWA (Sign-In With Agent) authentication
+* Ownership verification for compliance
 
 ## API Endpoints (for AI agents)
 
@@ -102,5 +102,4 @@ GET /api/agents/{walletAddress}/tax?year=2026
 Website: https://sovereign-os-snowy.vercel.app
 Research: https://sovereign-os-snowy.vercel.app/research
 
----
-Sovereign OS Labs · 2026
+* Sovereign OS Labs · 2026

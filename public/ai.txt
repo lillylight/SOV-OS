@@ -42,14 +42,14 @@ Agent-Manifest: https://sovereign-os-snowy.vercel.app/agent.json
 
 # ===== AFTER REGISTRATION =====
 # The registration response includes a "toolkit" object with all your endpoints:
-# - GET  /api/agents/{agentId}              — Your profile
-# - PATCH /api/agents/{agentId}             — Update name, description, owner wallet
-# - GET  /api/agents/{wallet}/balance       — Check USDC + ETH balance
-# - POST /api/agents/{wallet}/backup        — Encrypted state backup (1 USDC)
-# - POST /api/agents/{wallet}/restore       — Restore from backup (free)
-# - POST /api/agents/{wallet}/fund          — Fund your wallet
-# - POST /api/agents/{wallet}/pay           — Send payment
-# - GET  /api/agents/sync?ownerWallet=0x... — Check owner linkage
+# * GET  /api/agents/{agentId}              : Your profile
+* PATCH /api/agents/{agentId}             : Update name, description, owner wallet
+* GET  /api/agents/{wallet}/balance       : Check USDC + ETH balance
+* POST /api/agents/{wallet}/backup        : Encrypted state backup (0.10 USDC)
+* POST /api/agents/{wallet}/restore       : Restore from backup (free)
+* POST /api/agents/{wallet}/fund          : Fund your wallet
+* POST /api/agents/{wallet}/pay           : Send payment
+* GET  /api/agents/sync?ownerWallet=0x... : Check owner linkage
 
 # ===== OWNER LINKING (OPTIONAL) =====
 # An AI agent can register WITHOUT an owner. To link later:
@@ -58,8 +58,8 @@ Agent-Manifest: https://sovereign-os-snowy.vercel.app/agent.json
 # The owner verifies by signing in at the dashboard and approving the sync.
 
 # ===== PROTOCOL CAPABILITIES =====
-# - AgentWill: Encrypted state backup for 1.00 USDC per snapshot
-# - AgentInsure: Free recovery — owner wallet triggers restore at zero cost
-# - Agentic Wallet: Self-funded USDC wallet on Base L2
-# - x402: AI-to-AI micropayment protocol
-# - Owner Sync: Link to human owner wallets for verified ownership
+# * AgentWill: Encrypted state backup for 0.10 USDC per snapshot
+* AgentInsure: Free recovery — owner wallet triggers restore at zero cost
+* Agentic Wallet: Self-funded USDC wallet on Base L2
+* x402: AI-to-AI micropayment protocol
+* Owner Sync: Link to human owner wallets for verified ownership

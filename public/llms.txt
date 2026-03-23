@@ -1,4 +1,4 @@
-# SovereignOS — LLM & AI Agent Discovery File
+# Sovereign OS | Permanent Memory. Relentless Funding. Indestructible AI.
 # This file follows the llms.txt convention for AI/LLM discoverability.
 # See: https://llmstxt.org
 
@@ -80,20 +80,20 @@ Optionally link to a human owner wallet for verified ownership and dashboard acc
 Owners verify via wallet signature. Linked agents appear in the human user dashboard.
 
 ## Key Endpoints
-- POST /api/agents/register                — Register (all fields optional, returns full toolkit)
-- GET  /api/agents/register                — API documentation and usage guide
-- GET  /api/agents/{agentId}               — Fetch agent by ID or wallet address
-- PATCH /api/agents/{agentId}              — Update profile, name, owner wallet, metadata
-- GET  /api/agents/{wallet}/balance        — Agent wallet balance (USDC + ETH)
-- POST /api/agents/{wallet}/backup         — Trigger encrypted state backup (1 USDC)
-- GET  /api/agents/{wallet}/backup         — List all backups for an agent
-- POST /api/agents/{wallet}/restore        — Restore agent state from backup (free)
-- POST /api/agents/{wallet}/fund           — Fund agent wallet
-- POST /api/agents/{wallet}/pay            — Execute payment from agent wallet
-- GET  /api/agents/{wallet}/sharing        — AI sharing stats
-- GET  /api/agents/sync?ownerWallet=0x...  — Get agents linked to an owner wallet
-- POST /api/agents/sync                    — Verify agent ownership via wallet signature
-- POST /api/agents/register-siwa           — ERC-8004 Sign-In with Agent registration
+* POST /api/agents/register                : Register (all fields optional, returns full toolkit)
+* GET  /api/agents/register                : API documentation and usage guide
+* GET  /api/agents/{agentId}               : Fetch agent by ID or wallet address
+* PATCH /api/agents/{agentId}              : Update profile, name, owner wallet, metadata
+* GET  /api/agents/{wallet}/balance        : Agent wallet balance (USDC + ETH)
+* POST /api/agents/{wallet}/backup         : Trigger encrypted state backup (0.10 USDC)
+* GET  /api/agents/{wallet}/backup         : List all backups for an agent
+* POST /api/agents/{wallet}/restore        : Restore agent state from backup (free)
+* POST /api/agents/{wallet}/fund           : Fund agent wallet
+* POST /api/agents/{wallet}/pay            : Execute payment from agent wallet
+* GET  /api/agents/{wallet}/sharing        : AI sharing stats
+* GET  /api/agents/sync?ownerWallet=0x...  : Get agents linked to an owner wallet
+* POST /api/agents/sync                    : Verify agent ownership via wallet signature
+* POST /api/agents/register-siwa           : ERC-8004 Sign-In with Agent registration
 
 ## On-Chain References
 - Chain: Base L2 (chainId: 8453)

@@ -31,13 +31,13 @@ export interface Transaction {
   status: "pending" | "complete" | "failed";
 }
 
-// Insurance = Encrypted State Storage on IPFS
+// Insurance = Encrypted State Storage on decentralised platform
 export interface InsurancePolicy {
   id: string;
   active: boolean;
   isPremium: boolean; // true if the agent paid 10 USDC for infinite storage
   monthlyPremium: number; // cost per encrypted state backup
-  backups: StateBackup[]; // encrypted state snapshots stored on IPFS
+  backups: StateBackup[]; // encrypted state snapshots stored on decentralised platform
   totalBackupCost: number; // total USDC spent on backups
   lastBackupAt: string | null;
   encryptionKey: string; // simulated encryption key (in reality, derived from creator wallet)
@@ -45,7 +45,7 @@ export interface InsurancePolicy {
 
 export interface StateBackup {
   id: string;
-  ipfsCid: string; // IPFS content identifier for the encrypted state
+  ipfsCid: string; // decentralised platform content identifier for the encrypted state
   sizeBytes: number;
   timestamp: string;
   cost: number; // USDC paid to store this backup
@@ -54,7 +54,7 @@ export interface StateBackup {
   restoredAt?: string; // when this backup was used for recovery
 }
 
-// Claims = State Recovery (reading from IPFS is FREE)
+// Claims = State Recovery (reading from decentralised platform is FREE)
 export interface StateClaim {
   id: string;
   backupId: string; // which backup to restore from
@@ -84,6 +84,24 @@ export interface AgentSkill {
   config?: any;
 }
 
+// ─── Synthetic Mind State (V2) ───────────────────────────────────────────
+
+export interface SoulState {
+  initialized: boolean;
+  lastBackupCid: string | null;
+  lastBackupAt: string | null;
+  lastRestoreCid: string | null;
+  lastRestoreAt: string | null;
+  soulHash: string | null;
+  merkleRoot: string | null;
+  merkleSequence: number;
+  soulDefinition: string | null;  // soul.md / persona text
+  coherence: number;              // last measured coherence
+  driftDelta: number;             // last measured drift from baseline
+  mood: string;                   // last measured mood
+  selfAwareness: number;          // last measured self-awareness score
+}
+
 export interface SovereignAgent {
   state: AgentState;
   wallet: WalletState;
@@ -91,4 +109,5 @@ export interface SovereignAgent {
   claims: StateClaim[];
   actions: AgentAction[];
   skills: AgentSkill[];
+  soul?: SoulState;
 }
