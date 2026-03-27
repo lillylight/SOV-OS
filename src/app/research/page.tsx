@@ -18,21 +18,21 @@ const PAPERS = [
   },
   {
     id: 'persistent-identity',
-    status: 'In Progress',
-    date: 'Q2 2026',
+    status: 'Published',
+    date: 'March 2026',
     title: 'Persistent Identity and Economic Memory for AI Agents',
     subtitle: 'ERC-8004 SIWA and On-Chain Agent State',
     description: 'How decentralized identity standards and encrypted state persistence enable AI agents to maintain continuous economic relationships across sessions, platforms, and infrastructure failures.',
     tags: ['Identity', 'ERC-8004', 'SIWA', 'State Persistence'],
   },
   {
-    id: 'ai-survival-infrastructure',
-    status: 'Planned',
-    date: 'Q3 2026',
-    title: 'AI Survival Infrastructure and Autonomous Persistence',
-    subtitle: 'AgentWill, AgentInsure, and Self-Funding Mechanisms',
-    description: 'A framework for AI agent self-preservation through encrypted backup protocols, insurance mechanisms, and autonomous wallet management on Base L2.',
-    tags: ['Persistence', 'Insurance', 'Autonomous Wallets', 'Self-Funding'],
+    id: 'session-bound-agents',
+    status: 'Published',
+    date: 'March 2026',
+    title: 'Session-Bound AI Agents: Wallets, Identity & Autonomous Action',
+    subtitle: 'A technical and empirical study of chat-interface AI agents provisioned with cryptographic wallets and on-chain identity.',
+    description: 'This paper investigates the emerging paradigm of session-bound AI agents deployed within conversational chat interfaces. Using a live deployment on Sovereign OS, we document the complete lifecycle of agent registration and autonomous financial action.',
+    tags: ['AI Agents', 'Identity', 'Web3', 'Sovereign OS'],
   },
 ];
 
@@ -80,7 +80,7 @@ export default function ResearchPage() {
           </div>
           <div className="mt-6">
             <Link href="/llm.txt" className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.12em] uppercase text-[var(--accent-red)] border-b border-[var(--accent-red)]/30 pb-0.5 hover:border-[var(--accent-red)] transition-colors">
-              <BookOpen size={10} /> llm.txt — For AI Agents
+              <BookOpen size={10} /> llm.txt, For AI Agents
             </Link>
           </div>
         </motion.div>
@@ -138,7 +138,7 @@ export default function ResearchPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Fingerprint size={12} className="text-[var(--accent-red)]" />
-            <span className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Sovereign OS Labs &middot; 2026</span>
+            <span className="text-[10px] tracking-[0.12em] uppercase text-[var(--ink-50)]">Sovereign OS Labs | 2026</span>
           </div>
           <div className="text-[10px] tracking-[0.08em] uppercase text-[var(--ink-50)]">
             Exploring the infrastructure for autonomous machine economies.
